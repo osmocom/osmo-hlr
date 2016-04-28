@@ -45,7 +45,6 @@ static int osmo_gsup_conn_oap_handle(struct osmo_gsup_conn *conn,
 	return 0;
 }
 
-
 /* Data from a given client has arrived over the socket */
 static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 			       struct msgb *msg)
@@ -54,39 +53,18 @@ static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 	struct ipaccess_head_ext *he = (struct ipaccess_head_ext *) msgb_l2(msg);
 	struct osmo_gsup_conn *clnt = (struct osmo_gsup_conn *)conn->data;
 	int rc;
-	static struct ipaccess_unit ipa_dev = {
-		.unit_name = "HLR",
-		/* FIXME */
-	};
 
 	msg->l2h = &hh->data[0];
 
-	/* FIXME: not BTS for server side? */
-#if 0
-	rc = ipaccess_bts_handle_ccm(conn, &ipa_dev, msg);
-
-	if (rc < 0) {
-		LOGP(DLGSUP, LOGL_NOTICE,
-		     "GSUP received an invalid IPA/CCM message from %s:%d\n",
-		     conn->addr, conn->port);
-		/* Link has been closed */
-		clnt->is_connected = 0;
-		msgb_free(msg);
-		return -1;
-	}
-
-	if (rc == 1) {
-		uint8_t msg_type = *(msg->l2h);
-		/* CCM message */
-		if (msg_type == IPAC_MSGT_PONG) {
-			LOGP(DLGSUP, LOGL_DEBUG, "GSUP receiving PONG\n");
-			clnt->got_ipa_pong = 1;
+	if (hh->proto == IPAC_PROTO_IPACCESS) {
+		rc = ipa_server_conn_ccm(conn, msg);
+		if (rc < 0) {
+			/* conn is already invalid here! */
+			msgb_free(msg);
+			return -1;
 		}
-
-		msgb_free(msg);
 		return 0;
 	}
-#endif
 
 	if (hh->proto != IPAC_PROTO_OSMO)
 		goto invalid;
@@ -117,6 +95,15 @@ invalid:
 
 }
 
+static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
+				   struct msgb *msg, struct tlv_parsed *tlvp,
+				   struct ipaccess_unit *unit)
+{
+	LOGP(DLGSUP, LOGL_INFO, "CCM Callback\n");
+	/* TODO: ? */
+	return 0;
+}
+
 static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
 {
 	struct osmo_gsup_conn *clnt = (struct osmo_gsup_conn *)conn->data;
@@ -135,6 +122,7 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 	struct osmo_gsup_conn *conn;
 	struct osmo_gsup_server *gsups =
 		(struct osmo_gsup_server *) link->data;
+	int rc;
 
 	conn = talloc_zero(link->data, struct osmo_gsup_conn);
 	OSMO_ASSERT(conn);
@@ -142,6 +130,7 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 	conn->conn = ipa_server_conn_create(conn, link, fd,
 					   osmo_gsup_server_read_cb,
 					   osmo_gsup_server_closed_cb, conn);
+	conn->conn->ccm_cb = osmo_gsup_server_ccm_cb;
 	OSMO_ASSERT(conn->conn);
 
 	/* link data structure with server structure */
@@ -150,13 +139,20 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 
 	LOGP(DLGSUP, LOGL_INFO, "New GSUP client %s:%d\n",
 		conn->conn->addr, conn->conn->port);
+
+	/* request the identity of the client */
+	rc = ipa_ccm_send_id_req(fd);
+	if (rc < 0)
+		goto failed;
 #if 0
 	rc = oap_init(&gsups->oap_config, &conn->oap_state);
 	if (rc != 0)
 		goto failed;
-failed:
 #endif
 	return 0;
+failed:
+	ipa_server_conn_destroy(conn->conn);
+	return -1;
 }
 
 struct osmo_gsup_server *
