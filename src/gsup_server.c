@@ -120,6 +120,7 @@ static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
 		conn->addr, conn->port);
 
 	llist_del(&clnt->list);
+	talloc_free(clnt);
 
 	return 0;
 }
@@ -132,10 +133,10 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 		(struct osmo_gsup_server *) link->data;
 	int rc;
 
-	conn = talloc_zero(link->data, struct osmo_gsup_conn);
+	conn = talloc_zero(gsups, struct osmo_gsup_conn);
 	OSMO_ASSERT(conn);
 
-	conn->conn = ipa_server_conn_create(conn, link, fd,
+	conn->conn = ipa_server_conn_create(gsups, link, fd,
 					   osmo_gsup_server_read_cb,
 					   osmo_gsup_server_closed_cb, conn);
 	conn->conn->ccm_cb = osmo_gsup_server_ccm_cb;
