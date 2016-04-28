@@ -65,6 +65,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 			gsup.message_type);
 		break;
 	}
+	msgb_free(msg);
 	return 0;
 }
 

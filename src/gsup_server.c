@@ -60,9 +60,9 @@ static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 		rc = ipa_server_conn_ccm(conn, msg);
 		if (rc < 0) {
 			/* conn is already invalid here! */
-			msgb_free(msg);
 			return -1;
 		}
+		msgb_free(msg);
 		return 0;
 	}
 
