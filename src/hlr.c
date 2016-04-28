@@ -1,3 +1,5 @@
+#include <signal.h>
+
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
@@ -66,11 +68,30 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	return 0;
 }
 
+static struct osmo_gsup_server *gs;
+
+static void signal_hdlr(int signal)
+{
+	switch (signal) {
+	case SIGINT:
+		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to SIGINT\n");
+		osmo_gsup_server_destroy(gs);
+		db_close(g_dbc);
+		log_fini();
+		exit(0);
+		break;
+	case SIGUSR1:
+		LOGP(DMAIN, LOGL_DEBUG, "Talloc Report due to SIGUSR1\n");
+		talloc_report_full(NULL, stderr);
+		break;
+	}
+}
 
 int main(int argc, char **argv)
 {
-	struct osmo_gsup_server *gs;
 	int rc;
+
+	talloc_enable_leak_report_full();
 
 	rc = osmo_init_logging(&hlr_log_info);
 	if (rc < 0) {
@@ -96,6 +117,12 @@ int main(int argc, char **argv)
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
 	}
+
+	osmo_init_ignore_signals();
+	signal(SIGINT, &signal_hdlr);
+	signal(SIGUSR1, &signal_hdlr);
+
+	//osmo_daemonize();
 
 	while (1) {
 		osmo_select_main(0);
