@@ -66,11 +66,16 @@ static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 		return 0;
 	}
 
-	if (hh->proto != IPAC_PROTO_OSMO)
+	if (hh->proto != IPAC_PROTO_OSMO) {
+		LOGP(DLGSUP, LOGL_NOTICE, "Unsupported IPA stream ID 0x%02x\n",
+			hh->proto);
 		goto invalid;
+	}
 
-	if (!he || msgb_l2len(msg) < sizeof(*he))
+	if (!he || msgb_l2len(msg) < sizeof(*he)) {
+		LOGP(DLGSUP, LOGL_NOTICE, "short IPA message\n");
 		goto invalid;
+	}
 
 	msg->l2h = &he->data[0];
 
@@ -81,15 +86,18 @@ static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 	} else if (he->proto == IPAC_PROTO_EXT_OAP) {
 		return osmo_gsup_conn_oap_handle(clnt, msg);
 		/* osmo_gsup_client_oap_handle frees msg */
-	} else
+	} else {
+		LOGP(DLGSUP, LOGL_NOTICE, "Unsupported IPA Osmo Proto 0x%02x\n",
+			hh->proto);
 		goto invalid;
+	}
 
 	return 0;
 
 invalid:
 	LOGP(DLGSUP, LOGL_NOTICE,
-	     "GSUP received an invalid IPA message from %s:%d, size = %d\n",
-	     conn->addr, conn->port, msgb_length(msg));
+	     "GSUP received an invalid IPA message from %s:%d: %s\n",
+	     conn->addr, conn->port, osmo_hexdump(msgb_l2(msg), msgb_l2len(msg)));
 	msgb_free(msg);
 	return -1;
 
