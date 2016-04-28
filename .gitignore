@@ -1,0 +1,4 @@
+*.o
+*.db
+src/hlr
+src/db_test
