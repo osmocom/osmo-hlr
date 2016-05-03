@@ -27,15 +27,15 @@ CREATE TABLE subscriber (
 	-- Chapter 2.13.115
 	periodic_rau_tau_tmr INTEGER,
 	-- Chapter 2.1.1.2: network access mode
-	nam_cs		BOOLEAN NOT NULL DEFAULT TRUE,
-	nam_ps		BOOLEAN NOT NULL DEFAULT TRUE,
+	nam_cs		BOOLEAN NOT NULL DEFAULT 1,
+	nam_ps		BOOLEAN NOT NULL DEFAULT 1,
 	-- Chapter 2.1.8
 	lmsi		INTEGER,
 
 	-- Chapter 2.7.5
-	ms_purged_cs	BOOLEAN NOT NULL DEFAULT FALSE,
+	ms_purged_cs	BOOLEAN NOT NULL DEFAULT 0,
 	-- Chapter 2.7.6
-	ms_purged_ps	BOOLEAN NOT NULL DEFAULT FALSE
+	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0
 );
 
 CREATE TABLE subscriber_apn (
@@ -64,4 +64,5 @@ CREATE TABLE auc_3g (
 	sqn		INTEGER
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscr_imsi ON subscriber (imsi);
 -- SELECT algo_id_2g, ki, algo_id_3g, k, op, opc, sqn FROM subscriber LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id WHERE imsi = ?
