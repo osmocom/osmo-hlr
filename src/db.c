@@ -25,8 +25,9 @@
 #include "db.h"
 
 static const char *stmt_sql[] = {
-	[SEL_BY_IMSI] = "SELECT * FROM subscriber WHERE imsi = ?",
-	[UPD_BY_IMSI] = "UPDATE subscriber SET vlr_number = ? WHERE imsi = ?",
+	[SEL_BY_IMSI] = "SELECT id,imsi,msisdn,vlr_number,sgsn_number,sgsn_address,periodic_lu_tmr,periodic_rau_tau_tmr,nam_cs,nam_ps,lmsi,ms_purged_cs,ms_purged_ps FROM subscriber WHERE imsi = ?",
+	[UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = ? WHERE id = ?",
+	[UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = ? WHERE id = ?",
 	[AUC_BY_IMSI] = "SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn FROM subscriber LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id WHERE imsi = ?",
 	[AUC_UPD_SQN] = "UPDATE auc_3g SET sqn = ? WHERE subscriber_id = ?",
 };

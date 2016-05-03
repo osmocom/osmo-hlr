@@ -1,12 +1,14 @@
 #pragma once
 
+#include <stdbool.h>
 #include <sqlite3.h>
 
 enum stmt_idx {
 	SEL_BY_IMSI	= 0,
-	UPD_BY_IMSI	= 1,
-	AUC_BY_IMSI	= 2,
-	AUC_UPD_SQN	= 3,
+	UPD_VLR_BY_ID	= 1,
+	UPD_SGSN_BY_ID	= 2,
+	AUC_BY_IMSI	= 3,
+	AUC_UPD_SQN	= 4,
 	_NUM_STMT
 };
 
@@ -33,3 +35,39 @@ int db_update_sqn(struct db_context *dbc, uint64_t id,
 int db_get_auc(struct db_context *dbc, const char *imsi,
 	    struct osmo_auth_vector *vec, unsigned int num_vec,
 	    const uint8_t *rand_auts, const uint8_t *auts);
+
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/gsm/protocol/gsm_23_003.h>
+
+/* TODO: Get this from somewhere? */
+#define GT_MAX_DIGITS	15
+
+struct hlr_subscriber {
+	struct llist_head list;
+
+	uint64_t	id;
+	char		imsi[GSM23003_IMSI_MAX_DIGITS+1];
+	char		msisdn[GT_MAX_DIGITS+1];
+	/* imeisv? */
+	char		vlr_number[GT_MAX_DIGITS+1];
+	char		sgsn_number[GT_MAX_DIGITS+1];
+	char		sgsn_address[GT_MAX_DIGITS+1];
+	/* ggsn number + address */
+	/* gmlc number */
+	/* smsc number */
+	uint32_t	periodic_lu_timer;
+	uint32_t	periodic_rau_tau_timer;
+	bool		nam_cs;
+	bool		nam_ps;
+	uint32_t	lmsi;
+	bool		ms_purged_cs;
+	bool		ms_purged_ps;
+};
+
+int db_subscr_get(struct db_context *dbc, const char *imsi,
+		  struct hlr_subscriber *subscr);
+
+int db_subscr_lu(struct db_context *dbc,
+		 const struct hlr_subscriber *subscr,
+		 const char *vlr_or_sgsn_number,
+		 bool lu_is_ps);

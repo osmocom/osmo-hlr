@@ -16,6 +16,7 @@ struct osmo_gsup_server {
 
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
+	struct llist_head routes;
 };
 
 
@@ -26,6 +27,7 @@ struct osmo_gsup_conn {
 	struct osmo_gsup_server *server;
 	struct ipa_server_conn *conn;
 	//struct oap_state oap_state;
+	struct tlv_parsed ccm;
 };
 
 

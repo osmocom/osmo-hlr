@@ -103,12 +103,71 @@ invalid:
 
 }
 
+static void osmo_tlvp_dump(const struct tlv_parsed *tlvp,
+			   int subsys, int level)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(tlvp->lv); i++) {
+		if (!TLVP_PRESENT(tlvp, i))
+			continue;
+
+		LOGP(subsys, level, "%u: %s\n", i,
+			TLVP_VAL(tlvp, i));
+		LOGP(subsys, level, "%u: %s\n", i,
+			osmo_hexdump(TLVP_VAL(tlvp, i),
+				     TLVP_LEN(tlvp, i)));
+	}
+}
+
+/* FIXME: should this be parrt of ipas_server handling, not GSUP? */
+static void tlvp_copy(void *ctx, struct tlv_parsed *out, const struct tlv_parsed *in)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(out->lv); i++) {
+		if (!TLVP_PRESENT(in, i)) {
+			if (TLVP_PRESENT(out, i)) {
+				talloc_free((void *) out->lv[i].val);
+				out->lv[i].val = NULL;
+				out->lv[i].len = 0;
+			}
+			continue;
+		}
+		out->lv[i].val = talloc_memdup(ctx, in->lv[i].val, in->lv[i].len);
+		out->lv[i].len = in->lv[i].len;
+	}
+}
+
+int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
+			   uint8_t tag)
+{
+	if (!TLVP_PRESENT(&clnt->ccm, tag))
+		return -ENODEV;
+	*addr = (uint8_t *) TLVP_VAL(&clnt->ccm, tag);
+
+	return TLVP_LEN(&clnt->ccm, tag);
+}
+
 static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
 				   struct msgb *msg, struct tlv_parsed *tlvp,
 				   struct ipaccess_unit *unit)
 {
+	struct osmo_gsup_conn *clnt = (struct osmo_gsup_conn *)conn->data;
+	uint8_t *addr;
+	size_t addr_len;
+
 	LOGP(DLGSUP, LOGL_INFO, "CCM Callback\n");
-	/* TODO: ? */
+
+	/* FIXME: should this be parrt of ipas_server handling, not
+	 * GSUP? */
+	tlvp_copy(clnt, &clnt->ccm, tlvp);
+	osmo_tlvp_dump(tlvp, DLGSUP, LOGL_INFO);
+
+	addr_len = osmo_gsup_conn_ccm_get(clnt, &addr, IPAC_IDTAG_SERNR);
+	if (addr_len)
+		gsup_route_add(clnt, addr, addr_len);
+
 	return 0;
 }
 
@@ -119,6 +178,7 @@ static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
 	LOGP(DLGSUP, LOGL_INFO, "Lost GSUP client %s:%d\n",
 		conn->addr, conn->port);
 
+	gsup_route_del_conn(clnt);
 	llist_del(&clnt->list);
 	talloc_free(clnt);
 
@@ -176,6 +236,7 @@ osmo_gsup_server_create(void *ctx, const char *ip_addr,
 	OSMO_ASSERT(gsups);
 
 	INIT_LLIST_HEAD(&gsups->clients);
+	INIT_LLIST_HEAD(&gsups->routes);
 
 	gsups->link = ipa_server_link_create(gsups,
 					/* no e1inp */ NULL,
