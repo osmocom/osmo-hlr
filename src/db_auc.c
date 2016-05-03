@@ -103,10 +103,6 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	if (subscr_id)
 		*subscr_id = sqlite3_column_int64(stmt, 0);
 
-	for (int i = 0; i < 10; i++)
-		LOGAUC(imsi, LOGL_DEBUG, "col_type(%d)=%d\n", i,
-				sqlite3_column_type(stmt, i));
-
 	/* obtain result values using sqlite3_column_*() */
 	if (sqlite3_column_type(stmt, 1) == SQLITE_INTEGER) {
 		/* we do have some 2G authentication data */
