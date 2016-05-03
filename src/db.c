@@ -105,6 +105,12 @@ struct db_context *db_open(void *ctx, const char *fname)
 	if (rc != SQLITE_OK)
 		LOGP(DDB, LOGL_ERROR, "Unable to enable SQlite3 extended result codes\n");
 
+	char *err_msg;
+	rc = sqlite3_exec(dbc->db, "PRAGMA journal_mode=WAL; PRAGMA synchonous = NORMAL;", 0, 0, &err_msg);
+	if (rc != SQLITE_OK)
+		LOGP(DDB, LOGL_ERROR, "Unable to set Write-Ahead Logging: %s\n",
+			err_msg);
+
 	/* prepare all SQL statements */
 	for (i = 0; i < ARRAY_SIZE(dbc->stmt); i++) {
 		rc = sqlite3_prepare_v2(dbc->db, stmt_sql[i], -1,
