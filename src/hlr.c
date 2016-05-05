@@ -387,11 +387,9 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* Cancel in old VLR/SGSN, if new VLR/SGSN differs from old */
 	if (luop->is_ps == false &&
 	    strcmp(subscr->vlr_number, vlr_number)) {
-		/* FIXME: start location cancel towards old VLR */
 		lu_op_tx_cancel_old(luop);
 	} else if (luop->is_ps == true &&
 		   strcmp(subscr->sgsn_number, sgsn_number)) {
-		/* FIXME: start location cancel towards old VLR */
 		lu_op_tx_cancel_old(luop);
 	} else
 #endif
