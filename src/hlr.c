@@ -342,7 +342,6 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 			  const struct osmo_gsup_message *gsup)
 {
 	int rc;
-	bool is_ps;
 	struct lu_operation *luop;
 	struct hlr_subscriber *subscr;
 	uint8_t *peer_addr;
@@ -374,10 +373,10 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 
 	/* Check if subscriber is generally permitted on CS or PS
 	 * service (as requested) */
-	if (!is_ps && !subscr->nam_cs) {
+	if (!luop->is_ps && !subscr->nam_cs) {
 		lu_op_tx_error(luop, GMM_CAUSE_PLMN_NOTALLOWED);
 		return 0;
-	} else if (is_ps && !subscr->nam_ps) {
+	} else if (luop->is_ps && !subscr->nam_ps) {
 		lu_op_tx_error(luop, GMM_CAUSE_GPRS_NOTALLOWED);
 		return 0;
 	}
