@@ -32,6 +32,8 @@ CREATE TABLE subscriber (
 	-- Chapter 2.1.8
 	lmsi		INTEGER,
 
+	-- The below purged flags might not even be stored non-volatile,
+	-- refer to TS 23.012 Chapter 3.6.1.4
 	-- Chapter 2.7.5
 	ms_purged_cs	BOOLEAN NOT NULL DEFAULT 0,
 	-- Chapter 2.7.6

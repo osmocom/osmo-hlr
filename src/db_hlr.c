@@ -135,3 +135,48 @@ out:
 
 	return ret;
 }
+
+int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
+{
+	sqlite3_stmt *stmt = dbc->stmt[UPD_VLR_BY_ID];
+	int rc, ret = 1;
+
+	if (is_ps)
+		stmt = dbc->stmt[UPD_PURGE_PS_BY_IMSI];
+	else
+		stmt = dbc->stmt[UPD_PURGE_CS_BY_IMSI];
+
+	rc = sqlite3_bind_int(stmt, 1, 1);
+	if (rc != SQLITE_OK) {
+		LOGP(DAUC, LOGL_ERROR, "Error binding Purged: %d\n", rc);
+		return -1;
+	}
+
+	rc = sqlite3_bind_text(stmt, 2, imsi, -1, SQLITE_STATIC);
+	if (rc != SQLITE_OK) {
+		LOGP(DAUC, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
+		ret = -1;
+		goto out;
+	}
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR, "Error setting Purged: %d\n", rc);
+		ret = -2;
+		goto out;
+	}
+	/* FIXME: return 0 in case IMSI not known */
+out:
+	/* remove bindings and reset statement to be re-executed */
+	rc = sqlite3_clear_bindings(stmt);
+	if (rc != SQLITE_OK) {
+		LOGP(DAUC, LOGL_ERROR, "Error clearing bindings: %d\n", rc);
+	}
+	rc = sqlite3_reset(stmt);
+	if (rc != SQLITE_OK) {
+		LOGP(DAUC, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
+	}
+
+	return ret;
+}

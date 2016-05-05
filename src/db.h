@@ -9,6 +9,8 @@ enum stmt_idx {
 	UPD_SGSN_BY_ID	= 2,
 	AUC_BY_IMSI	= 3,
 	AUC_UPD_SQN	= 4,
+	UPD_PURGE_CS_BY_IMSI,
+	UPD_PURGE_PS_BY_IMSI,
 	_NUM_STMT
 };
 
@@ -71,3 +73,6 @@ int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,
 		 const char *vlr_or_sgsn_number,
 		 bool lu_is_ps);
+
+int db_subscr_purge(struct db_context *dbc,
+		const char *imsi, bool is_ps);

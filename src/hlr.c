@@ -406,6 +406,43 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	return 0;
 }
 
+static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
+			   const struct osmo_gsup_message *gsup)
+{
+	struct osmo_gsup_message gsup_reply = {0};
+	struct msgb *msg_out;
+	bool is_ps = false;
+	int rc;
+
+	LOGP(DAUC, LOGL_INFO, "%s: Purge MS (%s)\n", gsup->imsi,
+		is_ps ? "PS" : "CS");
+
+	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
+
+	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
+		is_ps = true;
+
+	/* FIXME: check if the VLR that sends the purge is the same that
+	 * we have on record. Only update if yes */
+
+	/* Perform the actual update of the DB */
+	rc = db_subscr_purge(g_dbc, gsup->imsi, is_ps);
+
+	if (rc == 1)
+		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_RESULT;
+	else if (rc == 0) {
+		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_ERROR;
+		gsup_reply.cause = GMM_CAUSE_IMSI_UNKNOWN;
+	} else {
+		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_ERROR;
+		gsup_reply.cause = GMM_CAUSE_NET_FAIL;
+	}
+
+	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP AUC response");
+	osmo_gsup_encode(msg_out, &gsup_reply);
+	return osmo_gsup_conn_send(conn, msg_out);
+}
+
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
 	static struct osmo_gsup_message gsup;
@@ -424,6 +461,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		break;
 	case OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST:
 		rx_upd_loc_req(conn, &gsup);
+		break;
+	case OSMO_GSUP_MSGT_PURGE_MS_REQUEST:
+		rx_purge_ms_req(conn, &gsup);
 		break;
 	/* responses to requests sent by us */
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
