@@ -47,7 +47,6 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 
 	/* initialize return message structure */
 	memset(&gsup_out, 0, sizeof(gsup_out));
-	gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT;
 	memcpy(&gsup_out.imsi, &gsup->imsi, sizeof(gsup_out.imsi));
 
 	rc = db_get_auc(g_dbc, gsup->imsi, gsup_out.auth_vectors,
@@ -59,6 +58,9 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	} else if (rc == 0) {
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
 		gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
+	} else {
+		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT;
+		gsup_out.num_auth_vectors = rc;
 	}
 
 	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP AUC response");
