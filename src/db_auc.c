@@ -71,13 +71,15 @@ int db_update_sqn(struct db_context *dbc, uint64_t id,
 	return 0;
 }
 
-/* obtain the authentication data for a given imsi */
+/* obtain the authentication data for a given imsi
+ * returns -1 in case of error, 0 for unknown IMSI, 1 for success */
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		     struct osmo_sub_auth_data *aud2g,
 		     struct osmo_sub_auth_data *aud3g,
 		     uint64_t *subscr_id)
 {
 	sqlite3_stmt *stmt = dbc->stmt[AUC_BY_IMSI];
+	int ret = 0;
 	int rc;
 
 	memset(aud2g, 0, sizeof(*aud2g));
@@ -88,12 +90,19 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 				SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
 		LOGAUC(imsi, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
+		ret = -1;
+		goto out;
 	}
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
-	if (rc != SQLITE_ROW) {
+	if (rc == SQLITE_DONE) {
+		LOGAUC(imsi, LOGL_INFO, "Unknown\n");
+		ret = 0;
+		goto out;
+	} else if (rc != SQLITE_ROW) {
 		LOGAUC(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
+		ret = -1;
 		goto out;
 	}
 
@@ -151,6 +160,12 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		aud3g->type = OSMO_AUTH_TYPE_UMTS;
 	} else
 		LOGAUC(imsi, LOGL_DEBUG, "No 3G Auth Data\n");
+
+	if (aud2g->type == 0 && aud3g->type == 0)
+		ret = -1;
+	else
+		ret = 1;
+
 out:
 	/* remove bindings and reset statement to be re-executed */
 	rc = sqlite3_clear_bindings(stmt);
@@ -162,30 +177,33 @@ out:
 		LOGAUC(imsi, LOGL_ERROR, "Error in sqlite3_reset(): %d\n", rc);
 	}
 
-	if (aud2g->type == 0 && aud3g->type == 0)
-		return -1;
-
-	return 0;
+	return ret;
 }
 
+/* return -1 in case of error, 0 for unknown imsi, positive for number
+ * of vectors generated */
 int db_get_auc(struct db_context *dbc, const char *imsi,
 	    struct osmo_auth_vector *vec, unsigned int num_vec,
 	    const uint8_t *rand_auts, const uint8_t *auts)
 {
 	struct osmo_sub_auth_data aud2g, aud3g;
 	uint64_t subscr_id;
+	int ret = 0;
 	int rc;
 
 	rc = db_get_auth_data(dbc, imsi, &aud2g, &aud3g, &subscr_id);
-	if (rc < 0)
+	if (rc <= 0)
 		return rc;
 
 	LOGAUC(imsi, LOGL_INFO, "Calling to generate %u vectors\n", num_vec);
 	rc = auc_compute_vectors(vec, num_vec, &aud2g, &aud3g, rand_auts, auts);
-	if (rc < 0)
+	if (rc < 0) {
 		num_vec = 0;
-	else
+		ret = -1;
+	} else {
 		num_vec = rc;
+		ret = num_vec;
+	}
 	LOGAUC(imsi, LOGL_INFO, "Generated %u vectors\n", num_vec);
 
 	/* Update SQN in database, as needed */
@@ -197,8 +215,9 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 		if (rc < 0) {
 			LOGAUC(imsi, LOGL_ERROR, "Error updating SQN: %d\n", rc);
 			num_vec = 0;
+			ret = -1;
 		}
 	}
 
-	return num_vec;
+	return ret;
 }
