@@ -125,7 +125,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 			goto end_2g;
 		}
 #endif
-		memcpy(&aud2g->u.gsm.ki, ki, sizeof(aud2g->u.gsm.ki));
+		osmo_hexparse(ki, &aud2g->u.gsm.ki, sizeof(aud2g->u.gsm.ki));
 		aud2g->type = OSMO_AUTH_TYPE_GSM;
 	} else
 		LOGAUC(imsi, LOGL_DEBUG, "No 2G Auth Data\n");
@@ -140,7 +140,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 			LOGAUC(imsi, LOGL_ERROR, "Error reading K: %d\n", rc);
 			goto out;
 		}
-		memcpy(&aud3g->u.umts.k, k, sizeof(aud3g->u.umts.k));
+		osmo_hexparse(k, &aud3g->u.umts.k, sizeof(aud3g->u.umts.k));
 		/* UMTS Subscribers can have either OP or OPC */
 		op = sqlite3_column_text(stmt, 5);
 		if (!op) {
@@ -149,10 +149,12 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 				LOGAUC(imsi, LOGL_ERROR, "Error reading OPC: %d\n", rc);
 				goto out;
 			}
-			memcpy(&aud3g->u.umts.opc, opc, sizeof(aud3g->u.umts.opc));
+			osmo_hexparse(opc, &aud3g->u.umts.opc,
+					sizeof(aud3g->u.umts.opc));
 			aud3g->u.umts.opc_is_op = 0;
 		} else {
-			memcpy(&aud3g->u.umts.opc, op, sizeof(aud3g->u.umts.opc));
+			osmo_hexparse(op, &aud3g->u.umts.opc,
+					sizeof(aud3g->u.umts.opc));
 			aud3g->u.umts.opc_is_op = 1;
 		}
 		aud3g->u.umts.sqn = sqlite3_column_int64(stmt, 7);
