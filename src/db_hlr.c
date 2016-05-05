@@ -60,6 +60,7 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 	subscr->id = sqlite3_column_int64(stmt, 0);
 	SL3_TXT(subscr->imsi, stmt, 1);
 	SL3_TXT(subscr->msisdn, stmt, 2);
+	/* FIXME: These should all be BLOBs as they might contain NUL */
 	SL3_TXT(subscr->vlr_number, stmt, 3);
 	SL3_TXT(subscr->sgsn_number, stmt, 4);
 	SL3_TXT(subscr->sgsn_address, stmt, 5);

@@ -156,6 +156,7 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 	return osmo_gsup_conn_send(conn, msg);
 }
 
+/* Transmit a given GSUP message for the given LU operation */
 static void _luop_tx_gsup(struct lu_operation *luop,
 			  const struct osmo_gsup_message *gsup)
 {
@@ -189,6 +190,7 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 	talloc_free(luop);
 }
 
+/* timer call-back in case LU operation doesn't receive an response */
 static void lu_op_timer_cb(void *data)
 {
 	struct lu_operation *luop = data;
@@ -267,6 +269,7 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	memset(&gsup, 0, sizeof(gsup));
 	gsup.message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST;
 	strncpy(gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi)-1);
+	/* FIXME: deal with encoding the following data */
 	gsup.msisdn_enc;
 	gsup.hlr_enc;
 
@@ -369,6 +372,8 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		return 0;
 	}
 
+	/* Check if subscriber is generally permitted on CS or PS
+	 * service (as requested) */
 	if (!is_ps && !subscr->nam_cs) {
 		lu_op_tx_error(luop, GMM_CAUSE_PLMN_NOTALLOWED);
 		return 0;
