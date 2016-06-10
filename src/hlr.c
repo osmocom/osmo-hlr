@@ -51,7 +51,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 
 	rc = db_get_auc(g_dbc, gsup->imsi, gsup_out.auth_vectors,
 			ARRAY_SIZE(gsup_out.auth_vectors),
-			NULL /* gsup->rand_auts */, gsup->auts);
+			gsup->rand, gsup->auts);
 	if (rc < 0) {
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
 		gsup_out.cause = GMM_CAUSE_NET_FAIL;
