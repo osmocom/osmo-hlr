@@ -30,6 +30,8 @@ static const char *stmt_sql[] = {
 	[UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = ? WHERE id = ?",
 	[AUC_BY_IMSI] = "SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn FROM subscriber LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id WHERE imsi = ?",
 	[AUC_UPD_SQN] = "UPDATE auc_3g SET sqn = ? WHERE subscriber_id = ?",
+	[UPD_PURGE_CS_BY_IMSI] = "UPDATE subscriber SET ms_purged_cs=1 WHERE imsi = ?",
+	[UPD_PURGE_PS_BY_IMSI] = "UPDATE subscriber SET ms_purged_ps=1 WHERE imsi = ?",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

@@ -146,15 +146,9 @@ int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
 	else
 		stmt = dbc->stmt[UPD_PURGE_CS_BY_IMSI];
 
-	rc = sqlite3_bind_int(stmt, 1, 1);
+	rc = sqlite3_bind_text(stmt, 1, imsi, -1, SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding Purged: %d\n", rc);
-		return -1;
-	}
-
-	rc = sqlite3_bind_text(stmt, 2, imsi, -1, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
+		LOGP(DAUC, LOGL_ERROR, "Error binding IMSI %s: %d\n", imsi, rc);
 		ret = -1;
 		goto out;
 	}
