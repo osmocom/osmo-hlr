@@ -13,12 +13,6 @@ const struct log_info_cat hlr_log_info_cat[] = {
 		.color = "\033[1;31m",
 		.enabled = 1, .loglevel = LOGL_DEBUG,
 	},
-	[DLGSUP] = {
-		.name = "DLGSUP",
-		.description = "GSUP Protocol",
-		.color = "\033[1;32m",
-		.enabled = 1, .loglevel = LOGL_INFO,
-	},
 	[DAUC] = {
 		.name = "DAUC",
 		.description = "Authentication Center",
