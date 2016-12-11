@@ -182,7 +182,7 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 
 	memset(&gsup, 0, sizeof(gsup));
 	gsup.message_type = OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR;
-	strncpy(&gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi));
+	strncpy((char*)&gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi));
 	gsup.imsi[sizeof(gsup.imsi)-1] = '\0';
 	gsup.cause = cause;
 

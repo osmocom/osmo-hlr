@@ -51,9 +51,9 @@ int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg)
 static int osmo_gsup_conn_oap_handle(struct osmo_gsup_conn *conn,
 				struct msgb *msg_rx)
 {
+#if 0
 	int rc;
 	struct msgb *msg_tx;
-#if 0
 	rc = oap_handle(&conn->oap_state, msg_rx, &msg_tx);
 	msgb_free(msg_rx);
 	if (rc < 0)
@@ -174,7 +174,7 @@ static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
 				   struct ipaccess_unit *unit)
 {
 	struct osmo_gsup_conn *clnt = (struct osmo_gsup_conn *)conn->data;
-	uint8_t *addr;
+	uint8_t *addr = NULL;
 	size_t addr_len;
 
 	LOGP(DLGSUP, LOGL_INFO, "CCM Callback\n");
