@@ -26,6 +26,7 @@
 #include <osmocom/abis/ipaccess.h>
 
 #include "gsup_server.h"
+#include "gsup_router.h"
 
 static void osmo_gsup_server_send(struct osmo_gsup_conn *conn,
 			     int proto_ext, struct msgb *msg_tx)

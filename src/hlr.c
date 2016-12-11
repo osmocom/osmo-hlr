@@ -116,6 +116,8 @@ struct lu_operation {
 	uint8_t *peer;
 };
 
+void lu_op_tx_insert_subscr_data(struct lu_operation *luop);
+
 void lu_op_statechg(struct lu_operation *luop, enum lu_state new_state)
 {
 	enum lu_state old_state = luop->state;

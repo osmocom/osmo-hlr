@@ -32,6 +32,8 @@ struct osmo_gsup_conn {
 
 
 int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg);
+int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
+			   uint8_t tag);
 
 struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 					const char *ip_addr,
