@@ -22,6 +22,9 @@ noinst_HEADERS = \
 
 bin_PROGRAMS = \
 	osmo-hlr \
+	$(NULL)
+
+noinst_PROGRAMS = \
 	db_test \
 	$(NULL)
 
