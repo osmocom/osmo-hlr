@@ -33,10 +33,7 @@ PKG_CHECK_MODULES(LIBOSMOGSM, libosmogsm >= 0.9.0)
 PKG_CHECK_MODULES(LIBOSMOVTY, libosmovty >= 0.9.0)
 PKG_CHECK_MODULES(LIBOSMOABIS, libosmoabis >= 0.3.2)
 
-found_sqlite3=yes
-PKG_CHECK_MODULES(SQLITE3, sqlite3, ,found_sqlite3=no)
-AM_CONDITIONAL(HAVE_SQLITE3, test "$found_sqlite3" = yes)
-AC_SUBST(found_sqlite3)
+PKG_CHECK_MODULES(SQLITE3, sqlite3)
 
 AC_CONFIG_MACRO_DIR([m4])
 
