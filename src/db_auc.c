@@ -197,7 +197,7 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	if (rc <= 0)
 		return rc;
 
-	LOGAUC(imsi, LOGL_INFO, "Calling to generate %u vectors\n", num_vec);
+	LOGAUC(imsi, LOGL_DEBUG, "Calling to generate %u vectors\n", num_vec);
 	rc = auc_compute_vectors(vec, num_vec, &aud2g, &aud3g, rand_auts, auts);
 	if (rc < 0) {
 		num_vec = 0;
