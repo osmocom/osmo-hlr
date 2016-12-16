@@ -55,6 +55,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 
 		if (aud2g && !aud3g) {
 			/* 2G only case: output directly to vec */
+			DEBUGP(DAUC, "compute vector [%u]/%u: 2G only\n",
+			       i, num_vec);
 			rc = osmo_auth_gen_vec(vec+i, aud2g, rand);
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
@@ -63,6 +65,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			}
 		} else if (aud3g) {
 			/* 3G or 3G + 2G case */
+			DEBUGP(DAUC, "compute vector [%u]/%u: 3G or 3G + 2G\n",
+			       i, num_vec);
 			if (rand_auts && auts)
 				rc = osmo_auth_gen_vec_auts(vec+i, aud3g,
 							    rand_auts,
@@ -78,6 +82,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 		if (aud2g && aud3g) {
 			/* separate 2G + 3G case: patch 2G into 3G */
 			struct osmo_auth_vector vtmp;
+			DEBUGP(DAUC, "compute vector [%u]/%u:"
+			       " separate 2G + 3G\n", i, num_vec);
 			rc = osmo_auth_gen_vec(&vtmp, aud2g, rand);
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
