@@ -25,6 +25,7 @@
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
 #include <osmocom/gsm/apn.h>
+#include <osmocom/gsm/gsm48_ie.h>
 
 #include "db.h"
 #include "logging.h"
@@ -266,6 +267,7 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;
 	uint8_t apn[APN_MAXLEN];
+	uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
 	int l;
 
 	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED ||
@@ -274,8 +276,20 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	memset(&gsup, 0, sizeof(gsup));
 	gsup.message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST;
 	strncpy(gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi)-1);
+
+	l = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0,
+				    luop->subscr.msisdn);
+	if (l < 1) {
+		LOGP(DMAIN, LOGL_ERROR,
+		     "%s: Error: cannot encode MSISDN '%s'\n",
+		     luop->subscr.imsi, luop->subscr.msisdn);
+		lu_op_tx_error(luop, GMM_CAUSE_PROTO_ERR_UNSPEC);
+		return;
+	}
+	gsup.msisdn_enc = msisdn_enc;
+	gsup.msisdn_enc_len = l;
+
 	/* FIXME: deal with encoding the following data */
-	gsup.msisdn_enc;
 	gsup.hlr_enc;
 
 	if (luop->is_ps) {
