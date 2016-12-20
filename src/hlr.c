@@ -24,6 +24,7 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
+#include <osmocom/gsm/apn.h>
 
 #include "db.h"
 #include "logging.h"
@@ -264,6 +265,8 @@ void lu_op_rx_cancel_old_ack(struct lu_operation *luop,
 void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;
+	uint8_t apn[APN_MAXLEN];
+	int l;
 
 	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED ||
 		    luop->state == LU_S_CANCEL_ACK_RECEIVED);
@@ -276,7 +279,17 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	gsup.hlr_enc;
 
 	if (luop->is_ps) {
-		/* FIXME: PDP infos */
+		/* FIXME: PDP infos - use more fine-grained access control
+		   instead of wildcard APN */
+		l = osmo_apn_from_str(apn, sizeof(apn), "*");
+		if (l > 0) {
+			gsup.pdp_infos[0].apn_enc = apn;
+			gsup.pdp_infos[0].apn_enc_len = l;
+			gsup.pdp_infos[0].have_info = 1;
+			gsup.num_pdp_infos = 1;
+			/* FIXME: use real value: */
+			gsup.pdp_infos[0].context_id = 1;
+		}
 	}
 
 	/* Send ISD to new VLR/SGSN */
