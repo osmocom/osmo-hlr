@@ -26,7 +26,7 @@
 #include "rand.h"
 
 /* compute given number of vectors using either aud2g or aud2g or a combination
- * of both.  Handles re-synchrnization if rand_auts and auts are set */
+ * of both.  Handles re-synchronization if rand_auts and auts are set */
 int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			struct osmo_sub_auth_data *aud2g,
 			struct osmo_sub_auth_data *aud3g,
