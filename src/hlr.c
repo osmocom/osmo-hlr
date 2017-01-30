@@ -20,6 +20,8 @@
 #include <signal.h>
 #include <errno.h>
 
+#include <getopt.h>
+
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
@@ -516,6 +518,82 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	return 0;
 }
 
+static void print_usage()
+{
+	printf("Usage: osmo-hlr\n");
+}
+
+static void print_help()
+{
+	printf("  -h --help                  This text.\n");
+	printf("  -l --database db-name      The database to use.\n");
+	printf("  -d option --debug=DRLL:DCC:DMM:DRR:DRSL:DNM  Enable debugging.\n");
+	printf("  -D --daemonize             Fork the process into a background daemon.\n");
+	printf("  -s --disable-color         Do not print ANSI colors in the log\n");
+	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
+	printf("  -e --log-level number      Set a global loglevel.\n");
+}
+
+static struct {
+	const char *db_file;
+	bool daemonize;
+} cmdline_opts = {
+	.db_file = "hlr.db",
+	.daemonize = false,
+};
+
+static void handle_options(int argc, char **argv)
+{
+	while (1) {
+		int option_index = 0, c;
+		static struct option long_options[] = {
+			{"help", 0, 0, 'h'},
+			{"database", 1, 0, 'l'},
+			{"debug", 1, 0, 'd'},
+			{"daemonize", 0, 0, 'D'},
+			{"disable-color", 0, 0, 's'},
+			{"log-level", 1, 0, 'e'},
+			{"timestamp", 0, 0, 'T'},
+			{0, 0, 0, 0}
+		};
+
+		c = getopt_long(argc, argv, "hl:d:Dse:T",
+				long_options, &option_index);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'h':
+			print_usage();
+			print_help();
+			exit(0);
+		case 'l':
+			cmdline_opts.db_file = optarg;
+			break;
+		case 'd':
+			log_parse_category_mask(osmo_stderr_target, optarg);
+			break;
+		case 'D':
+			cmdline_opts.daemonize = 1;
+			break;
+		case 's':
+			log_set_use_color(osmo_stderr_target, 0);
+			break;
+		case 'e':
+			log_set_log_level(osmo_stderr_target, atoi(optarg));
+			break;
+		case 'T':
+			log_set_print_timestamp(osmo_stderr_target, 1);
+			break;
+		default:
+			/* catch unknown options *as well as* missing arguments. */
+			fprintf(stderr, "Error in command line options. Exiting.\n");
+			exit(-1);
+			break;
+		}
+	}
+}
+
 static void *hlr_ctx = NULL;
 static struct osmo_gsup_server *gs;
 
@@ -549,6 +627,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error initializing logging\n");
 		exit(1);
 	}
+
+	handle_options(argc, argv);
+
 	LOGP(DMAIN, LOGL_NOTICE, "hlr starting\n");
 
 	rc = rand_init();
@@ -557,7 +638,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_dbc = db_open(hlr_ctx, "hlr.db");
+	g_dbc = db_open(hlr_ctx, cmdline_opts.db_file);
 	if (!g_dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(1);
@@ -573,7 +654,13 @@ int main(int argc, char **argv)
 	signal(SIGINT, &signal_hdlr);
 	signal(SIGUSR1, &signal_hdlr);
 
-	//osmo_daemonize();
+	if (cmdline_opts.daemonize) {
+		rc = osmo_daemonize();
+		if (rc < 0) {
+			perror("Error during daemonize");
+			exit(1);
+		}
+	}
 
 	while (1) {
 		osmo_select_main(0);

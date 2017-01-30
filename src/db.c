@@ -75,6 +75,7 @@ struct db_context *db_open(void *ctx, const char *fname)
 	unsigned int i;
 	int rc;
 
+	LOGP(DDB, LOGL_NOTICE, "using database: %s\n", fname);
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
 	LOGP(DDB, LOGL_INFO, "Running with SQLite3 lib version %s\n", sqlite3_libversion());
 
