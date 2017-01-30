@@ -516,6 +516,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	return 0;
 }
 
+static void *hlr_ctx = NULL;
 static struct osmo_gsup_server *gs;
 
 static void signal_hdlr(int signal)
@@ -526,11 +527,12 @@ static void signal_hdlr(int signal)
 		osmo_gsup_server_destroy(gs);
 		db_close(g_dbc);
 		log_fini();
+		talloc_report_full(hlr_ctx, stderr);
 		exit(0);
 		break;
 	case SIGUSR1:
 		LOGP(DMAIN, LOGL_DEBUG, "Talloc Report due to SIGUSR1\n");
-		talloc_report_full(NULL, stderr);
+		talloc_report_full(hlr_ctx, stderr);
 		break;
 	}
 }
@@ -539,7 +541,8 @@ int main(int argc, char **argv)
 {
 	int rc;
 
-	talloc_enable_leak_report_full();
+	hlr_ctx = talloc_named_const(NULL, 1, "OsmoHLR");
+	msgb_talloc_ctx_init(hlr_ctx, 0);
 
 	rc = osmo_init_logging(&hlr_log_info);
 	if (rc < 0) {
@@ -554,13 +557,13 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_dbc = db_open(NULL, "hlr.db");
+	g_dbc = db_open(hlr_ctx, "hlr.db");
 	if (!g_dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(1);
 	}
 
-	gs = osmo_gsup_server_create(NULL, NULL, 2222, read_cb);
+	gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb);
 	if (!gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
