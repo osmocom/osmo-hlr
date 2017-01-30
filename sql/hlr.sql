@@ -60,7 +60,7 @@ CREATE TABLE auc_2g (
 CREATE TABLE auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_3g	INTEGER NOT NULL,
-	k		INTEGER NOT NULL,
+	k		VARCHAR(32) NOT NULL,
 	op		VARCHAR,
 	opc		VARCHAR,
 	sqn		INTEGER
