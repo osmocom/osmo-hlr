@@ -53,17 +53,17 @@ CREATE TABLE subscriber_multi_msisdn (
 
 CREATE TABLE auc_2g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
-	algo_id_2g	INTEGER NOT NULL,
-	ki		VARCHAR(32) NOT NULL
+	algo_id_2g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
+	ki		VARCHAR(32) NOT NULL	-- hex string: subscriber's secret key (128bit)
 );
 
 CREATE TABLE auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
-	algo_id_3g	INTEGER NOT NULL,
-	k		VARCHAR(32) NOT NULL,
-	op		VARCHAR(32),
-	opc		VARCHAR(32),
-	sqn		INTEGER NOT NULL DEFAULT 0
+	algo_id_3g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
+	k		VARCHAR(32) NOT NULL,	-- hex string: subscriber's secret key (128bit)
+	op		VARCHAR(32),		-- hex string: operator's secret key (128bit)
+	opc		VARCHAR(32),		-- hex string: derived from OP and K (128bit)
+	sqn		INTEGER NOT NULL DEFAULT 0	-- sequence number of key usage
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscr_imsi ON subscriber (imsi);
