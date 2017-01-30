@@ -28,12 +28,17 @@
 #include <osmocom/gsm/gsup.h>
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
+#include <osmocom/vty/vty.h>
+#include <osmocom/vty/command.h>
+#include <osmocom/vty/telnet_interface.h>
+#include <osmocom/vty/ports.h>
 
 #include "db.h"
 #include "logging.h"
 #include "gsup_server.h"
 #include "gsup_router.h"
 #include "rand.h"
+#include "hlr_vty.h"
 
 static struct db_context *g_dbc;
 
@@ -526,18 +531,22 @@ static void print_usage()
 static void print_help()
 {
 	printf("  -h --help                  This text.\n");
+	printf("  -c --config-file filename  The config file to use.\n");
 	printf("  -l --database db-name      The database to use.\n");
 	printf("  -d option --debug=DRLL:DCC:DMM:DRR:DRSL:DNM  Enable debugging.\n");
 	printf("  -D --daemonize             Fork the process into a background daemon.\n");
 	printf("  -s --disable-color         Do not print ANSI colors in the log\n");
 	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
 	printf("  -e --log-level number      Set a global loglevel.\n");
+	printf("  -V --version               Print the version of OsmoHLR.\n");
 }
 
 static struct {
+	const char *config_file;
 	const char *db_file;
 	bool daemonize;
 } cmdline_opts = {
+	.config_file = "osmo-hlr.cfg",
 	.db_file = "hlr.db",
 	.daemonize = false,
 };
@@ -548,16 +557,18 @@ static void handle_options(int argc, char **argv)
 		int option_index = 0, c;
 		static struct option long_options[] = {
 			{"help", 0, 0, 'h'},
+			{"config-file", 1, 0, 'c'},
 			{"database", 1, 0, 'l'},
 			{"debug", 1, 0, 'd'},
 			{"daemonize", 0, 0, 'D'},
 			{"disable-color", 0, 0, 's'},
 			{"log-level", 1, 0, 'e'},
 			{"timestamp", 0, 0, 'T'},
+			{"version", 0, 0, 'V' },
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hl:d:Dse:T",
+		c = getopt_long(argc, argv, "hc:l:d:Dse:TV",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -567,6 +578,9 @@ static void handle_options(int argc, char **argv)
 			print_usage();
 			print_help();
 			exit(0);
+		case 'c':
+			cmdline_opts.config_file = optarg;
+			break;
 		case 'l':
 			cmdline_opts.db_file = optarg;
 			break;
@@ -584,6 +598,10 @@ static void handle_options(int argc, char **argv)
 			break;
 		case 'T':
 			log_set_print_timestamp(osmo_stderr_target, 1);
+			break;
+		case 'V':
+			print_version(1);
+			exit(0);
 			break;
 		default:
 			/* catch unknown options *as well as* missing arguments. */
@@ -615,6 +633,12 @@ static void signal_hdlr(int signal)
 	}
 }
 
+static struct vty_app_info vty_info = {
+	.name 		= "OsmoHLR",
+	.version	= PACKAGE_VERSION,
+	.is_config_node	= hlr_vty_is_config_node,
+};
+
 int main(int argc, char **argv)
 {
 	int rc;
@@ -628,7 +652,23 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	vty_init(&vty_info);
 	handle_options(argc, argv);
+	hlr_vty_init(&hlr_log_info);
+
+	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
+	if (rc < 0) {
+		LOGP(DMAIN, LOGL_FATAL,
+		     "Failed to parse the config file: '%s'\n",
+		     cmdline_opts.config_file);
+		return rc;
+	}
+
+	/* start telnet after reading config for vty_get_bind_addr() */
+	rc = telnet_init_dynif(hlr_ctx, NULL, vty_get_bind_addr(),
+			       OSMO_VTY_PORT_HLR);
+	if (rc < 0)
+		return rc;
 
 	LOGP(DMAIN, LOGL_NOTICE, "hlr starting\n");
 

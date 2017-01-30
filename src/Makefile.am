@@ -18,6 +18,7 @@ noinst_HEADERS = \
 	gsup_server.h \
 	logging.h \
 	rand.h \
+	hlr_vty.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -38,6 +39,7 @@ osmo_hlr_SOURCES = \
 	hlr.c \
 	logging.c \
 	rand_urandom.c \
+	hlr_vty.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
