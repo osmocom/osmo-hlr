@@ -47,6 +47,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 	/* compute quintuples */
 	for (i = 0; i < num_vec; i++) {
 		rc = rand_get(rand, sizeof(rand));
+		DEBUGP(DAUC, "rand %s\n", osmo_hexdump_nospc(rand, sizeof(rand)));
 		if (rc != sizeof(rand)) {
 			LOGP(DAUC, LOGL_ERROR, "Unable to read %zu random "
 			     "bytes: rc=%d\n", sizeof(rand), rc);
@@ -65,8 +66,9 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			}
 		} else if (aud3g) {
 			/* 3G or 3G + 2G case */
-			DEBUGP(DAUC, "compute vector [%u]/%u: 3G or 3G + 2G\n",
-			       i, num_vec);
+			if (!aud2g)
+				DEBUGP(DAUC, "compute vector [%u]/%u: 3G only\n",
+				       i, num_vec);
 			if (rand_auts && auts)
 				rc = osmo_auth_gen_vec_auts(vec+i, aud3g,
 							    rand_auts,

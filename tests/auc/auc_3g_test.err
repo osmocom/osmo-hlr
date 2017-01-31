@@ -1,3 +1,106 @@
+
+===== test_gen_vectors_2g_only
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: 2G only
+rc == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 00000000000000000000000000000000
+  ck: 00000000000000000000000000000000
+  ik: 00000000000000000000000000000000
+  res: 00000000000000000000000000000000
+  res_len: 00
+  kc: 241a5b16aeb8e400
+  sres: 429d5b27
+  auth_types: 01000000
+
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: 2G only
+rc == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 00000000000000000000000000000000
+  ck: 00000000000000000000000000000000
+  ik: 00000000000000000000000000000000
+  res: 00000000000000000000000000000000
+  res_len: 00
+  kc: 241a5b16aeb8e400
+  sres: 429d5b27
+  auth_types: 01000000
+
+===== test_gen_vectors_2g_only: SUCCESS
+
+
+===== test_gen_vectors_2g_plus_3g
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: separate 2G + 3G
+rc == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 8704f5ba55f30000d2ee44b22c8ea919
+  ck: f64735036e5871319c679f4742a75ea1
+  ik: 27497388b6cb044648f396aa155b95ef
+  res: e229c19e791f2e410000000000000000
+  res_len: 08
+  kc: 241a5b16aeb8e400
+  sres: 429d5b27
+  auth_types: 03000000
+
+aud3g.u.umts.sqn == 1
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: separate 2G + 3G
+rc == 1
+aud3g.u.umts.sqn == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 8704f5ba55f30000d2ee44b22c8ea919
+  ck: f64735036e5871319c679f4742a75ea1
+  ik: 27497388b6cb044648f396aa155b95ef
+  res: e229c19e791f2e410000000000000000
+  res_len: 08
+  kc: 241a5b16aeb8e400
+  sres: 429d5b27
+  auth_types: 03000000
+
+===== test_gen_vectors_2g_plus_3g: SUCCESS
+
+
 ===== test_gen_vectors_3g_only
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 8704f5ba55f30000d2ee44b22c8ea919
+  ck: f64735036e5871319c679f4742a75ea1
+  ik: 27497388b6cb044648f396aa155b95ef
+  res: e229c19e791f2e410000000000000000
+  res_len: 08
+  kc: 059a4f668f6fbe39
+  sres: 9b36efdf
+  auth_types: 03000000
+
+aud3g.u.umts.sqn == 1
+aud3g.u.umts.sqn == 0
+DAUC rand 39fa2f4e3d523d8619a73b4f65c3e14d
+DAUC compute vector [0]/1: 3G only
+rc == 1
+aud3g.u.umts.sqn == 1
+auth vector ==
+  rand: 39fa2f4e3d523d8619a73b4f65c3e14d
+  autn: 8704f5ba55f30000d2ee44b22c8ea919
+  ck: f64735036e5871319c679f4742a75ea1
+  ik: 27497388b6cb044648f396aa155b95ef
+  res: e229c19e791f2e410000000000000000
+  res_len: 08
+  kc: 059a4f668f6fbe39
+  sres: 9b36efdf
+  auth_types: 03000000
+
 ===== test_gen_vectors_3g_only: SUCCESS
 
