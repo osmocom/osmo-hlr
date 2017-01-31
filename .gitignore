@@ -22,3 +22,6 @@ missing
 
 src/osmo-hlr
 src/db_test
+
+tests/testsuite
+tests/auc/auc_3g_test

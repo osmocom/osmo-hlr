@@ -3,6 +3,7 @@ AUTOMAKE_OPTIONS = foreign dist-bzip2
 SUBDIRS = \
 	src \
 	sql \
+	tests \
 	$(NULL)
 
 EXTRA_DIST = \
