@@ -1,5 +1,6 @@
 *.o
 *.db
+*.pyc
 .*.sw?
 .version
 Makefile
@@ -25,3 +26,5 @@ src/db_test
 
 tests/testsuite
 tests/auc/auc_3g_test
+tests/auc/auc_ts_55_205_test_sets.c
+tests/auc/auc_ts_55_205_test_sets

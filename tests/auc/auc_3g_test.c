@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <osmocom/core/application.h>
 #include <osmocom/core/utils.h>
@@ -39,7 +40,7 @@
 		OSMO_ASSERT((val) expect_op); \
 	} while (0);
 
-const char *vec_str(const struct osmo_auth_vector *vec)
+char *vec_str(const struct osmo_auth_vector *vec)
 {
 	static char buf[1024];
 	char *pos = buf;
@@ -67,7 +68,7 @@ const char *vec_str(const struct osmo_auth_vector *vec)
 }
 
 #define VEC_IS(vec, expect) do { \
-		const char *_is = vec_str(vec); \
+		char *_is = vec_str(vec); \
 		fprintf(stderr, "auth vector ==\n%s\n", _is); \
 	        if (strcmp(_is, expect)) { \
 			fprintf(stderr, "MISMATCH! expected ==\n%s\n", \
@@ -78,7 +79,7 @@ const char *vec_str(const struct osmo_auth_vector *vec)
 				if (*a != *b) { \
 					while (a > _is && *(a-1) != '\n') a--; \
 					fprintf(stderr, "mismatch at %d:\n" \
-						"%s", a - _is, a); \
+						"%s", (int)(a - _is), a); \
 					break; \
 				} \
 			} \
@@ -112,13 +113,13 @@ static void test_gen_vectors_2g_only(void)
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
 		      aud2g.u.gsm.ki, sizeof(aud2g.u.gsm.ki));
 
-	aud3g = (struct osmo_sub_auth_data){ {0} };
+	aud3g = (struct osmo_sub_auth_data){ 0 };
 
 	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
 		      fake_rand, sizeof(fake_rand));
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
 
@@ -134,7 +135,7 @@ static void test_gen_vectors_2g_only(void)
 	       "  auth_types: 01000000\n"
 	      );
 
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result (regardless of the umts sequence nr) */
@@ -188,7 +189,7 @@ static void test_gen_vectors_2g_plus_3g(void)
 		      fake_rand, sizeof(fake_rand));
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
 
@@ -204,15 +205,15 @@ static void test_gen_vectors_2g_plus_3g(void)
 	       "  auth_types: 03000000\n"
 	      );
 
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
 
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
 	aud3g.u.umts.sqn = 0;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
@@ -254,7 +255,7 @@ static void test_gen_vectors_3g_only(void)
 		      fake_rand, sizeof(fake_rand));
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
 
@@ -280,15 +281,15 @@ static void test_gen_vectors_3g_only(void)
 	 * hence expecting kc: 059a4f668f6fbe39
 	 */
 
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
 
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
 	aud3g.u.umts.sqn = 0;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"

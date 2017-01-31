@@ -48,4 +48,5 @@ AC_OUTPUT(
 	sql/Makefile
 	tests/Makefile
 	tests/auc/Makefile
+	tests/auc/gen_ts_55_205_test_sets/Makefile
 	)

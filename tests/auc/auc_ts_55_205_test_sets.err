@@ -1,0 +1,304 @@
+
+===== test_set_1
+aud3g.u.umts.sqn == 0
+DAUC rand 23553cbe9637a89d218ae64dae47bf35
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 23553cbe9637a89d218ae64dae47bf35
+  ck: b40ba9a3c58b2a05bbf0d987b21bf8cb
+  ik: f769bcd751044604127672711c6d3441
+  res: a54211d5e3ba50bf0000000000000000
+  kc: eae4be823af9a08b
+  sres: 46f8416a
+
+===== test_set_1: SUCCESS
+
+
+===== test_set_2
+aud3g.u.umts.sqn == 0
+DAUC rand 9f7c8d021accf4db213ccff0c7f71a6a
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 9f7c8d021accf4db213ccff0c7f71a6a
+  ck: 5dbdbb2954e8f3cde665b046179a5098
+  ik: 59a92d3b476a0443487055cf88b2307b
+  res: 8011c48c0c214ed20000000000000000
+  kc: aa01739b8caa976d
+  sres: 8c308a5e
+
+===== test_set_2: SUCCESS
+
+
+===== test_set_3
+aud3g.u.umts.sqn == 0
+DAUC rand ce83dbc54ac0274a157c17f80d017bd6
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: ce83dbc54ac0274a157c17f80d017bd6
+  ck: e203edb3971574f5a94b0d61b816345d
+  ik: 0c4524adeac041c4dd830d20854fc46b
+  res: f365cd683cd92e960000000000000000
+  kc: 9a8ec95f408cc507
+  sres: cfbce3fe
+
+===== test_set_3: SUCCESS
+
+
+===== test_set_4
+aud3g.u.umts.sqn == 0
+DAUC rand 74b0cd6031a1c8339b2b6ce2b8c4a186
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 74b0cd6031a1c8339b2b6ce2b8c4a186
+  ck: 7657766b373d1c2138f307e3de9242f9
+  ik: 1c42e960d89b8fa99f2744e0708ccb53
+  res: 5860fc1bce351e7e0000000000000000
+  kc: cdc1dc0841b81a22
+  sres: 9655e265
+
+===== test_set_4: SUCCESS
+
+
+===== test_set_5
+aud3g.u.umts.sqn == 0
+DAUC rand ee6466bc96202c5a557abbeff8babf63
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: ee6466bc96202c5a557abbeff8babf63
+  ck: 3f8c7587fe8e4b233af676aede30ba3b
+  ik: a7466cc1e6b2a1337d49d3b66e95d7b4
+  res: 16c8233f05a0ac280000000000000000
+  kc: df75bc5ea899879f
+  sres: 13688f17
+
+===== test_set_5: SUCCESS
+
+
+===== test_set_6
+aud3g.u.umts.sqn == 0
+DAUC rand 194aa756013896b74b4a2a3b0af4539e
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 194aa756013896b74b4a2a3b0af4539e
+  ck: 4cd0846020f8fa0731dd47cbdc6be411
+  ik: 88ab80a415f15c73711254a1d388f696
+  res: 8c25a16cd918a1df0000000000000000
+  kc: 84b417ae3aeab4f3
+  sres: 553d00b3
+
+===== test_set_6: SUCCESS
+
+
+===== test_set_7
+aud3g.u.umts.sqn == 0
+DAUC rand 3a4c2b3245c50eb5c71d08639395764d
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 3a4c2b3245c50eb5c71d08639395764d
+  ck: 10f05bab75a99a5fbb98a9c287679c3b
+  ik: f9ec0865eb32f22369cade40c59c3a44
+  res: a63241e1ffc3e5ab0000000000000000
+  kc: 3b4e244cdc60ce03
+  sres: 59f1a44a
+
+===== test_set_7: SUCCESS
+
+
+===== test_set_8
+aud3g.u.umts.sqn == 0
+DAUC rand f761e5e93d603feb730e27556cb8a2ca
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: f761e5e93d603feb730e27556cb8a2ca
+  ck: 71236b7129f9b22ab77ea7a54c96da22
+  ik: 90527ebaa5588968db41727325a04d9e
+  res: 4a90b2171ac83a760000000000000000
+  kc: 8d4ec01de597acfe
+  sres: 50588861
+
+===== test_set_8: SUCCESS
+
+
+===== test_set_9
+aud3g.u.umts.sqn == 0
+DAUC rand 08eff828b13fdb562722c65c7f30a9b2
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 08eff828b13fdb562722c65c7f30a9b2
+  ck: 08cef6d004ec61471a3c3cda048137fa
+  ik: ed0318ca5deb9206272f6e8fa64ba411
+  res: 4bc2212d8624910a0000000000000000
+  kc: d8debc4ffbcd60aa
+  sres: cde6b027
+
+===== test_set_9: SUCCESS
+
+
+===== test_set_10
+aud3g.u.umts.sqn == 0
+DAUC rand 679ac4dbacd7d233ff9d6806f4149ce3
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 679ac4dbacd7d233ff9d6806f4149ce3
+  ck: 69b1cae7c7429d975e245cacb05a517c
+  ik: 74f24e8c26df58e1b38d7dcd4f1b7fbd
+  res: 6fc30fee6d1235230000000000000000
+  kc: f0eaa50a1edcebb7
+  sres: 02d13acd
+
+===== test_set_10: SUCCESS
+
+
+===== test_set_11
+aud3g.u.umts.sqn == 0
+DAUC rand 4c47eb3076dc55fe5106cb2034b8cd78
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 4c47eb3076dc55fe5106cb2034b8cd78
+  ck: 908c43f0569cb8f74bc971e706c36c5f
+  ik: c251df0d888dd9329bcf46655b226e40
+  res: aefa357beac2a87a0000000000000000
+  kc: 82dbab7f83f063da
+  sres: 44389d01
+
+===== test_set_11: SUCCESS
+
+
+===== test_set_12
+aud3g.u.umts.sqn == 0
+DAUC rand 311c4c929744d675b720f3b7e9b1cbd0
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 311c4c929744d675b720f3b7e9b1cbd0
+  ck: 44c0f23c5493cfd241e48f197e1d1012
+  ik: 0c9fb81613884c2535dd0eabf3b440d8
+  res: 98dbbd099b3b408d0000000000000000
+  kc: 3c66cb98cab2d33d
+  sres: 03e0fd84
+
+===== test_set_12: SUCCESS
+
+
+===== test_set_13
+aud3g.u.umts.sqn == 0
+DAUC rand cf7d0ab1d94306950bf12018fbd46887
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: cf7d0ab1d94306950bf12018fbd46887
+  ck: 5af86b80edb70df5292cc1121cbad50c
+  ik: 7f4d6ae7440e18789a8b75ad3f42f03a
+  res: af4a411e1139f2c20000000000000000
+  kc: 9612b5d88a4130bb
+  sres: be73b3dc
+
+===== test_set_13: SUCCESS
+
+
+===== test_set_14
+aud3g.u.umts.sqn == 0
+DAUC rand 1f0f8578464fd59b64bed2d09436b57a
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 1f0f8578464fd59b64bed2d09436b57a
+  ck: 3f8c3f3ccf7625bf77fc94bcfd22fd26
+  ik: abcbae8fd46115e9961a55d0da5f2078
+  res: 7bffa5c2f41fbc050000000000000000
+  kc: 75a150df3c6aed08
+  sres: 8fe019c7
+
+===== test_set_14: SUCCESS
+
+
+===== test_set_15
+aud3g.u.umts.sqn == 0
+DAUC rand 59b75f14251c75031d0bcbac1c2c04c7
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 59b75f14251c75031d0bcbac1c2c04c7
+  ck: d42b2d615e49a03ac275a5aef97af892
+  ik: 0b3f8d024fe6bfafaa982b8f82e319c2
+  res: 7e3f44c7591f6f450000000000000000
+  kc: b7f92e426a36fec5
+  sres: 27202b82
+
+===== test_set_15: SUCCESS
+
+
+===== test_set_16
+aud3g.u.umts.sqn == 0
+DAUC rand f69b78f300a0568bce9f0cb93c4be4c9
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: f69b78f300a0568bce9f0cb93c4be4c9
+  ck: 6edaf99e5bd9f85d5f36d91c1272fb4b
+  ik: d61c853c280dd9c46f297baec386de17
+  res: 70f6bdb9ad21525f0000000000000000
+  kc: 88d9de10a22004c5
+  sres: ddd7efe6
+
+===== test_set_16: SUCCESS
+
+
+===== test_set_17
+aud3g.u.umts.sqn == 0
+DAUC rand b120f1c1a0102a2f507dd543de68281f
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: b120f1c1a0102a2f507dd543de68281f
+  ck: 66195dbed0313274c5ca7766615fa25e
+  ik: 66bec707eb2afc476d7408a8f2927b36
+  res: 479dd25c20792d630000000000000000
+  kc: a819e577a8d6175b
+  sres: 67e4ff3f
+
+===== test_set_17: SUCCESS
+
+
+===== test_set_18
+aud3g.u.umts.sqn == 0
+DAUC rand 81e92b6c0ee0e12ebceba8d92a99dfa5
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 81e92b6c0ee0e12ebceba8d92a99dfa5
+  ck: 5349fbe098649f948f5d2e973a81c00f
+  ik: 9744871ad32bf9bbd1dd5ce54e3e2e5a
+  res: 28d7b0f2a2ec3de50000000000000000
+  kc: 9a8d0e883ff0887a
+  sres: 8a3b8d17
+
+===== test_set_18: SUCCESS
+
+
+===== test_set_19
+aud3g.u.umts.sqn == 0
+DAUC rand 9fddc72092c6ad036b6e464789315b78
+DAUC compute vector [0]/1: 3G only
+rc == 1
+auth vector ==
+  rand: 9fddc72092c6ad036b6e464789315b78
+  ck: b5f2da03883b69f96bf52e029ed9ac45
+  ik: b4721368bc16ea67875c5598688bb0ef
+  res: a95100e2760952cd0000000000000000
+  kc: ed29b2f1c27f9f34
+  sres: df58522f
+
+===== test_set_19: SUCCESS
+
