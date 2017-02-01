@@ -63,7 +63,7 @@ CREATE TABLE auc_3g (
 	k		VARCHAR(32) NOT NULL,
 	op		VARCHAR(32),
 	opc		VARCHAR(32),
-	sqn		INTEGER
+	sqn		INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscr_imsi ON subscriber (imsi);
