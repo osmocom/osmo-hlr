@@ -54,15 +54,15 @@ CREATE TABLE subscriber_multi_msisdn (
 CREATE TABLE auc_2g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_2g	INTEGER NOT NULL,
-	ki		VARCHAR NOT NULL
+	ki		VARCHAR(32) NOT NULL
 );
 
 CREATE TABLE auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_3g	INTEGER NOT NULL,
 	k		VARCHAR(32) NOT NULL,
-	op		VARCHAR,
-	opc		VARCHAR,
+	op		VARCHAR(32),
+	opc		VARCHAR(32),
 	sqn		INTEGER
 );
 
