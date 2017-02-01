@@ -3,9 +3,9 @@
 CREATE TABLE subscriber (
 	id		INTEGER PRIMARY KEY,
 	-- Chapter 2.1.1.1
-	imsi		VARCHAR(15) NOT NULL,
+	imsi		VARCHAR(15) UNIQUE NOT NULL,
 	-- Chapter 2.1.2
-	msisdn		VARCHAR(15),
+	msisdn		VARCHAR(15) UNIQUE,
 	-- Chapter 2.2.3: Most recent / current IMEI
 	imeisv		VARCHAR,
 	-- Chapter 2.4.5
