@@ -71,8 +71,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 				       i, num_vec);
 			if (rand_auts && auts)
 				rc = osmo_auth_gen_vec_auts(vec+i, aud3g,
-							    rand_auts,
-							    auts, rand);
+							    auts, rand_auts,
+							    rand);
 			else
 				rc = osmo_auth_gen_vec(vec+i, aud3g, rand);
 			if (rc < 0) {
