@@ -181,6 +181,17 @@ static void _luop_tx_gsup(struct lu_operation *luop,
 			    msg_out);
 }
 
+static inline void fill_gsup_msg(struct osmo_gsup_message *out,
+				 const struct lu_operation *lu,
+				 enum osmo_gsup_message_type mt)
+{
+	memset(out, 0, sizeof(struct osmo_gsup_message));
+	if (lu)
+		osmo_strlcpy(out->imsi, lu->subscr.imsi,
+			     GSM23003_IMSI_MAX_DIGITS + 1);
+	out->message_type = mt;
+}
+
 /*! Transmit UPD_LOC_ERROR and destroy lu_operation */
 void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 {
@@ -190,10 +201,7 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 	       luop->subscr.imsi, get_value_string(gsm48_gmm_cause_names,
 						   cause));
 
-	memset(&gsup, 0, sizeof(gsup));
-	gsup.message_type = OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR;
-	strncpy((char*)&gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi));
-	gsup.imsi[sizeof(gsup.imsi)-1] = '\0';
+	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR);
 	gsup.cause = cause;
 
 	_luop_tx_gsup(luop, &gsup);
@@ -227,9 +235,7 @@ void lu_op_tx_ack(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;
 
-	memset(&gsup, 0, sizeof(gsup));
-	gsup.message_type = OSMO_GSUP_MSGT_UPDATE_LOCATION_RESULT;
-	strncpy(gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi)-1);
+	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_UPDATE_LOCATION_RESULT);
 	//FIXME gsup.hlr_enc;
 
 	_luop_tx_gsup(luop, &gsup);
@@ -245,8 +251,7 @@ void lu_op_tx_cancel_old(struct lu_operation *luop)
 
 	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED);
 
-	memset(&gsup, 0, sizeof(gsup));
-	gsup.message_type = OSMO_GSUP_MSGT_LOCATION_CANCEL_REQUEST;
+	fill_gsup_msg(&gsup, NULL, OSMO_GSUP_MSGT_LOCATION_CANCEL_REQUEST);
 	//gsup.cause = FIXME;
 	//gsup.cancel_type = FIXME;
 
@@ -281,9 +286,7 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED ||
 		    luop->state == LU_S_CANCEL_ACK_RECEIVED);
 
-	memset(&gsup, 0, sizeof(gsup));
-	gsup.message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST;
-	strncpy(gsup.imsi, luop->subscr.imsi, sizeof(gsup.imsi)-1);
+	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_INSERT_DATA_REQUEST);
 
 	l = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0,
 				    luop->subscr.msisdn);
