@@ -186,8 +186,9 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 {
 	struct osmo_gsup_message gsup;
 
-	DEBUGP(DMAIN, "%s: LU OP Tx Error (cause=%u)\n",
-		luop->subscr.imsi, cause);
+	DEBUGP(DMAIN, "%s: LU OP Tx Error (cause %s)\n",
+	       luop->subscr.imsi, get_value_string(gsm48_gmm_cause_names,
+						   cause));
 
 	memset(&gsup, 0, sizeof(gsup));
 	gsup.message_type = OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR;
