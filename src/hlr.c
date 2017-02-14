@@ -19,7 +19,7 @@
 
 #include <signal.h>
 #include <errno.h>
-
+#include <stdbool.h>
 #include <getopt.h>
 
 #include <osmocom/core/msgb.h>
@@ -38,6 +38,7 @@
 #include "gsup_server.h"
 #include "gsup_router.h"
 #include "rand.h"
+#include "luop.h"
 #include "hlr_vty.h"
 
 static struct db_context *g_dbc;
@@ -83,187 +84,9 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 
 static LLIST_HEAD(g_lu_ops);
 
-#define CANCEL_TIMEOUT_SECS	30
-#define ISD_TIMEOUT_SECS	30
-
-enum lu_state {
-	LU_S_NULL,
-	LU_S_LU_RECEIVED,
-	LU_S_CANCEL_SENT,
-	LU_S_CANCEL_ACK_RECEIVED,
-	LU_S_ISD_SENT,
-	LU_S_ISD_ACK_RECEIVED,
-	LU_S_COMPLETE,
-};
-
-static const struct value_string lu_state_names[] = {
-	{ LU_S_NULL,			"NULL" },
-	{ LU_S_LU_RECEIVED,		"LU RECEIVED" },
-	{ LU_S_CANCEL_SENT,		"CANCEL SENT" },
-	{ LU_S_CANCEL_ACK_RECEIVED,	"CANCEL-ACK RECEIVED" },
-	{ LU_S_ISD_SENT,		"ISD SENT" },
-	{ LU_S_ISD_ACK_RECEIVED,	"ISD-ACK RECEIVED" },
-	{ LU_S_COMPLETE,		"COMPLETE" },
-	{ 0, NULL }
-};
-
-struct lu_operation {
-	/*! entry in global list of location update operations */
-	struct llist_head list;
-	/*! to which gsup_server do we belong */
-	struct osmo_gsup_server *gsup_server;
-	/*! state of the location update */
-	enum lu_state state;
-	/*! CS (false) or PS (true) Location Update? */
-	bool is_ps;
-	/*! currently running timer */
-	struct osmo_timer_list timer;
-
-	/*! subscriber related to this operation */
-	struct hlr_subscriber subscr;
-	/*! peer VLR/SGSN starting the request */
-	uint8_t *peer;
-};
-
-void lu_op_tx_insert_subscr_data(struct lu_operation *luop);
-
-void lu_op_statechg(struct lu_operation *luop, enum lu_state new_state)
-{
-	enum lu_state old_state = luop->state;
-
-	DEBUGP(DMAIN, "LU OP state change: %s -> ",
-		get_value_string(lu_state_names, old_state));
-	DEBUGPC(DMAIN, "%s\n",
-		get_value_string(lu_state_names, new_state));
-
-	luop->state = new_state;
-}
-
-struct lu_operation *lu_op_by_imsi(const char *imsi)
-{
-	struct lu_operation *luop;
-
-	llist_for_each_entry(luop, &g_lu_ops, list) {
-		if (!strcmp(imsi, luop->subscr.imsi))
-			return luop;
-	}
-	return NULL;
-}
-
-/* Send a msgb to a given address using routing */
-int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
-			const uint8_t *addr, size_t addrlen,
-			struct msgb *msg)
-{
-	struct osmo_gsup_conn *conn;
-
-	conn = gsup_route_find(gs, addr, addrlen);
-	if (!conn) {
-		DEBUGP(DMAIN, "Cannot find route for addr %s\n", addr);
-		msgb_free(msg);
-		return -ENODEV;
-	}
-
-	return osmo_gsup_conn_send(conn, msg);
-}
-
-/* Transmit a given GSUP message for the given LU operation */
-static void _luop_tx_gsup(struct lu_operation *luop,
-			  const struct osmo_gsup_message *gsup)
-{
-	struct msgb *msg_out;
-
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP LUOP");
-	osmo_gsup_encode(msg_out, gsup);
-
-	osmo_gsup_addr_send(luop->gsup_server, luop->peer,
-			    talloc_total_size(luop->peer),
-			    msg_out);
-}
-
-static inline void fill_gsup_msg(struct osmo_gsup_message *out,
-				 const struct lu_operation *lu,
-				 enum osmo_gsup_message_type mt)
-{
-	memset(out, 0, sizeof(struct osmo_gsup_message));
-	if (lu)
-		osmo_strlcpy(out->imsi, lu->subscr.imsi,
-			     GSM23003_IMSI_MAX_DIGITS + 1);
-	out->message_type = mt;
-}
-
-/*! Transmit UPD_LOC_ERROR and destroy lu_operation */
-void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
-{
-	struct osmo_gsup_message gsup;
-
-	DEBUGP(DMAIN, "%s: LU OP Tx Error (cause %s)\n",
-	       luop->subscr.imsi, get_value_string(gsm48_gmm_cause_names,
-						   cause));
-
-	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR);
-	gsup.cause = cause;
-
-	_luop_tx_gsup(luop, &gsup);
-
-	llist_del(&luop->list);
-	talloc_free(luop);
-}
-
-/* timer call-back in case LU operation doesn't receive an response */
-static void lu_op_timer_cb(void *data)
-{
-	struct lu_operation *luop = data;
-
-	DEBUGP(DMAIN, "LU OP timer expired in state %s\n",
-		get_value_string(lu_state_names, luop->state));
-
-	switch (luop->state) {
-	case LU_S_CANCEL_SENT:
-		break;
-	case LU_S_ISD_SENT:
-		break;
-	default:
-		break;
-	}
-
-	lu_op_tx_error(luop, GMM_CAUSE_NET_FAIL);
-}
-
-/*! Transmit UPD_LOC_RESULT and destroy lu_operation */
-void lu_op_tx_ack(struct lu_operation *luop)
-{
-	struct osmo_gsup_message gsup;
-
-	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_UPDATE_LOCATION_RESULT);
-	//FIXME gsup.hlr_enc;
-
-	_luop_tx_gsup(luop, &gsup);
-
-	llist_del(&luop->list);
-	talloc_free(luop);
-}
-
-/*! Send Cancel Location to old VLR/SGSN */
-void lu_op_tx_cancel_old(struct lu_operation *luop)
-{
-	struct osmo_gsup_message gsup;
-
-	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED);
-
-	fill_gsup_msg(&gsup, NULL, OSMO_GSUP_MSGT_LOCATION_CANCEL_REQUEST);
-	//gsup.cause = FIXME;
-	//gsup.cancel_type = FIXME;
-
-	_luop_tx_gsup(luop, &gsup);
-
-	lu_op_statechg(luop, LU_S_CANCEL_SENT);
-	osmo_timer_schedule(&luop->timer, CANCEL_TIMEOUT_SECS, 0);
-}
-
 /*! Receive Cancel Location Result from old VLR/SGSN */
 void lu_op_rx_cancel_old_ack(struct lu_operation *luop,
-			    const struct osmo_gsup_message *gsup)
+			     const struct osmo_gsup_message *gsup)
 {
 	OSMO_ASSERT(luop->state == LU_S_CANCEL_SENT);
 	/* FIXME: Check for spoofing */
@@ -273,55 +96,6 @@ void lu_op_rx_cancel_old_ack(struct lu_operation *luop,
 	/* FIXME */
 
 	lu_op_tx_insert_subscr_data(luop);
-}
-
-/*! Transmit Insert Subscriber Data to new VLR/SGSN */
-void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
-{
-	struct osmo_gsup_message gsup;
-	uint8_t apn[APN_MAXLEN];
-	uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
-	int l;
-
-	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED ||
-		    luop->state == LU_S_CANCEL_ACK_RECEIVED);
-
-	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_INSERT_DATA_REQUEST);
-
-	l = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0,
-				    luop->subscr.msisdn);
-	if (l < 1) {
-		LOGP(DMAIN, LOGL_ERROR,
-		     "%s: Error: cannot encode MSISDN '%s'\n",
-		     luop->subscr.imsi, luop->subscr.msisdn);
-		lu_op_tx_error(luop, GMM_CAUSE_PROTO_ERR_UNSPEC);
-		return;
-	}
-	gsup.msisdn_enc = msisdn_enc;
-	gsup.msisdn_enc_len = l;
-
-	/* FIXME: deal with encoding the following data */
-	gsup.hlr_enc;
-
-	if (luop->is_ps) {
-		/* FIXME: PDP infos - use more fine-grained access control
-		   instead of wildcard APN */
-		l = osmo_apn_from_str(apn, sizeof(apn), "*");
-		if (l > 0) {
-			gsup.pdp_infos[0].apn_enc = apn;
-			gsup.pdp_infos[0].apn_enc_len = l;
-			gsup.pdp_infos[0].have_info = 1;
-			gsup.num_pdp_infos = 1;
-			/* FIXME: use real value: */
-			gsup.pdp_infos[0].context_id = 1;
-		}
-	}
-
-	/* Send ISD to new VLR/SGSN */
-	_luop_tx_gsup(luop, &gsup);
-
-	lu_op_statechg(luop, LU_S_ISD_SENT);
-	osmo_timer_schedule(&luop->timer, ISD_TIMEOUT_SECS, 0);
 }
 
 /*! Receive Insert Subscriber Data Result from new VLR/SGSN */
@@ -364,38 +138,18 @@ void lu_op_rx_gsup(struct lu_operation *luop,
 	}
 }
 
-static struct lu_operation *lu_op_alloc(struct osmo_gsup_server *srv)
-{
-	struct lu_operation *luop;
-
-	luop = talloc_zero(srv, struct lu_operation);
-	OSMO_ASSERT(luop);
-	luop->gsup_server = srv;
-	luop->timer.cb = lu_op_timer_cb;
-	luop->timer.data = luop;
-
-	return luop;
-}
-
 /*! Receive Update Location Request, creates new \ref lu_operation */
 static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 			  const struct osmo_gsup_message *gsup)
 {
-	int rc;
-	struct lu_operation *luop;
-	struct hlr_subscriber *subscr;
-	uint8_t *peer_addr;
-
-	rc = osmo_gsup_conn_ccm_get(conn, &peer_addr, IPAC_IDTAG_SERNR);
-	if (rc < 0) {
+	struct lu_operation *luop = lu_op_alloc_conn(conn);
+	if (!luop) {
 		LOGP(DMAIN, LOGL_ERROR, "LU REQ from conn without addr?\n");
-		return rc;
+		return -EINVAL;
 	}
 
-	luop = lu_op_alloc(conn->server);
-	luop->peer = talloc_memdup(luop, peer_addr, rc);
 	lu_op_statechg(luop, LU_S_LU_RECEIVED);
-	subscr = &luop->subscr;
+
 	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
 		luop->is_ps = true;
 	llist_add(&luop->list, &g_lu_ops);
@@ -403,8 +157,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* Roughly follwing "Process Update_Location_HLR" of TS 09.02 */
 
 	/* check if subscriber is known at all */
-	rc = db_subscr_get(g_dbc, gsup->imsi, subscr);
-	if (rc < 0) {
+	if (!lu_op_fill_subscr(luop, g_dbc, gsup->imsi)) {
 		/* Send Error back: Subscriber Unknown in HLR */
 		strcpy(luop->subscr.imsi, gsup->imsi);
 		lu_op_tx_error(luop, GMM_CAUSE_IMSI_UNKNOWN);
@@ -413,10 +166,10 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 
 	/* Check if subscriber is generally permitted on CS or PS
 	 * service (as requested) */
-	if (!luop->is_ps && !subscr->nam_cs) {
+	if (!luop->is_ps && !luop->subscr.nam_cs) {
 		lu_op_tx_error(luop, GMM_CAUSE_PLMN_NOTALLOWED);
 		return 0;
-	} else if (luop->is_ps && !subscr->nam_ps) {
+	} else if (luop->is_ps && !luop->subscr.nam_ps) {
 		lu_op_tx_error(luop, GMM_CAUSE_GPRS_NOTALLOWED);
 		return 0;
 	}
@@ -508,7 +261,8 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_RESULT:
 		{
-			struct lu_operation *luop = lu_op_by_imsi(gsup.imsi);
+			struct lu_operation *luop = lu_op_by_imsi(gsup.imsi,
+								  &g_lu_ops);
 			if (!luop) {
 				LOGP(DMAIN, LOGL_ERROR, "GSUP message %s for "
 				     "unknown IMSI %s\n",

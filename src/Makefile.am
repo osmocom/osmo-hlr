@@ -14,6 +14,7 @@ EXTRA_DIST = \
 noinst_HEADERS = \
 	auc.h \
 	db.h \
+	luop.h \
 	gsup_router.h \
 	gsup_server.h \
 	logging.h \
@@ -32,6 +33,7 @@ noinst_PROGRAMS = \
 osmo_hlr_SOURCES = \
 	auc.c \
 	db.c \
+	luop.c \
 	db_auc.c \
 	db_hlr.c \
 	gsup_router.c \
