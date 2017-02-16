@@ -510,8 +510,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		{
 			struct lu_operation *luop = lu_op_by_imsi(gsup.imsi);
 			if (!luop) {
-				LOGP(DMAIN, LOGL_ERROR, "GSUP message %u for "
-					"unknown IMSI %s\n", gsup.message_type,
+				LOGP(DMAIN, LOGL_ERROR, "GSUP message %s for "
+				     "unknown IMSI %s\n",
+				     osmo_gsup_message_type_name(gsup.message_type),
 					gsup.imsi);
 				break;
 			}
@@ -519,8 +520,8 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		}
 		break;
 	default:
-		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %u\n",
-			gsup.message_type);
+		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
+		     osmo_gsup_message_type_name(gsup.message_type));
 		break;
 	}
 	msgb_free(msg);
