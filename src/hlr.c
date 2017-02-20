@@ -260,6 +260,14 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		rx_purge_ms_req(conn, &gsup);
 		break;
 	/* responses to requests sent by us */
+	case OSMO_GSUP_MSGT_DELETE_DATA_ERROR:
+		LOGP(DMAIN, LOGL_ERROR, "Error while deleting subscriber data "
+		     "for IMSI %s\n", gsup.imsi);
+		break;
+	case OSMO_GSUP_MSGT_DELETE_DATA_RESULT:
+		LOGP(DMAIN, LOGL_ERROR, "Deleting subscriber data for IMSI %s\n",
+		     gsup.imsi);
+		break;
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
 	case OSMO_GSUP_MSGT_INSERT_DATA_RESULT:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
@@ -456,7 +464,8 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb);
+	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb,
+					    &g_lu_ops);
 	if (!g_hlr->gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);

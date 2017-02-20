@@ -33,6 +33,47 @@
 #include "luop.h"
 #include "ctrl.h"
 
+static int handle_cmd_ps(struct hlr *ctx, struct ctrl_cmd *cmd, bool enable)
+{
+	struct lu_operation *luop = NULL;
+	struct osmo_gsup_conn *co;
+
+	if (db_subscr_get(ctx->dbc, cmd->value, NULL) < 0) {
+		cmd->reply = "Subscriber Unknown in HLR";
+		return CTRL_CMD_ERROR;
+	}
+
+	if (db_subscr_ps(ctx->dbc, cmd->value, enable) < 0) {
+		cmd->reply = "Error updating DB";
+		return CTRL_CMD_ERROR;
+	}
+
+	/* FIXME: only send to single SGSN where latest update for IMSI came from */
+	if (!enable) {
+		llist_for_each_entry(co, &ctx->gs->clients, list) {
+			luop = lu_op_alloc_conn(co);
+			lu_op_fill_subscr(luop, ctx->dbc, cmd->value);
+			lu_op_tx_del_subscr_data(luop);
+		}
+	}
+
+	cmd->reply = "OK";
+
+	return CTRL_CMD_REPLY;
+}
+
+CTRL_CMD_DEFINE_WO_NOVRF(enable_ps, "enable-ps");
+static int set_enable_ps(struct ctrl_cmd *cmd, void *data)
+{
+	return handle_cmd_ps(data, cmd, true);
+}
+
+CTRL_CMD_DEFINE_WO_NOVRF(disable_ps, "disable-ps");
+static int set_disable_ps(struct ctrl_cmd *cmd, void *data)
+{
+	return handle_cmd_ps(data, cmd, false);
+}
+
 CTRL_CMD_DEFINE_WO_NOVRF(status_ps, "status-ps");
 static int set_status_ps(struct ctrl_cmd *cmd, void *data)
 {
@@ -57,6 +98,8 @@ int hlr_ctrl_cmds_install()
 {
 	int rc = 0;
 
+	rc |= ctrl_cmd_install(CTRL_NODE_ROOT, &cmd_enable_ps);
+	rc |= ctrl_cmd_install(CTRL_NODE_ROOT, &cmd_disable_ps);
 	rc |= ctrl_cmd_install(CTRL_NODE_ROOT, &cmd_status_ps);
 
 	return rc;

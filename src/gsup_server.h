@@ -14,6 +14,9 @@ struct osmo_gsup_server {
 	/* list of osmo_gsup_conn */
 	struct llist_head clients;
 
+	/* lu_operations list */
+	struct llist_head *luop;
+
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
 	struct llist_head routes;
@@ -36,9 +39,10 @@ int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
 			   uint8_t tag);
 
 struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
-					const char *ip_addr,
-					uint16_t tcp_port,
-					osmo_gsup_read_cb_t read_cb);
+						 const char *ip_addr,
+						 uint16_t tcp_port,
+						 osmo_gsup_read_cb_t read_cb,
+						 struct llist_head *lu_op_lst);
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);
 

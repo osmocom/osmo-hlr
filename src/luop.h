@@ -78,3 +78,4 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause);
 void lu_op_tx_ack(struct lu_operation *luop);
 void lu_op_tx_cancel_old(struct lu_operation *luop);
 void lu_op_tx_insert_subscr_data(struct lu_operation *luop);
+void lu_op_tx_del_subscr_data(struct lu_operation *luop);

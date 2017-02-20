@@ -266,3 +266,16 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	lu_op_statechg(luop, LU_S_ISD_SENT);
 	osmo_timer_schedule(&luop->timer, ISD_TIMEOUT_SECS, 0);
 }
+
+/*! Transmit Delete Subscriber Data to new VLR/SGSN */
+void lu_op_tx_del_subscr_data(struct lu_operation *luop)
+{
+	struct osmo_gsup_message gsup;
+
+	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_DELETE_DATA_REQUEST);
+
+	gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
+
+	/* Send ISD to new VLR/SGSN */
+	_luop_tx_gsup(luop, &gsup);
+}
