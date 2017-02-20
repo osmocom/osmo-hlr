@@ -41,7 +41,7 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 		  struct hlr_subscriber *subscr)
 {
 	sqlite3_stmt *stmt = dbc->stmt[SEL_BY_IMSI];
-	int rc, ret = 0;
+	int rc;
 
 	if (!db_bind_imsi(stmt, imsi))
 		return -EINVAL;
@@ -50,8 +50,13 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_ROW) {
 		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		ret = -ENOEXEC;
-		goto out;
+		db_remove_reset(stmt);
+		return -ENOEXEC;
+	}
+
+	if (!subscr) {
+		db_remove_reset(stmt);
+		return 0;
 	}
 
 	/* obtain the various columns */
@@ -70,10 +75,9 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 	subscr->ms_purged_cs = sqlite3_column_int(stmt, 11);
 	subscr->ms_purged_ps = sqlite3_column_int(stmt, 12);
 
-out:
 	db_remove_reset(stmt);
 
-	return ret;
+	return 0;
 }
 
 int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
