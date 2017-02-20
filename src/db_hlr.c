@@ -18,6 +18,7 @@
  */
 
 #include <string.h>
+#include <errno.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
@@ -42,17 +43,14 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 	sqlite3_stmt *stmt = dbc->stmt[SEL_BY_IMSI];
 	int rc, ret = 0;
 
-	rc = sqlite3_bind_text(stmt, 1, imsi, -1, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		LOGHLR(imsi, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
-		return -1;
-	}
+	if (!db_bind_imsi(stmt, imsi))
+		return -EINVAL;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_ROW) {
 		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		ret = -2;
+		ret = -ENOEXEC;
 		goto out;
 	}
 
@@ -73,15 +71,7 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 	subscr->ms_purged_ps = sqlite3_column_int(stmt, 12);
 
 out:
-	/* remove bindings and reset statement to be re-executed */
-	rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error clerearing bindings: %d\n", rc);
-	}
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
-	}
+	db_remove_reset(stmt);
 
 	return ret;
 }
@@ -105,13 +95,13 @@ int db_subscr_lu(struct db_context *dbc,
 	rc = sqlite3_bind_int64(stmt, 1, subscr->id);
 	if (rc != SQLITE_OK) {
 		LOGP(DAUC, LOGL_ERROR, "Error binding ID: %d\n", rc);
-		return -1;
+		return -EINVAL;
 	}
 
 	rc = sqlite3_bind_text(stmt, 2, txt, -1, SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
 		LOGP(DAUC, LOGL_ERROR, "Error binding VLR/SGSN Number: %d\n", rc);
-		ret = -2;
+		ret = -EBADMSG;
 		goto out;
 	}
 
@@ -119,19 +109,10 @@ int db_subscr_lu(struct db_context *dbc,
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
 		LOGP(DAUC, LOGL_ERROR, "Error updating SQN: %d\n", rc);
-		ret = -3;
-		goto out;
+		ret = -ENOEXEC;
 	}
 out:
-	/* remove bindings and reset statement to be re-executed */
-	rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error clerearing bindings: %d\n", rc);
-	}
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
-	}
+	db_remove_reset(stmt);
 
 	return ret;
 }
@@ -146,31 +127,18 @@ int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
 	else
 		stmt = dbc->stmt[UPD_PURGE_CS_BY_IMSI];
 
-	rc = sqlite3_bind_text(stmt, 1, imsi, -1, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding IMSI %s: %d\n", imsi, rc);
-		ret = -1;
-		goto out;
-	}
+	if (!db_bind_imsi(stmt, imsi))
+		return -EINVAL;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
 		LOGP(DAUC, LOGL_ERROR, "Error setting Purged: %d\n", rc);
-		ret = -2;
-		goto out;
+		ret = -ENOEXEC;
 	}
 	/* FIXME: return 0 in case IMSI not known */
-out:
-	/* remove bindings and reset statement to be re-executed */
-	rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error clearing bindings: %d\n", rc);
-	}
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
-	}
+
+	db_remove_reset(stmt);
 
 	return ret;
 }

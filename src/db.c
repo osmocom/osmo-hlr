@@ -19,6 +19,7 @@
 
 #include <osmocom/core/utils.h>
 
+#include <stdbool.h>
 #include <sqlite3.h>
 
 #include "logging.h"
@@ -55,6 +56,36 @@ static void sql3_sql_log_cb(void *arg, sqlite3 *s3, const char *stmt, int type)
 		LOGP(DDB, LOGL_DEBUG, "Unknown %d\n", type);
 		break;
 	}
+}
+
+/* remove bindings and reset statement to be re-executed */
+bool db_remove_reset(sqlite3_stmt *stmt)
+{
+	int rc = sqlite3_clear_bindings(stmt);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error clerearing bindings: %d\n", rc);
+		return false;
+	}
+
+	rc = sqlite3_reset(stmt);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
+		return false;
+	}
+	return true;
+}
+
+/* bind IMSI and do proper cleanup in case of failure */
+bool db_bind_imsi(sqlite3_stmt *stmt, const char *imsi)
+{
+	int rc = sqlite3_bind_text(stmt, 1, imsi, -1, SQLITE_STATIC);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error binding IMSI %s: %d\n", imsi, rc);
+		db_remove_reset(stmt);
+		return false;
+	}
+
+	return true;
 }
 
 void db_close(struct db_context *dbc)
