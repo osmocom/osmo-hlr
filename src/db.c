@@ -47,7 +47,7 @@ static void sql3_sql_log_cb(void *arg, sqlite3 *s3, const char *stmt, int type)
 		LOGP(DDB, LOGL_DEBUG, "Opened database\n");
 		break;
 	case 1:
-		LOGP(DDB, LOGL_DEBUG, stmt);
+		LOGP(DDB, LOGL_DEBUG, "%s\n", stmt);
 		break;
 	case 2:
 		LOGP(DDB, LOGL_DEBUG, "Closed database\n");
