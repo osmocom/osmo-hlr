@@ -4,13 +4,15 @@
 #include <sqlite3.h>
 
 enum stmt_idx {
-	SEL_BY_IMSI	= 0,
-	UPD_VLR_BY_ID	= 1,
-	UPD_SGSN_BY_ID	= 2,
-	AUC_BY_IMSI	= 3,
-	AUC_UPD_SQN	= 4,
-	UPD_PURGE_CS_BY_IMSI,
-	UPD_PURGE_PS_BY_IMSI,
+	SEL_BY_IMSI		= 0,
+	UPD_VLR_BY_ID		= 1,
+	UPD_SGSN_BY_ID		= 2,
+	AUC_BY_IMSI		= 3,
+	AUC_UPD_SQN		= 4,
+	UPD_PURGE_CS_BY_IMSI	= 5,
+	UPD_PURGE_PS_BY_IMSI	= 6,
+	SET_NAM_PS_BY_IMSI	= 7,
+	UNSET_NAM_PS_BY_IMSI	= 8,
 	_NUM_STMT
 };
 
@@ -70,7 +72,7 @@ struct hlr_subscriber {
 
 int db_subscr_get(struct db_context *dbc, const char *imsi,
 		  struct hlr_subscriber *subscr);
-
+int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable);
 int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,
 		 const char *vlr_or_sgsn_number,

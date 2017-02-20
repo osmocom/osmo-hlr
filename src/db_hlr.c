@@ -76,6 +76,32 @@ out:
 	return ret;
 }
 
+int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
+{
+	sqlite3_stmt *stmt =
+		dbc->stmt[enable ? SET_NAM_PS_BY_IMSI : UNSET_NAM_PS_BY_IMSI];
+	int rc;
+
+	if (!db_bind_imsi(stmt, imsi))
+		return -EINVAL;
+
+	rc = sqlite3_step(stmt); /* execute the statement */
+	if (rc != SQLITE_DONE) {
+		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
+		rc = -ENOEXEC;
+	}
+
+	rc = sqlite3_changes(dbc->db); /* verify execution result */
+	if (rc != 1) {
+		LOGHLR(imsi, LOGL_ERROR, "SQL modified %d rows (expected 1)\n",
+		       rc);
+		rc = -EINVAL;
+	}
+
+	db_remove_reset(stmt);
+	return rc;
+}
+
 int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,
 		 const char *vlr_or_sgsn_number, bool lu_is_ps)
