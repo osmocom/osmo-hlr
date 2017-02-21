@@ -88,11 +88,23 @@ char *vec_str(const struct osmo_auth_vector *vec)
 	} while (0)
 
 uint8_t fake_rand[16] = { 0 };
+bool fake_rand_fixed = true;
+
+void next_rand(const char *hexstr, bool fixed)
+{
+	osmo_hexparse(hexstr, fake_rand, sizeof(fake_rand));
+	fake_rand_fixed = fixed;
+}
 
 int rand_get(uint8_t *rand, unsigned int len)
 {
+	int i;
 	OSMO_ASSERT(len <= sizeof(fake_rand));
 	memcpy(rand, fake_rand, len);
+	if (!fake_rand_fixed) {
+		for (i = 0; i < len; i++)
+			fake_rand[i] += 0x11;
+	}
 	return len;
 }
 
@@ -115,8 +127,7 @@ static void test_gen_vectors_2g_only(void)
 
 	aud3g = (struct osmo_sub_auth_data){ 0 };
 
-	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
-		      fake_rand, sizeof(fake_rand));
+	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
@@ -184,9 +195,7 @@ static void test_gen_vectors_2g_plus_3g(void)
 		      aud3g.u.umts.k, sizeof(aud3g.u.umts.k));
 	osmo_hexparse("FB2A3D1B360F599ABAB99DB8669F8308",
 		      aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc));
-
-	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
-		      fake_rand, sizeof(fake_rand));
+	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
@@ -252,9 +261,7 @@ static void test_gen_vectors_3g_only(void)
 		      aud3g.u.umts.k, sizeof(aud3g.u.umts.k));
 	osmo_hexparse("FB2A3D1B360F599ABAB99DB8669F8308",
 		      aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc));
-
-	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
-		      fake_rand, sizeof(fake_rand));
+	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
@@ -353,8 +360,7 @@ static void test_gen_vectors_3g_only(void)
 	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
 		      rand_auts, sizeof(rand_auts));
 	/* new RAND token for the next key */
-	osmo_hexparse("897210a0f7de278f0b8213098e098a3f",
-		      fake_rand, sizeof(fake_rand));
+	next_rand("897210a0f7de278f0b8213098e098a3f", true);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, rand_auts, auts);
 	VERBOSE_ASSERT(rc, == 1, "%d");
 	/* The USIM's last sqn was 23, the calculated vector was 24, hence the
