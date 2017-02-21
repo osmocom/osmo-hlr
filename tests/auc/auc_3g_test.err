@@ -119,6 +119,92 @@ auth vector ==
   sres: 0ad888ef
   auth_types: 03000000
 
+- verify N vectors with AUTS resync == N vectors without AUTS
+First just set rand and sqn = 24, and compute 3 vectors
+aud3g.u.umts.sqn == 24
+DAUC rand 897210a0f7de278f0b8213098e098a3f
+DAUC compute vector [0]/3: 3G only
+DAUC rand 9a8321b108ef38a01c93241a9f1a9b50
+DAUC compute vector [1]/3: 3G only
+DAUC rand ab9432c2190049b12da4352bb02bac61
+DAUC compute vector [2]/3: 3G only
+rc == 3
+aud3g.u.umts.sqn == 27
+[0]: auth vector ==
+  rand: 897210a0f7de278f0b8213098e098a3f
+  autn: c6b9790dad4b00000cf322869ea6a481
+  ck: e9922bd036718ed9e40bd1d02c3b81a5
+  ik: f19c20ca863137f8892326d959ec5e01
+  res: 9af5a557902d2db80000000000000000
+  res_len: 08
+  kc: 7526fc13c5976685
+  sres: 0ad888ef
+  auth_types: 03000000
+
+[1]: auth vector ==
+  rand: 9a8321b108ef38a01c93241a9f1a9b50
+  autn: 79a5113eb0910000be6020540503ffc5
+  ck: 3686f05df057d1899c66ae4eb18cf941
+  ik: 79f21ed53bcb47787de57d136ff803a5
+  res: 43023475cb29292c0000000000000000
+  res_len: 08
+  kc: aef73dd515e86c15
+  sres: 882b1d59
+  auth_types: 03000000
+
+[2]: auth vector ==
+  rand: ab9432c2190049b12da4352bb02bac61
+  autn: 24b018d46c3b00009c7e1b47f3a19b2b
+  ck: d86c3191a36fc0602e48202ef2080964
+  ik: 648dab72016181406243420649e63dc9
+  res: 010cab11cc63a6e40000000000000000
+  res_len: 08
+  kc: f0eaf8cb19e0758d
+  sres: cd6f0df5
+  auth_types: 03000000
+
+Now reach sqn = 24 with AUTS and expect the same
+DAUC rand 897210a0f7de278f0b8213098e098a3f
+DAUC compute vector [0]/3: 3G only
+DAUC rand 9a8321b108ef38a01c93241a9f1a9b50
+DAUC compute vector [1]/3: 3G only
+DAUC rand ab9432c2190049b12da4352bb02bac61
+DAUC compute vector [2]/3: 3G only
+THERE IS A BUG AND THE TEST PASSES THE WRONG VECTORS UNTIL THAT IS FIXED
+The SQN should increment with each new vector.
+[0]: auth vector ==
+  rand: 897210a0f7de278f0b8213098e098a3f
+  autn: c6b9790dad4b00000cf322869ea6a481
+  ck: e9922bd036718ed9e40bd1d02c3b81a5
+  ik: f19c20ca863137f8892326d959ec5e01
+  res: 9af5a557902d2db80000000000000000
+  res_len: 08
+  kc: 7526fc13c5976685
+  sres: 0ad888ef
+  auth_types: 03000000
+
+[1]: auth vector ==
+  rand: 9a8321b108ef38a01c93241a9f1a9b50
+  autn: 79a5113eb0900000f7e138537aa0962b
+  ck: 3686f05df057d1899c66ae4eb18cf941
+  ik: 79f21ed53bcb47787de57d136ff803a5
+  res: 43023475cb29292c0000000000000000
+  res_len: 08
+  kc: aef73dd515e86c15
+  sres: 882b1d59
+  auth_types: 03000000
+
+[2]: auth vector ==
+  rand: ab9432c2190049b12da4352bb02bac61
+  autn: 24b018d46c390000d88e11730d0367ac
+  ck: d86c3191a36fc0602e48202ef2080964
+  ik: 648dab72016181406243420649e63dc9
+  res: 010cab11cc63a6e40000000000000000
+  res_len: 08
+  kc: f0eaf8cb19e0758d
+  sres: cd6f0df5
+  auth_types: 03000000
+
 ===== test_gen_vectors_3g_only: SUCCESS
 
 
