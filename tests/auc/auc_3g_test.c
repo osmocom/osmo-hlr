@@ -376,6 +376,103 @@ static void test_gen_vectors_3g_only(void)
 	comment_end();
 }
 
+void test_gen_vectors_bad_args()
+{
+	struct osmo_auth_vector vec;
+	uint8_t auts[14];
+	uint8_t rand_auts[16];
+	int rc;
+	int i;
+
+	struct osmo_sub_auth_data aud2g = {
+		.type = OSMO_AUTH_TYPE_GSM,
+		.algo = OSMO_AUTH_ALG_COMP128v1,
+	};
+
+	struct osmo_sub_auth_data aud3g = {
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.algo = OSMO_AUTH_ALG_MILENAGE,
+	};
+
+	struct osmo_sub_auth_data aud2g_noalg = {
+		.type = OSMO_AUTH_TYPE_GSM,
+		.algo = OSMO_AUTH_ALG_NONE,
+	};
+
+	struct osmo_sub_auth_data aud3g_noalg = {
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.algo = OSMO_AUTH_ALG_NONE,
+	};
+
+	struct osmo_sub_auth_data aud_notype = {
+		.type = OSMO_AUTH_TYPE_NONE,
+		.algo = OSMO_AUTH_ALG_MILENAGE,
+	};
+
+	struct osmo_sub_auth_data no_aud = {
+		.type = OSMO_AUTH_TYPE_NONE,
+		.algo = OSMO_AUTH_ALG_NONE,
+	};
+
+	struct {
+		struct osmo_sub_auth_data *aud2g;
+		struct osmo_sub_auth_data *aud3g;
+		uint8_t *rand_auts;
+		uint8_t *auts;
+		const char *label;
+	} tests[] = {
+		{         NULL,         NULL,       NULL,  NULL, "no auth data (a)"},
+		{         NULL, &aud3g_noalg,       NULL,  NULL, "no auth data (b)"},
+		{         NULL,  &aud_notype,       NULL,  NULL, "no auth data (c)"},
+		{         NULL,      &no_aud,       NULL,  NULL, "no auth data (d)"},
+		{ &aud2g_noalg,         NULL,       NULL,  NULL, "no auth data (e)"},
+		{ &aud2g_noalg, &aud3g_noalg,       NULL,  NULL, "no auth data (f)"},
+		{ &aud2g_noalg,  &aud_notype,       NULL,  NULL, "no auth data (g)"},
+		{ &aud2g_noalg,      &no_aud,       NULL,  NULL, "no auth data (h)"},
+		{  &aud_notype,         NULL,       NULL,  NULL, "no auth data (i)"},
+		{  &aud_notype, &aud3g_noalg,       NULL,  NULL, "no auth data (j)"},
+		{  &aud_notype,  &aud_notype,       NULL,  NULL, "no auth data (k)"},
+		{  &aud_notype,      &no_aud,       NULL,  NULL, "no auth data (l)"},
+		{      &no_aud,         NULL,       NULL,  NULL, "no auth data (m)"},
+		{      &no_aud, &aud3g_noalg,       NULL,  NULL, "no auth data (n)"},
+		{      &no_aud,  &aud_notype,       NULL,  NULL, "no auth data (o)"},
+		{      &no_aud,      &no_aud,       NULL,  NULL, "no auth data (p)"},
+		{       &aud3g,         NULL,       NULL,  NULL, "wrong auth data type (a)"},
+		{       &aud3g, &aud3g_noalg,       NULL,  NULL, "wrong auth data type (b)"},
+		{       &aud3g,  &aud_notype,       NULL,  NULL, "wrong auth data type (c)"},
+		{       &aud3g,      &no_aud,       NULL,  NULL, "wrong auth data type (d)"},
+		{         NULL,       &aud2g,       NULL,  NULL, "wrong auth data type (e)"},
+		{ &aud3g_noalg,       &aud2g,       NULL,  NULL, "wrong auth data type (f)"},
+		{  &aud_notype,       &aud2g,       NULL,  NULL, "wrong auth data type (g)"},
+		{      &no_aud,       &aud2g,       NULL,  NULL, "wrong auth data type (h)"},
+		{       &aud3g,       &aud2g,       NULL,  NULL, "wrong auth data type (i)"},
+		{       &aud3g,       &aud3g,       NULL,  NULL, "wrong auth data type (j)"},
+		{       &aud2g,       &aud2g,       NULL,  NULL, "wrong auth data type (k)"},
+		{       &aud2g,         NULL,  rand_auts,  auts, "AUTS for 2G-only (a)"},
+		{       &aud2g, &aud3g_noalg,  rand_auts,  auts, "AUTS for 2G-only (b)"},
+		{       &aud2g,  &aud_notype,  rand_auts,  auts, "AUTS for 2G-only (c)"},
+		{       &aud2g,      &no_aud,  rand_auts,  auts, "AUTS for 2G-only (d)"},
+		{         NULL,       &aud3g,       NULL,  auts, "incomplete AUTS (a)"},
+		{         NULL,       &aud3g,  rand_auts,  NULL, "incomplete AUTS (b)"},
+		{       &aud2g,       &aud3g,       NULL,  auts, "incomplete AUTS (c)"},
+		{       &aud2g,       &aud3g,  rand_auts,  NULL, "incomplete AUTS (d)"},
+	};
+
+	comment_start();
+
+	for (i = 0; i < ARRAY_SIZE(tests); i++) {
+		fprintf(stderr, "\n- %s\n", tests[i].label);
+		rc = auc_compute_vectors(&vec, 1,
+					 tests[i].aud2g,
+					 tests[i].aud3g,
+					 tests[i].rand_auts,
+					 tests[i].auts);
+		VERBOSE_ASSERT(rc, < 0, "%d");
+	}
+
+	comment_end();
+}
+
 int main()
 {
 	printf("auc_3g_test.c\n");
@@ -388,6 +485,7 @@ int main()
 	test_gen_vectors_2g_only();
 	test_gen_vectors_2g_plus_3g();
 	test_gen_vectors_3g_only();
+	test_gen_vectors_bad_args();
 
 	printf("Done\n");
 	return 0;

@@ -36,13 +36,42 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 	uint8_t rand[16];
 	int rc;
 
-	if (aud2g->algo == OSMO_AUTH_ALG_NONE)
+	if (aud2g && (aud2g->algo == OSMO_AUTH_ALG_NONE
+		      || aud2g->type == OSMO_AUTH_TYPE_NONE))
 		aud2g = NULL;
-	if (aud3g->algo == OSMO_AUTH_ALG_NONE)
+	if (aud3g && (aud3g->algo == OSMO_AUTH_ALG_NONE
+		      || aud3g->type == OSMO_AUTH_TYPE_NONE))
 		aud3g = NULL;
 
-	if (!aud2g && !aud3g)
+	if (!aud2g && !aud3g) {
+		LOGP(DAUC, LOGL_ERROR, "auc_compute_vectors() called"
+		     " with neither 2G nor 3G auth data available\n");
 		return -1;
+	}
+
+	if (aud2g && aud2g->type != OSMO_AUTH_TYPE_GSM) {
+		LOGP(DAUC, LOGL_ERROR, "auc_compute_vectors() called"
+		     " with non-2G auth data passed for aud2g arg\n");
+		return -1;
+	}
+
+	if (aud3g && aud3g->type != OSMO_AUTH_TYPE_UMTS) {
+		LOGP(DAUC, LOGL_ERROR, "auc_compute_vectors() called"
+		     " with non-3G auth data passed for aud3g arg\n");
+		return -1;
+	}
+
+	if ((rand_auts != NULL) != (auts != NULL)) {
+		LOGP(DAUC, LOGL_ERROR, "auc_compute_vectors() with only one"
+		     " of AUTS and AUTS_RAND given, need both or neither\n");
+		return -1;
+	}
+
+	if (auts && !aud3g) {
+		LOGP(DAUC, LOGL_ERROR, "auc_compute_vectors() with AUTS called"
+		     " but no 3G auth data passed\n");
+		return -1;
+	}
 
 	/* compute quintuples */
 	for (i = 0; i < num_vec; i++) {

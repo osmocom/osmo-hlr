@@ -121,3 +121,147 @@ auth vector ==
 
 ===== test_gen_vectors_3g_only: SUCCESS
 
+
+===== test_gen_vectors_bad_args
+
+- no auth data (a)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (b)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (c)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (d)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (e)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (f)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (g)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (h)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (i)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (j)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (k)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (l)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (m)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (n)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (o)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- no auth data (p)
+DAUC auc_compute_vectors() called with neither 2G nor 3G auth data available
+rc == -1
+
+- wrong auth data type (a)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (b)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (c)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (d)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (e)
+DAUC auc_compute_vectors() called with non-3G auth data passed for aud3g arg
+rc == -1
+
+- wrong auth data type (f)
+DAUC auc_compute_vectors() called with non-3G auth data passed for aud3g arg
+rc == -1
+
+- wrong auth data type (g)
+DAUC auc_compute_vectors() called with non-3G auth data passed for aud3g arg
+rc == -1
+
+- wrong auth data type (h)
+DAUC auc_compute_vectors() called with non-3G auth data passed for aud3g arg
+rc == -1
+
+- wrong auth data type (i)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (j)
+DAUC auc_compute_vectors() called with non-2G auth data passed for aud2g arg
+rc == -1
+
+- wrong auth data type (k)
+DAUC auc_compute_vectors() called with non-3G auth data passed for aud3g arg
+rc == -1
+
+- AUTS for 2G-only (a)
+DAUC auc_compute_vectors() with AUTS called but no 3G auth data passed
+rc == -1
+
+- AUTS for 2G-only (b)
+DAUC auc_compute_vectors() with AUTS called but no 3G auth data passed
+rc == -1
+
+- AUTS for 2G-only (c)
+DAUC auc_compute_vectors() with AUTS called but no 3G auth data passed
+rc == -1
+
+- AUTS for 2G-only (d)
+DAUC auc_compute_vectors() with AUTS called but no 3G auth data passed
+rc == -1
+
+- incomplete AUTS (a)
+DAUC auc_compute_vectors() with only one of AUTS and AUTS_RAND given, need both or neither
+rc == -1
+
+- incomplete AUTS (b)
+DAUC auc_compute_vectors() with only one of AUTS and AUTS_RAND given, need both or neither
+rc == -1
+
+- incomplete AUTS (c)
+DAUC auc_compute_vectors() with only one of AUTS and AUTS_RAND given, need both or neither
+rc == -1
+
+- incomplete AUTS (d)
+DAUC auc_compute_vectors() with only one of AUTS and AUTS_RAND given, need both or neither
+rc == -1
+===== test_gen_vectors_bad_args: SUCCESS
+
