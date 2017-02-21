@@ -69,7 +69,6 @@ char *vec_str(const struct osmo_auth_vector *vec)
 
 #define VEC_IS(vec, expect) do { \
 		char *_is = vec_str(vec); \
-		fprintf(stderr, "auth vector ==\n%s\n", _is); \
 	        if (strcmp(_is, expect)) { \
 			fprintf(stderr, "MISMATCH! expected ==\n%s\n", \
 				expect); \
@@ -84,7 +83,8 @@ char *vec_str(const struct osmo_auth_vector *vec)
 				} \
 			} \
 			OSMO_ASSERT(false); \
-		} \
+		} else \
+			fprintf(stderr, "vector matches expectations\n"); \
 	} while (0)
 
 uint8_t fake_rand[16] = { 0 };

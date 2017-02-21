@@ -18,12 +18,16 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
 
 #include "logging.h"
 #include "rand.h"
+
+#define hexb(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
+#define hex(buf,sz) osmo_hexdump_nospc((void*)buf, sz)
 
 /* compute given number of vectors using either aud2g or aud2g or a combination
  * of both.  Handles re-synchronization if rand_auts and auts are set */
@@ -34,7 +38,16 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 {
 	unsigned int i;
 	uint8_t rand[16];
+	struct osmo_auth_vector vtmp;
 	int rc;
+
+	/* no need to iterate the log categories all the time */
+	int dbg = log_check_level(DAUC, LOGL_DEBUG);
+#define DBGP(args ...) if (dbg) DEBUGP(DAUC, ##args)
+#define DBGVB(member) DBGP("vector [%u]: " #member " = %s\n", \
+			   i, hexb(vec[i].member))
+#define DBGVV(fmt, member) DBGP("vector [%u]: " #member " = " fmt "\n", \
+			        i, vec[i].member)
 
 	if (aud2g && (aud2g->algo == OSMO_AUTH_ALG_NONE
 		      || aud2g->type == OSMO_AUTH_TYPE_NONE))
@@ -73,59 +86,100 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 		return -1;
 	}
 
-	/* compute quintuples */
+	DBGP("Computing %d auth vector%s: %s%s\n",
+	     num_vec, num_vec == 1 ? "" : "s",
+	     aud3g? (aud2g? "3G + separate 2G"
+		     : "3G only (2G derived from 3G keys)")
+	     : "2G only",
+	     auts? ", with AUTS resync" : "");
+	if (aud3g) {
+		DBGP("3G: k = %s\n", hexb(aud3g->u.umts.k));
+		DBGP("3G: %s = %s\n",
+		     aud3g->u.umts.opc_is_op? "OP" : "opc",
+		     hexb(aud3g->u.umts.opc));
+	}
+	if (aud2g)
+		DBGP("2G: ki = %s\n", hexb(aud2g->u.gsm.ki));
+
 	for (i = 0; i < num_vec; i++) {
 		rc = rand_get(rand, sizeof(rand));
-		DEBUGP(DAUC, "rand %s\n", osmo_hexdump_nospc(rand, sizeof(rand)));
 		if (rc != sizeof(rand)) {
 			LOGP(DAUC, LOGL_ERROR, "Unable to read %zu random "
 			     "bytes: rc=%d\n", sizeof(rand), rc);
 			goto out;
 		}
+		DBGP("vector [%u]: rand = %s\n", i, hexb(rand));
 
-		if (aud2g && !aud3g) {
-			/* 2G only case: output directly to vec */
-			DEBUGP(DAUC, "compute vector [%u]/%u: 2G only\n",
-			       i, num_vec);
-			rc = osmo_auth_gen_vec(vec+i, aud2g, rand);
-			if (rc < 0) {
-				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
-				     "generation: %d\n", rc);
-				goto out;
-			}
-		} else if (aud3g) {
+		if (aud3g) {
 			/* 3G or 3G + 2G case */
-			if (!aud2g)
-				DEBUGP(DAUC, "compute vector [%u]/%u: 3G only\n",
-				       i, num_vec);
-			if (rand_auts && auts)
-				rc = osmo_auth_gen_vec_auts(vec+i, aud3g,
-							    auts, rand_auts,
-							    rand);
-			else
+
+			if (auts) {
+				DBGP("vector [%u]: resync: auts = %s\n",
+				     i, hex(auts, 14));
+				DBGP("vector [%u]: resync: rand_auts = %s\n",
+				     i, hex(rand_auts, 16));
+
+				rc = osmo_auth_gen_vec_auts(vec+i, aud3g, auts,
+							    rand_auts, rand);
+				/* The sqn used for the key is sqn - 1 because
+				 * vector generation has already inc'd it. The
+				 * USIM's sqn sent in AUTS is sqn - 2. */
+				DBGP("vector [%u]: resync: sqn = %"PRIu64 "\n",
+				     i, aud3g->u.umts.sqn - 1);
+			} else {
+				DBGP("vector [%u]: sqn = %" PRIu64 "\n",
+				     i, aud3g->u.umts.sqn);
 				rc = osmo_auth_gen_vec(vec+i, aud3g, rand);
+			}
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 3G vector "
-				     "generation: %d\n", rc);
+				     "generation: [%u]: rc = %d\n", i, rc);
 				goto out;
 			}
-		}
-		if (aud2g && aud3g) {
-			/* separate 2G + 3G case: patch 2G into 3G */
-			struct osmo_auth_vector vtmp;
-			DEBUGP(DAUC, "compute vector [%u]/%u:"
-			       " separate 2G + 3G\n", i, num_vec);
+
+			DBGVB(autn);
+			DBGVB(ck);
+			DBGVB(ik);
+			DBGVB(res);
+			DBGVV("%u", res_len);
+
+			if (!aud2g) {
+				/* use the 2G tokens from 3G keys */
+				DBGVB(kc);
+				DBGVB(sres);
+				DBGVV("0x%x", auth_types);
+				continue;
+			}
+			/* calculate 2G separately */
+
+			DBGP("vector [%u]: deriving 2G from 3G\n", i);
+
 			rc = osmo_auth_gen_vec(&vtmp, aud2g, rand);
 			if (rc < 0) {
-				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
-				     "generation: %d\n", rc);
+				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector"
+				     "generation: [%u]: rc = %d\n", i, rc);
 				goto out;
 			}
 			memcpy(&vec[i].kc, vtmp.kc, sizeof(vec[i].kc));
 			memcpy(&vec[i].sres, vtmp.sres, sizeof(vec[i].sres));
 			vec[i].auth_types |= OSMO_AUTH_TYPE_GSM;
+		} else {
+			/* 2G only case */
+			rc = osmo_auth_gen_vec(vec+i, aud2g, rand);
+			if (rc < 0) {
+				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
+				     "generation: [%u]: rc = %d\n", i, rc);
+				goto out;
+			}
 		}
+
+		DBGVB(kc);
+		DBGVB(sres);
+		DBGVV("0x%x", auth_types);
 	}
 out:
 	return i;
+#undef DBGVV
+#undef DBGVB
+#undef DBGP
 }
