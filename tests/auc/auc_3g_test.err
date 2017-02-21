@@ -102,5 +102,22 @@ auth vector ==
   sres: 9b36efdf
   auth_types: 03000000
 
+- test AUTS resync
+aud3g.u.umts.sqn == 0
+DAUC rand 897210a0f7de278f0b8213098e098a3f
+DAUC compute vector [0]/1: 3G only
+rc == 1
+aud3g.u.umts.sqn == 25
+auth vector ==
+  rand: 897210a0f7de278f0b8213098e098a3f
+  autn: c6b9790dad4b00000cf322869ea6a481
+  ck: e9922bd036718ed9e40bd1d02c3b81a5
+  ik: f19c20ca863137f8892326d959ec5e01
+  res: 9af5a557902d2db80000000000000000
+  res_len: 08
+  kc: 7526fc13c5976685
+  sres: 0ad888ef
+  auth_types: 03000000
+
 ===== test_gen_vectors_3g_only: SUCCESS
 

@@ -235,6 +235,8 @@ static void test_gen_vectors_3g_only(void)
 	struct osmo_sub_auth_data aud2g;
 	struct osmo_sub_auth_data aud3g;
 	struct osmo_auth_vector vec;
+	uint8_t auts[14];
+	uint8_t rand_auts[16];
 	int rc;
 
 	comment_start();
@@ -300,6 +302,74 @@ static void test_gen_vectors_3g_only(void)
 	       "  res_len: 08\n"
 	       "  kc: 059a4f668f6fbe39\n"
 	       "  sres: 9b36efdf\n"
+	       "  auth_types: 03000000\n"
+	      );
+
+
+	fprintf(stderr, "- test AUTS resync\n");
+	vec = (struct osmo_auth_vector){};
+	aud3g.u.umts.sqn = 0;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+
+	/* The AUTN sent was 8704f5ba55f30000d2ee44b22c8ea919
+	 * with the first 6 bytes being SQN ^ AK.
+	 * K = EB215756028D60E3275E613320AEC880
+	 * OPC = FB2A3D1B360F599ABAB99DB8669F8308
+	 * RAND = 39fa2f4e3d523d8619a73b4f65c3e14d
+	 * --milenage-f5-->
+	 * AK = 8704f5ba55f3
+	 *
+	 * The first six bytes are 8704f5ba55f3,
+	 * and 8704f5ba55f3 ^ AK = 0.
+	 * --> SQN = 0.
+	 *
+	 * Say the USIM doesn't like that, let's say it is at SQN 23.
+	 * SQN_MS = 000000000017
+	 *
+	 * AUTS = Conc(SQN_MS) || MAC-S
+	 * Conc(SQN_MS) = SQN_MS ⊕ f5*[K](RAND)
+	 * MAC-S = f1*[K] (SQN MS || RAND || AMF)
+	 *
+	 * f5*--> Conc(SQN_MS) = 000000000017 ^ 979498b1f73a
+	 *                     = 979498b1f72d
+	 * AMF = 0000 (TS 33.102 v7.0.0, 6.3.3)
+	 *
+	 * MAC-S = f1*[K] (000000000017 || 39fa2f4e3d523d8619a73b4f65c3e14d || 0000)
+	 *       = 3e28c59fa2e72f9c
+	 *
+	 * AUTS = 979498b1f72d || 3e28c59fa2e72f9c
+	 *
+	 * verify valid AUTS resulting in SQN 23 with:
+	 * osmo-auc-gen -3 -a milenage -k EB215756028D60E3275E613320AEC880 \
+	 *              -o FB2A3D1B360F599ABAB99DB8669F8308 \
+	 *              -r 39fa2f4e3d523d8619a73b4f65c3e14d \
+	 *              -A 979498b1f72d3e28c59fa2e72f9c
+	 */
+
+	/* AUTS response by USIM */
+	osmo_hexparse("979498b1f72d3e28c59fa2e72f9c",
+		      auts, sizeof(auts));
+	/* RAND sent to USIM, which AUTS was generated from */
+	osmo_hexparse("39fa2f4e3d523d8619a73b4f65c3e14d",
+		      rand_auts, sizeof(rand_auts));
+	/* new RAND token for the next key */
+	osmo_hexparse("897210a0f7de278f0b8213098e098a3f",
+		      fake_rand, sizeof(fake_rand));
+	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, rand_auts, auts);
+	VERBOSE_ASSERT(rc, == 1, "%d");
+	/* The USIM's last sqn was 23, the calculated vector was 24, hence the
+	 * next one stored should be 25. */
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 25, "%"PRIu64);
+
+	VEC_IS(&vec,
+	       "  rand: 897210a0f7de278f0b8213098e098a3f\n"
+	       "  autn: c6b9790dad4b00000cf322869ea6a481\n"
+	       "  ck: e9922bd036718ed9e40bd1d02c3b81a5\n"
+	       "  ik: f19c20ca863137f8892326d959ec5e01\n"
+	       "  res: 9af5a557902d2db80000000000000000\n"
+	       "  res_len: 08\n"
+	       "  kc: 7526fc13c5976685\n"
+	       "  sres: 0ad888ef\n"
 	       "  auth_types: 03000000\n"
 	      );
 
