@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <getopt.h>
 
 #include <osmocom/core/application.h>
 #include <osmocom/core/utils.h>
@@ -76,9 +77,13 @@ char *vec_str(const struct osmo_auth_vector *vec)
 			char *b = expect; \
 			for (; *a && *b; a++, b++) { \
 				if (*a != *b) { \
-					while (a > _is && *(a-1) != '\n') a--; \
-					fprintf(stderr, "mismatch at %d:\n" \
-						"%s", (int)(a - _is), a); \
+					fprintf(stderr, "mismatch at %d:\n", \
+						(int)(a - _is)); \
+					while (a > _is && *(a-1) != '\n') { \
+						fprintf(stderr, " "); \
+						a--; \
+					} \
+					fprintf(stderr, "v\n%s", a); \
 					break; \
 				} \
 			} \
@@ -547,11 +552,67 @@ void test_gen_vectors_bad_args()
 	comment_end();
 }
 
-int main()
+static struct {
+	bool verbose;
+} cmdline_opts = {
+	.verbose = false,
+};
+
+static void print_help(const char *program)
+{
+	printf("Usage:\n"
+	       "  %s [-v] [N [N...]]\n"
+	       "Options:\n"
+	       "  -h --help      show this text.\n"
+	       "  -v --verbose   print source file and line numbers\n",
+	       program
+	       );
+}
+
+static void handle_options(int argc, char **argv)
+{
+	while (1) {
+		int option_index = 0, c;
+		static struct option long_options[] = {
+			{"help", 0, 0, 'h'},
+			{"verbose", 1, 0, 'v'},
+			{0, 0, 0, 0}
+		};
+
+		c = getopt_long(argc, argv, "hv",
+				long_options, &option_index);
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'h':
+			print_help(argv[0]);
+			exit(0);
+		case 'v':
+			cmdline_opts.verbose = true;
+			break;
+		default:
+			/* catch unknown options *as well as* missing arguments. */
+			fprintf(stderr, "Error in command line options. Exiting.\n");
+			exit(-1);
+			break;
+		}
+	}
+
+	if (optind < argc) {
+		fprintf(stderr, "too many args\n");
+		exit(-1);
+	}
+}
+
+int main(int argc, char **argv)
 {
 	printf("auc_3g_test.c\n");
+
+	handle_options(argc, argv);
+
 	osmo_init_logging(&hlr_log_info);
-	log_set_print_filename(osmo_stderr_target, 0);
+	log_set_print_filename(osmo_stderr_target, cmdline_opts.verbose);
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);
 	log_set_print_category(osmo_stderr_target, 1);
