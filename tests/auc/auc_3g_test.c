@@ -239,48 +239,6 @@ static void test_gen_vectors_2g_plus_3g(void)
 	comment_end();
 }
 
-void _test_gen_vectors_3g_only__expect_vecs__WRONG(struct osmo_auth_vector vecs[3])
-{
-	fprintf(stderr, "THERE IS A BUG AND THE TEST PASSES THE WRONG VECTORS UNTIL THAT IS FIXED\n");
-	fprintf(stderr, "The SQN should increment with each new vector.\n");
-	fprintf(stderr, "[0]: ");
-	VEC_IS(&vecs[0],
-	       "  rand: 897210a0f7de278f0b8213098e098a3f\n"
-	       "  autn: c6b9790dad4b00000cf322869ea6a481\n"
-	       "  ck: e9922bd036718ed9e40bd1d02c3b81a5\n"
-	       "  ik: f19c20ca863137f8892326d959ec5e01\n"
-	       "  res: 9af5a557902d2db80000000000000000\n"
-	       "  res_len: 08\n"
-	       "  kc: 7526fc13c5976685\n"
-	       "  sres: 0ad888ef\n"
-	       "  auth_types: 03000000\n"
-	      );
-	fprintf(stderr, "[1]: ");
-	VEC_IS(&vecs[1],
-	       "  rand: 9a8321b108ef38a01c93241a9f1a9b50\n"
-	       "  autn: 79a5113eb0900000f7e138537aa0962b\n"
-	       "  ck: 3686f05df057d1899c66ae4eb18cf941\n"
-	       "  ik: 79f21ed53bcb47787de57d136ff803a5\n"
-	       "  res: 43023475cb29292c0000000000000000\n"
-	       "  res_len: 08\n"
-	       "  kc: aef73dd515e86c15\n"
-	       "  sres: 882b1d59\n"
-	       "  auth_types: 03000000\n"
-	      );
-	fprintf(stderr, "[2]: ");
-	VEC_IS(&vecs[2],
-	       "  rand: ab9432c2190049b12da4352bb02bac61\n"
-	       "  autn: 24b018d46c390000d88e11730d0367ac\n"
-	       "  ck: d86c3191a36fc0602e48202ef2080964\n"
-	       "  ik: 648dab72016181406243420649e63dc9\n"
-	       "  res: 010cab11cc63a6e40000000000000000\n"
-	       "  res_len: 08\n"
-	       "  kc: f0eaf8cb19e0758d\n"
-	       "  sres: cd6f0df5\n"
-	       "  auth_types: 03000000\n"
-	      );
-}
-
 void _test_gen_vectors_3g_only__expect_vecs(struct osmo_auth_vector vecs[3])
 {
 	fprintf(stderr, "[0]: ");
@@ -487,9 +445,7 @@ static void test_gen_vectors_3g_only(void)
 	next_rand("897210a0f7de278f0b8213098e098a3f", false);
 	rc = auc_compute_vectors(vecs, 3, &aud2g, &aud3g, rand_auts, auts);
 
-	/* THIS IS WRONG AND WILL BE FIXED IN A SUBSEQUENT COMMIT:
-	   should be _test_gen_vectors_3g_only__expect_vecs() instead */
-	_test_gen_vectors_3g_only__expect_vecs__WRONG(vecs);
+	_test_gen_vectors_3g_only__expect_vecs(vecs);
 
 	comment_end();
 }

@@ -113,7 +113,9 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 		if (aud3g) {
 			/* 3G or 3G + 2G case */
 
-			if (auts) {
+			/* Do AUTS only for the first vector or we would use
+			 * the same SQN for each following key. */
+			if ((i == 0) && auts) {
 				DBGP("vector [%u]: resync: auts = %s\n",
 				     i, hex(auts, 14));
 				DBGP("vector [%u]: resync: rand_auts = %s\n",
