@@ -16,23 +16,23 @@ AM_LDFLAGS = \
 	$(NULL)
 
 EXTRA_DIST = \
-	auc_3g_test.ok \
-	auc_3g_test.err \
+	auc_test.ok \
+	auc_test.err \
 	auc_ts_55_205_test_sets.ok \
 	auc_ts_55_205_test_sets.err \
 	$(NULL)
 
 
 noinst_PROGRAMS = \
-	auc_3g_test \
+	auc_test \
 	auc_ts_55_205_test_sets \
 	$(NULL)
 
-auc_3g_test_SOURCES = \
-	auc_3g_test.c \
+auc_test_SOURCES = \
+	auc_test.c \
 	$(NULL)
 
-auc_3g_test_LDADD = \
+auc_test_LDADD = \
 	$(top_srcdir)/src/auc.c \
 	$(top_srcdir)/src/logging.c \
 	$(LIBOSMOCORE_LIBS) \
