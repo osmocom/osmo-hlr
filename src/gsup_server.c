@@ -185,9 +185,15 @@ static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
 	osmo_tlvp_dump(tlvp, DLGSUP, LOGL_INFO);
 
 	addr_len = osmo_gsup_conn_ccm_get(clnt, &addr, IPAC_IDTAG_SERNR);
-	if (addr_len)
-		gsup_route_add(clnt, addr, addr_len);
+	if (addr_len <= 0) {
+		LOGP(DLGSUP, LOGL_ERROR, "GSUP client %s:%u has no %s IE and"
+		     " cannot be routed\n",
+		     conn->addr, conn->port,
+		     ipa_ccm_idtag_name(IPAC_IDTAG_SERNR));
+		return -EINVAL;
+	}
 
+	gsup_route_add(clnt, addr, addr_len);
 	return 0;
 }
 
