@@ -1,4 +1,4 @@
-/* OsmoHLR generic header */
+/* OsmoHLR Control Interface implementation */
 
 /* (C) 2017 sysmocom s.f.m.c. GmbH <info@sysmocom.de>
  * All Rights Reserved
@@ -22,16 +22,10 @@
 
 #pragma once
 
-#include <stdbool.h>
+#include <osmocom/ctrl/control_if.h>
 
-struct hlr {
-	/* GSUP server pointer */
-	struct osmo_gsup_server *gs;
+#include "gsup_server.h"
 
-	/* DB context */
-	struct db_context *dbc;
-
-	/* Control Interface */
-	struct ctrl_handle *ctrl;
-	const char *ctrl_bind_addr;
-};
+int hlr_ctrl_cmds_install();
+struct ctrl_handle *hlr_controlif_setup(struct hlr *ctx,
+					struct osmo_gsup_server *gs);

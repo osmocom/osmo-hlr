@@ -3,6 +3,7 @@ AM_CFLAGS = \
 	$(LIBOSMOCORE_CFLAGS) \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(LIBOSMOVTY_CFLAGS) \
+	$(LIBOSMOCTRL_CFLAGS) \
 	$(LIBOSMOABIS_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(NULL)
@@ -20,6 +21,7 @@ noinst_HEADERS = \
 	gsup_server.h \
 	logging.h \
 	rand.h \
+	ctrl.h \
 	hlr_vty.h \
 	$(NULL)
 
@@ -33,6 +35,7 @@ noinst_PROGRAMS = \
 
 osmo_hlr_SOURCES = \
 	auc.c \
+	ctrl.c \
 	db.c \
 	luop.c \
 	db_auc.c \
@@ -49,6 +52,7 @@ osmo_hlr_LDADD = \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOVTY_LIBS) \
+	$(LIBOSMOCTRL_LIBS) \
 	$(LIBOSMOABIS_LIBS) \
 	$(SQLITE3_LIBS) \
 	$(NULL)

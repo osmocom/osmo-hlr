@@ -32,9 +32,11 @@
 #include <osmocom/vty/command.h>
 #include <osmocom/vty/telnet_interface.h>
 #include <osmocom/vty/ports.h>
+#include <osmocom/ctrl/control_vty.h>
 
 #include "db.h"
 #include "hlr.h"
+#include "ctrl.h"
 #include "logging.h"
 #include "gsup_server.h"
 #include "gsup_router.h"
@@ -393,9 +395,16 @@ static void signal_hdlr(int signal)
 	}
 }
 
+static const char vlr_copyright[] =
+	"Copyright (C) 2016, 2017 by Harald Welte, sysmocom s.f.m.c. GmbH\r\n"
+	"License AGPLv3+: GNU AGPL version 3 or later <http://gnu.org/licenses/agpl-3.0.html>\r\n"
+	"This is free software: you are free to change and redistribute it.\r\n"
+	 "There is NO WARRANTY, to the extent permitted by law.\r\n";
+
 static struct vty_app_info vty_info = {
 	.name 		= "OsmoHLR",
 	.version	= PACKAGE_VERSION,
+	.copyright	= vlr_copyright,
 	.is_config_node	= hlr_vty_is_config_node,
 };
 
@@ -415,6 +424,7 @@ int main(int argc, char **argv)
 	}
 
 	vty_init(&vty_info);
+	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
 	hlr_vty_init(&hlr_log_info);
 
@@ -451,6 +461,9 @@ int main(int argc, char **argv)
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
 	}
+
+	g_hlr->ctrl_bind_addr = ctrl_vty_get_bind_addr();
+	g_hlr->ctrl = hlr_controlif_setup(g_hlr, g_hlr->gs);
 
 	osmo_init_ignore_signals();
 	signal(SIGINT, &signal_hdlr);
