@@ -14,6 +14,7 @@ EXTRA_DIST = \
 noinst_HEADERS = \
 	auc.h \
 	db.h \
+	hlr.h \
 	luop.h \
 	gsup_router.h \
 	gsup_server.h \

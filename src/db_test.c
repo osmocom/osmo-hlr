@@ -4,12 +4,13 @@
 #include <osmocom/core/application.h>
 
 #include "db.h"
+#include "hlr.h"
 #include "rand.h"
 #include "logging.h"
 
-static struct db_context *g_dbc;
+static struct hlr *g_hlr;
 
-static int test(const char *imsi)
+static int test(const char *imsi, struct db_context *dbc)
 {
 	struct osmo_auth_vector vec[3];
 	int rc, i;
@@ -19,7 +20,7 @@ static int test(const char *imsi)
 	for (i = 0; i < ARRAY_SIZE(vec); i++)
 		vec[i].res_len = 0;
 
-	rc = db_get_auc(g_dbc, imsi, vec, ARRAY_SIZE(vec), NULL, NULL);
+	rc = db_get_auc(dbc, imsi, vec, ARRAY_SIZE(vec), NULL, NULL);
 	if (rc <= 0) {
 		LOGP(DMAIN, LOGL_ERROR, "Cannot obtain auth tuples for '%s'\n", imsi);
 		return rc;
@@ -46,6 +47,8 @@ int main(int argc, char **argv)
 {
 	int rc;
 
+	g_hlr = talloc_zero(NULL, struct hlr);
+
 	rc = osmo_init_logging(&hlr_log_info);
 	if (rc < 0) {
 		fprintf(stderr, "Error initializing logging\n");
@@ -59,24 +62,24 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_dbc = db_open(NULL, "hlr.db");
-	if (!g_dbc) {
+	g_hlr->dbc = db_open(NULL, "hlr.db");
+	if (!g_hlr->dbc) {
 		LOGP(DMAIN, LOGL_ERROR, "Error opening database\n");
 		exit(1);
 	}
 
 	/* non-existing subscriber */
-	rc = test("901990123456789");
+	rc = test("901990123456789", g_hlr->dbc);
 	/* 2G only AUC data (COMP128v1 / MILENAGE) */
-	rc = test("901990000000001");
+	rc = test("901990000000001", g_hlr->dbc);
 	/* 2G + 3G AUC data (COMP128v1 / MILENAGE) */
-	rc = test("901990000000002");
+	rc = test("901990000000002", g_hlr->dbc);
 	/* 3G AUC data (MILENAGE) */
-	rc = test("901990000000003");
+	rc = test("901990000000003", g_hlr->dbc);
 
 	LOGP(DMAIN, LOGL_NOTICE, "Exiting\n");
 
-	db_close(g_dbc);
+	db_close(g_hlr->dbc);
 
 	log_fini();
 

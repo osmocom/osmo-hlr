@@ -34,6 +34,7 @@
 #include <osmocom/vty/ports.h>
 
 #include "db.h"
+#include "hlr.h"
 #include "logging.h"
 #include "gsup_server.h"
 #include "gsup_router.h"
@@ -41,7 +42,7 @@
 #include "luop.h"
 #include "hlr_vty.h"
 
-static struct db_context *g_dbc;
+static struct hlr *g_hlr;
 
 /***********************************************************************
  * Send Auth Info handling
@@ -49,7 +50,8 @@ static struct db_context *g_dbc;
 
 /* process an incoming SAI request */
 static int rx_send_auth_info(struct osmo_gsup_conn *conn,
-			     const struct osmo_gsup_message *gsup)
+			     const struct osmo_gsup_message *gsup,
+			     struct db_context *dbc)
 {
 	struct osmo_gsup_message gsup_out;
 	struct msgb *msg_out;
@@ -59,7 +61,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	memset(&gsup_out, 0, sizeof(gsup_out));
 	memcpy(&gsup_out.imsi, &gsup->imsi, sizeof(gsup_out.imsi));
 
-	rc = db_get_auc(g_dbc, gsup->imsi, gsup_out.auth_vectors,
+	rc = db_get_auc(dbc, gsup->imsi, gsup_out.auth_vectors,
 			ARRAY_SIZE(gsup_out.auth_vectors),
 			gsup->rand, gsup->auts);
 	if (rc < 0) {
@@ -157,7 +159,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* Roughly follwing "Process Update_Location_HLR" of TS 09.02 */
 
 	/* check if subscriber is known at all */
-	if (!lu_op_fill_subscr(luop, g_dbc, gsup->imsi)) {
+	if (!lu_op_fill_subscr(luop, g_hlr->dbc, gsup->imsi)) {
 		/* Send Error back: Subscriber Unknown in HLR */
 		strcpy(luop->subscr.imsi, gsup->imsi);
 		lu_op_tx_error(luop, GMM_CAUSE_IMSI_UNKNOWN);
@@ -216,7 +218,7 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	 * we have on record. Only update if yes */
 
 	/* Perform the actual update of the DB */
-	rc = db_subscr_purge(g_dbc, gsup->imsi, is_ps);
+	rc = db_subscr_purge(g_hlr->dbc, gsup->imsi, is_ps);
 
 	if (rc == 1)
 		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_RESULT;
@@ -247,7 +249,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	switch (gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:
-		rx_send_auth_info(conn, &gsup);
+		rx_send_auth_info(conn, &gsup, g_hlr->dbc);
 		break;
 	case OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST:
 		rx_upd_loc_req(conn, &gsup);
@@ -372,15 +374,14 @@ static void handle_options(int argc, char **argv)
 }
 
 static void *hlr_ctx = NULL;
-static struct osmo_gsup_server *gs;
 
 static void signal_hdlr(int signal)
 {
 	switch (signal) {
 	case SIGINT:
 		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to SIGINT\n");
-		osmo_gsup_server_destroy(gs);
-		db_close(g_dbc);
+		osmo_gsup_server_destroy(g_hlr->gs);
+		db_close(g_hlr->dbc);
 		log_fini();
 		talloc_report_full(hlr_ctx, stderr);
 		exit(0);
@@ -404,6 +405,8 @@ int main(int argc, char **argv)
 
 	hlr_ctx = talloc_named_const(NULL, 1, "OsmoHLR");
 	msgb_talloc_ctx_init(hlr_ctx, 0);
+
+	g_hlr = talloc_zero(hlr_ctx, struct hlr);
 
 	rc = osmo_init_logging(&hlr_log_info);
 	if (rc < 0) {
@@ -437,14 +440,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_dbc = db_open(hlr_ctx, cmdline_opts.db_file);
-	if (!g_dbc) {
+	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file);
+	if (!g_hlr->dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(1);
 	}
 
-	gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb);
-	if (!gs) {
+	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb);
+	if (!g_hlr->gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
 	}
@@ -465,7 +468,7 @@ int main(int argc, char **argv)
 		osmo_select_main(0);
 	}
 
-	db_close(g_dbc);
+	db_close(g_hlr->dbc);
 
 	log_fini();
 
