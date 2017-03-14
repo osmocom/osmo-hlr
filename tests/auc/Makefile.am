@@ -53,3 +53,7 @@ auc_ts_55_205_test_sets_LDADD = \
 auc_ts_55_205_test_sets.c: $(top_srcdir)/tests/auc/gen_ts_55_205_test_sets/*
 	$(top_srcdir)/tests/auc/gen_ts_55_205_test_sets/pdftxt_2_c.py > $@
 
+.PHONY: update_exp
+update_exp:
+	$(builddir)/auc_test >"$(srcdir)/auc_test.ok" 2>"$(srcdir)/auc_test.err"
+	$(builddir)/auc_ts_55_205_test_sets >"$(srcdir)/auc_ts_55_205_test_sets.ok" 2>"$(srcdir)/auc_ts_55_205_test_sets.err"

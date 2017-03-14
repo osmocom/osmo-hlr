@@ -194,6 +194,7 @@ static void test_gen_vectors_2g_plus_3g(void)
 	aud3g = (struct osmo_sub_auth_data){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.sqn = 32,
 	};
 
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
@@ -203,13 +204,14 @@ static void test_gen_vectors_2g_plus_3g(void)
 	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
-	       "  autn: 8704f5ba55f30000d2ee44b22c8ea919\n"
+	       "  autn: 8704f5ba55d30000541dde77ea5b1d8c\n"
 	       "  ck: f64735036e5871319c679f4742a75ea1\n"
 	       "  ik: 27497388b6cb044648f396aa155b95ef\n"
 	       "  res: e229c19e791f2e410000000000000000\n"
@@ -219,19 +221,17 @@ static void test_gen_vectors_2g_plus_3g(void)
 	       "  auth_types: 03000000\n"
 	      );
 
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
-
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
-	aud3g.u.umts.sqn = 0;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	aud3g.u.umts.sqn = 32;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
-	       "  autn: 8704f5ba55f30000d2ee44b22c8ea919\n"
+	       "  autn: 8704f5ba55d30000541dde77ea5b1d8c\n"
 	       "  ck: f64735036e5871319c679f4742a75ea1\n"
 	       "  ik: 27497388b6cb044648f396aa155b95ef\n"
 	       "  res: e229c19e791f2e410000000000000000\n"
@@ -301,6 +301,7 @@ static void test_gen_vectors_3g_only(void)
 	aud3g = (struct osmo_sub_auth_data){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.sqn = 32,
 	};
 
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
@@ -310,13 +311,14 @@ static void test_gen_vectors_3g_only(void)
 	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
-	       "  autn: 8704f5ba55f30000d2ee44b22c8ea919\n"
+	       "  autn: 8704f5ba55d30000541dde77ea5b1d8c\n"
 	       "  ck: f64735036e5871319c679f4742a75ea1\n"
 	       "  ik: 27497388b6cb044648f396aa155b95ef\n"
 	       "  res: e229c19e791f2e410000000000000000\n"
@@ -336,19 +338,17 @@ static void test_gen_vectors_3g_only(void)
 	 * hence expecting kc: 059a4f668f6fbe39
 	 */
 
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
-
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
-	aud3g.u.umts.sqn = 0;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	aud3g.u.umts.sqn = 32;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 1, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
-	       "  autn: 8704f5ba55f30000d2ee44b22c8ea919\n"
+	       "  autn: 8704f5ba55d30000541dde77ea5b1d8c\n"
 	       "  ck: f64735036e5871319c679f4742a75ea1\n"
 	       "  ik: 27497388b6cb044648f396aa155b95ef\n"
 	       "  res: e229c19e791f2e410000000000000000\n"
@@ -361,8 +361,8 @@ static void test_gen_vectors_3g_only(void)
 
 	fprintf(stderr, "- test AUTS resync\n");
 	vec = (struct osmo_auth_vector){};
-	aud3g.u.umts.sqn = 0;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	aud3g.u.umts.sqn = 32;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
 	/* The AUTN sent was 8704f5ba55f30000d2ee44b22c8ea919
 	 * with the first 6 bytes being SQN ^ AK.

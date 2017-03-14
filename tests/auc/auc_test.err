@@ -22,14 +22,14 @@ vector matches expectations
 
 
 ===== test_gen_vectors_2g_plus_3g
-aud3g.u.umts.sqn == 0
+aud3g.u.umts.sqn == 32
 DAUC Computing 1 auth vector: 3G + separate 2G
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
 DAUC 2G: ki = eb215756028d60e3275e613320aec880
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
-DAUC vector [0]: sqn = 0
-DAUC vector [0]: autn = 8704f5ba55f30000d2ee44b22c8ea919
+DAUC vector [0]: sqn = 32
+DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
 DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
@@ -39,16 +39,16 @@ DAUC vector [0]: kc = 241a5b16aeb8e400
 DAUC vector [0]: sres = 429d5b27
 DAUC vector [0]: auth_types = 0x3
 rc == 1
+aud3g.u.umts.sqn == 33
 vector matches expectations
-aud3g.u.umts.sqn == 1
-aud3g.u.umts.sqn == 0
+aud3g.u.umts.sqn == 32
 DAUC Computing 1 auth vector: 3G + separate 2G
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
 DAUC 2G: ki = eb215756028d60e3275e613320aec880
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
-DAUC vector [0]: sqn = 0
-DAUC vector [0]: autn = 8704f5ba55f30000d2ee44b22c8ea919
+DAUC vector [0]: sqn = 32
+DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
 DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
@@ -58,19 +58,19 @@ DAUC vector [0]: kc = 241a5b16aeb8e400
 DAUC vector [0]: sres = 429d5b27
 DAUC vector [0]: auth_types = 0x3
 rc == 1
-aud3g.u.umts.sqn == 1
+aud3g.u.umts.sqn == 33
 vector matches expectations
 ===== test_gen_vectors_2g_plus_3g: SUCCESS
 
 
 ===== test_gen_vectors_3g_only
-aud3g.u.umts.sqn == 0
+aud3g.u.umts.sqn == 32
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
-DAUC vector [0]: sqn = 0
-DAUC vector [0]: autn = 8704f5ba55f30000d2ee44b22c8ea919
+DAUC vector [0]: sqn = 32
+DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
 DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
@@ -79,15 +79,15 @@ DAUC vector [0]: kc = 059a4f668f6fbe39
 DAUC vector [0]: sres = 9b36efdf
 DAUC vector [0]: auth_types = 0x3
 rc == 1
+aud3g.u.umts.sqn == 33
 vector matches expectations
-aud3g.u.umts.sqn == 1
-aud3g.u.umts.sqn == 0
+aud3g.u.umts.sqn == 32
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
-DAUC vector [0]: sqn = 0
-DAUC vector [0]: autn = 8704f5ba55f30000d2ee44b22c8ea919
+DAUC vector [0]: sqn = 32
+DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
 DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
@@ -96,10 +96,10 @@ DAUC vector [0]: kc = 059a4f668f6fbe39
 DAUC vector [0]: sres = 9b36efdf
 DAUC vector [0]: auth_types = 0x3
 rc == 1
-aud3g.u.umts.sqn == 1
+aud3g.u.umts.sqn == 33
 vector matches expectations
 - test AUTS resync
-aud3g.u.umts.sqn == 0
+aud3g.u.umts.sqn == 32
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys), with AUTS resync
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
