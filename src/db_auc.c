@@ -159,6 +159,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 			aud3g->u.umts.opc_is_op = 1;
 		}
 		aud3g->u.umts.sqn = sqlite3_column_int64(stmt, 7);
+		aud3g->u.umts.ind_bitlen = sqlite3_column_int(stmt, 8);
 		/* FIXME: amf? */
 		aud3g->type = OSMO_AUTH_TYPE_UMTS;
 	} else
@@ -186,8 +187,9 @@ out:
 /* return -1 in case of error, 0 for unknown imsi, positive for number
  * of vectors generated */
 int db_get_auc(struct db_context *dbc, const char *imsi,
-	    struct osmo_auth_vector *vec, unsigned int num_vec,
-	    const uint8_t *rand_auts, const uint8_t *auts)
+	       unsigned int auc_3g_ind, struct osmo_auth_vector *vec,
+	       unsigned int num_vec, const uint8_t *rand_auts,
+	       const uint8_t *auts)
 {
 	struct osmo_sub_auth_data aud2g, aud3g;
 	uint64_t subscr_id;
@@ -197,6 +199,16 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	rc = db_get_auth_data(dbc, imsi, &aud2g, &aud3g, &subscr_id);
 	if (rc <= 0)
 		return rc;
+
+	aud3g.u.umts.ind = auc_3g_ind;
+	if (aud3g.type == OSMO_AUTH_TYPE_UMTS
+	    && aud3g.u.umts.ind >= (1U << aud3g.u.umts.ind_bitlen)) {
+		LOGAUC(imsi, LOGL_NOTICE, "3G auth: SQN's IND bitlen %u is"
+		       " too small to hold an index of %u. Truncating. This"
+		       " may cause numerous additional AUTS resyncing.\n",
+		       aud3g.u.umts.ind_bitlen, aud3g.u.umts.ind);
+		aud3g.u.umts.ind &= (1U << aud3g.u.umts.ind_bitlen) - 1;
+	}
 
 	LOGAUC(imsi, LOGL_DEBUG, "Calling to generate %u vectors\n", num_vec);
 	rc = auc_compute_vectors(vec, num_vec, &aud2g, &aud3g, rand_auts, auts);

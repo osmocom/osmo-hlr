@@ -39,8 +39,9 @@ int db_update_sqn(struct db_context *dbc, uint64_t id,
 		      uint64_t new_sqn);
 
 int db_get_auc(struct db_context *dbc, const char *imsi,
-	    struct osmo_auth_vector *vec, unsigned int num_vec,
-	    const uint8_t *rand_auts, const uint8_t *auts);
+	       unsigned int auc_3g_ind, struct osmo_auth_vector *vec,
+	       unsigned int num_vec, const uint8_t *rand_auts,
+	       const uint8_t *auts);
 
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/protocol/gsm_23_003.h>

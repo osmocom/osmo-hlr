@@ -20,7 +20,7 @@ static int test(const char *imsi, struct db_context *dbc)
 	for (i = 0; i < ARRAY_SIZE(vec); i++)
 		vec[i].res_len = 0;
 
-	rc = db_get_auc(dbc, imsi, vec, ARRAY_SIZE(vec), NULL, NULL);
+	rc = db_get_auc(dbc, imsi, 0, vec, ARRAY_SIZE(vec), NULL, NULL);
 	if (rc <= 0) {
 		LOGP(DMAIN, LOGL_ERROR, "Cannot obtain auth tuples for '%s'\n", imsi);
 		return rc;

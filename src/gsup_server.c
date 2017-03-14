@@ -211,6 +211,43 @@ static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
 	return 0;
 }
 
+/* Add conn to the clients list in a way that conn->auc_3g_ind takes the lowest
+ * unused integer and the list of clients remains sorted by auc_3g_ind.
+ * Keep this function non-static to allow linking in a unit test. */
+void osmo_gsup_server_add_conn(struct llist_head *clients,
+			       struct osmo_gsup_conn *conn)
+{
+	struct osmo_gsup_conn *c;
+	struct osmo_gsup_conn *prev_conn;
+
+	c = llist_first_entry_or_null(clients, struct osmo_gsup_conn, list);
+
+	/* Is the first index, 0, unused? */
+	if (!c || c->auc_3g_ind > 0) {
+		conn->auc_3g_ind = 0;
+		llist_add(&conn->list, clients);
+		return;
+	}
+
+	/* Look for a gap later on */
+	prev_conn = NULL;
+	llist_for_each_entry(c, clients, list) {
+		/* skip first item, we know it has auc_3g_ind == 0. */
+		if (!prev_conn) {
+			prev_conn = c;
+			continue;
+		}
+		if (c->auc_3g_ind > prev_conn->auc_3g_ind + 1)
+			break;
+		prev_conn = c;
+	}
+
+	OSMO_ASSERT(prev_conn);
+
+	conn->auc_3g_ind = prev_conn->auc_3g_ind + 1;
+	llist_add(&conn->list, &prev_conn->list);
+}
+
 /* a client has connected to the server socket and we have accept()ed it */
 static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 {
@@ -225,15 +262,15 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 	conn->conn = ipa_server_conn_create(gsups, link, fd,
 					   osmo_gsup_server_read_cb,
 					   osmo_gsup_server_closed_cb, conn);
-	conn->conn->ccm_cb = osmo_gsup_server_ccm_cb;
 	OSMO_ASSERT(conn->conn);
+	conn->conn->ccm_cb = osmo_gsup_server_ccm_cb;
 
 	/* link data structure with server structure */
 	conn->server = gsups;
-	llist_add_tail(&conn->list, &gsups->clients);
+	osmo_gsup_server_add_conn(&gsups->clients, conn);
 
-	LOGP(DLGSUP, LOGL_INFO, "New GSUP client %s:%d\n",
-		conn->conn->addr, conn->conn->port);
+	LOGP(DLGSUP, LOGL_INFO, "New GSUP client %s:%d (IND=%u)\n",
+	     conn->conn->addr, conn->conn->port, conn->auc_3g_ind);
 
 	/* request the identity of the client */
 	rc = ipa_ccm_send_id_req(fd);

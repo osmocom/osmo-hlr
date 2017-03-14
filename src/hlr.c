@@ -63,7 +63,8 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	memset(&gsup_out, 0, sizeof(gsup_out));
 	memcpy(&gsup_out.imsi, &gsup->imsi, sizeof(gsup_out.imsi));
 
-	rc = db_get_auc(dbc, gsup->imsi, gsup_out.auth_vectors,
+	rc = db_get_auc(dbc, gsup->imsi, conn->auc_3g_ind,
+			gsup_out.auth_vectors,
 			ARRAY_SIZE(gsup_out.auth_vectors),
 			gsup->rand, gsup->auts);
 	if (rc < 0) {

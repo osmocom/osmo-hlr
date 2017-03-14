@@ -1,5 +1,6 @@
 SUBDIRS = \
 	auc \
+	gsup_server \
 	$(NULL)
 
 # The `:;' works around a Bash 3.2 bug when the output is not writeable.
