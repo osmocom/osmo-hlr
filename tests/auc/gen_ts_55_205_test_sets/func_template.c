@@ -36,7 +36,7 @@ static void {func_name}(void)
         aud3g = (struct osmo_sub_auth_data){{
                 .type = OSMO_AUTH_TYPE_UMTS,
                 .algo = OSMO_AUTH_ALG_MILENAGE,
-		.u.umts.sqn = 32,
+		.u.umts.sqn = 31,
         }};
 
         osmo_hexparse("{Ki}",
@@ -48,10 +48,10 @@ static void {func_name}(void)
                       fake_rand, sizeof(fake_rand));
 
         vec = (struct osmo_auth_vector){{ {{0}} }};
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
         rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
         VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
         VEC_IS(&vec,
                "  rand: {RAND}\n"

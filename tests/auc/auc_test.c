@@ -194,7 +194,7 @@ static void test_gen_vectors_2g_plus_3g(void)
 	aud3g = (struct osmo_sub_auth_data){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
-		.u.umts.sqn = 32,
+		.u.umts.sqn = 31,
 	};
 
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
@@ -204,10 +204,10 @@ static void test_gen_vectors_2g_plus_3g(void)
 	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
@@ -223,11 +223,11 @@ static void test_gen_vectors_2g_plus_3g(void)
 
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
-	aud3g.u.umts.sqn = 32;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	aud3g.u.umts.sqn = 31;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
@@ -301,7 +301,7 @@ static void test_gen_vectors_3g_only(void)
 	aud3g = (struct osmo_sub_auth_data){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
-		.u.umts.sqn = 32,
+		.u.umts.sqn = 31,
 	};
 
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
@@ -311,10 +311,10 @@ static void test_gen_vectors_3g_only(void)
 	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
 	vec = (struct osmo_auth_vector){ {0} };
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
@@ -340,11 +340,11 @@ static void test_gen_vectors_3g_only(void)
 
 	/* even though vec is not zero-initialized, it should produce the same
 	 * result with the same sequence nr */
-	aud3g.u.umts.sqn = 32;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	aud3g.u.umts.sqn = 31;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 33, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 39fa2f4e3d523d8619a73b4f65c3e14d\n"
@@ -361,8 +361,8 @@ static void test_gen_vectors_3g_only(void)
 
 	fprintf(stderr, "- test AUTS resync\n");
 	vec = (struct osmo_auth_vector){};
-	aud3g.u.umts.sqn = 32;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
+	aud3g.u.umts.sqn = 31;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 
 	/* The AUTN sent was 8704f5ba55f30000d2ee44b22c8ea919
 	 * with the first 6 bytes being SQN ^ AK.
@@ -409,9 +409,8 @@ static void test_gen_vectors_3g_only(void)
 	next_rand("897210a0f7de278f0b8213098e098a3f", true);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, rand_auts, auts);
 	VERBOSE_ASSERT(rc, == 1, "%d");
-	/* The USIM's last sqn was 23, the calculated vector was 24, hence the
-	 * next one stored should be 25. */
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 25, "%"PRIu64);
+	/* The USIM's last sqn was 23, the calculated vector was 24 */
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 24, "%"PRIu64);
 
 	VEC_IS(&vec,
 	       "  rand: 897210a0f7de278f0b8213098e098a3f\n"
@@ -428,19 +427,19 @@ static void test_gen_vectors_3g_only(void)
 
 	fprintf(stderr, "- verify N vectors with AUTS resync"
 		" == N vectors without AUTS\n"
-		"First just set rand and sqn = 24, and compute 3 vectors\n");
+		"First just set rand and sqn = 23, and compute 3 vectors\n");
 	next_rand("897210a0f7de278f0b8213098e098a3f", false);
-	aud3g.u.umts.sqn = 24;
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 24, "%"PRIu64);
+	aud3g.u.umts.sqn = 23;
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 23, "%"PRIu64);
 
 	memset(vecs, 0, sizeof(vecs));
 	rc = auc_compute_vectors(vecs, 3, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 3, "%d");
-	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 27, "%"PRIu64);
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 26, "%"PRIu64);
 
 	_test_gen_vectors_3g_only__expect_vecs(vecs);
 
-	fprintf(stderr, "Now reach sqn = 24 with AUTS and expect the same\n");
+	fprintf(stderr, "Now reach sqn = 23 with AUTS and expect the same\n");
 	/* AUTS response by USIM */
 	osmo_hexparse("979498b1f72d3e28c59fa2e72f9c",
 		      auts, sizeof(auts));
