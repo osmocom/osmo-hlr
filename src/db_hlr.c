@@ -92,7 +92,8 @@ int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
 	rc = sqlite3_step(stmt); /* execute the statement */
 	if (rc != SQLITE_DONE) {
 		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		rc = -ENOEXEC;
+		db_remove_reset(stmt);
+		return -ENOEXEC;
 	}
 
 	rc = sqlite3_changes(dbc->db); /* verify execution result */
