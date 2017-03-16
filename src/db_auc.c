@@ -18,6 +18,7 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>

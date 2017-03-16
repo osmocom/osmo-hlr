@@ -123,14 +123,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 
 				rc = osmo_auth_gen_vec_auts(vec+i, aud3g, auts,
 							    rand_auts, rand);
-				/* The sqn used for the key is sqn - 1 because
-				 * vector generation has already inc'd it. The
-				 * USIM's sqn sent in AUTS is sqn - 2. */
-				DBGP("vector [%u]: resync: sqn = %"PRIu64 "\n",
-				     i, aud3g->u.umts.sqn - 1);
 			} else {
-				DBGP("vector [%u]: sqn = %" PRIu64 "\n",
-				     i, aud3g->u.umts.sqn);
 				rc = osmo_auth_gen_vec(vec+i, aud3g, rand);
 			}
 			if (rc < 0) {
@@ -138,6 +131,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 				     "generation: [%u]: rc = %d\n", i, rc);
 				goto out;
 			}
+			DBGP("vector [%u]: sqn = %" PRIu64 "\n",
+			     i, aud3g->u.umts.sqn);
 
 			DBGVB(autn);
 			DBGVB(ck);
