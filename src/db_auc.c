@@ -223,7 +223,8 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 
 	/* Update SQN in database, as needed */
 	if (aud3g.algo) {
-		LOGAUC(imsi, LOGL_DEBUG, "Updating SQN in DB\n");
+		LOGAUC(imsi, LOGL_DEBUG, "Updating SQN=%" PRIu64 " in DB\n",
+		       aud3g.u.umts.sqn);
 		rc = db_update_sqn(dbc, subscr_id, aud3g.u.umts.sqn);
 		/* don't tell caller we generated any triplets in case of
 		 * update error */

@@ -97,6 +97,8 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 		DBGP("3G: %s = %s\n",
 		     aud3g->u.umts.opc_is_op? "OP" : "opc",
 		     hexb(aud3g->u.umts.opc));
+		DBGP("3G: for sqn ind %u, previous sqn was %" PRIu64 "\n",
+		     aud3g->u.umts.ind, aud3g->u.umts.sqn);
 	}
 	if (aud2g)
 		DBGP("2G: ki = %s\n", hexb(aud2g->u.gsm.ki));

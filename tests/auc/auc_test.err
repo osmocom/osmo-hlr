@@ -26,6 +26,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G + separate 2G
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC 2G: ki = eb215756028d60e3275e613320aec880
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
 DAUC vector [0]: sqn = 32
@@ -45,6 +46,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G + separate 2G
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC 2G: ki = eb215756028d60e3275e613320aec880
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
 DAUC vector [0]: sqn = 32
@@ -68,6 +70,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
@@ -85,6 +88,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 39fa2f4e3d523d8619a73b4f65c3e14d
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 8704f5ba55d30000541dde77ea5b1d8c
@@ -103,6 +107,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys), with AUTS resync
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 897210a0f7de278f0b8213098e098a3f
 DAUC vector [0]: resync: auts = 979498b1f72d3e28c59fa2e72f9c
 DAUC vector [0]: resync: rand_auts = 39fa2f4e3d523d8619a73b4f65c3e14d
@@ -124,6 +129,7 @@ aud3g.u.umts.sqn == 23
 DAUC Computing 3 auth vectors: 3G only (2G derived from 3G keys)
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 23
 DAUC vector [0]: rand = 897210a0f7de278f0b8213098e098a3f
 DAUC vector [0]: sqn = 24
 DAUC vector [0]: autn = c6b9790dad4b00000cf322869ea6a481
@@ -163,6 +169,7 @@ Now reach sqn = 23 with AUTS and expect the same
 DAUC Computing 3 auth vectors: 3G only (2G derived from 3G keys), with AUTS resync
 DAUC 3G: k = eb215756028d60e3275e613320aec880
 DAUC 3G: opc = fb2a3d1b360f599abab99db8669f8308
+DAUC 3G: for sqn ind 0, previous sqn was 26
 DAUC vector [0]: rand = 897210a0f7de278f0b8213098e098a3f
 DAUC vector [0]: resync: auts = 979498b1f72d3e28c59fa2e72f9c
 DAUC vector [0]: resync: rand_auts = 39fa2f4e3d523d8619a73b4f65c3e14d

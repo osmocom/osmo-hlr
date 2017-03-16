@@ -4,6 +4,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 465b5ce8b199b49faa5f0a2ee238a6bc
 DAUC 3G: opc = cd63cb71954a9f4e48a5994e37a02baf
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 23553cbe9637a89d218ae64dae47bf35
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = aa689c64835000002bb2bf2f1faba139
@@ -25,6 +26,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = fec86ba6eb707ed08905757b1bb44b8f
 DAUC 3G: opc = 1006020f0a478bf6b699f15c062e42b3
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 9f7c8d021accf4db213ccff0c7f71a6a
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 33484dc2134b000091ec125f4840ed64
@@ -46,6 +48,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 9e5944aea94b81165c82fbf9f32db751
 DAUC 3G: opc = a64a507ae1a2a98bb88eb4210135dc87
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = ce83dbc54ac0274a157c17f80d017bd6
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = f0b9c08ad00e00005da4ccbbdfa29310
@@ -67,6 +70,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 4ab1deb05ca6ceb051fc98e77d026a84
 DAUC 3G: opc = dcf07cbd51855290b92a07a9891e523e
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 74b0cd6031a1c8339b2b6ce2b8c4a186
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 31e11a60913800006a7003718d5d82e5
@@ -88,6 +92,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 6c38a116ac280c454f59332ee35c8c4f
 DAUC 3G: opc = 3803ef5363b947c6aaa225e58fae3934
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = ee6466bc96202c5a557abbeff8babf63
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 45b0f69ab04c000053f2a822f2b3e824
@@ -109,6 +114,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 2d609d4db0ac5bf0d2c0de267014de0d
 DAUC 3G: opc = c35a0ab0bcbfc9252caff15f24efbde0
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 194aa756013896b74b4a2a3b0af4539e
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 7e6455f34cd300004a2a9f2f3a529b8c
@@ -130,6 +136,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = a530a7fe428fad1082c45eddfce13884
 DAUC 3G: opc = 27953e49bc8af6dcc6e730eb80286be3
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 3a4c2b3245c50eb5c71d08639395764d
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 88196c47984f00000a50c5f4056ccb68
@@ -151,6 +158,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = d9151cf04896e25830bf2e08267b8360
 DAUC 3G: opc = c4c93effe8a08138c203d4c27ce4e3d9
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = f761e5e93d603feb730e27556cb8a2ca
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 82a0f5287a5100006d6c0ff132426479
@@ -172,6 +180,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = a0e2971b6822e8d354a18cc235624ecb
 DAUC 3G: opc = 82a26f22bba9e9488f949a10d98e9cc4
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 08eff828b13fdb562722c65c7f30a9b2
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = a2f858aa9e7d00001c14f5fcd445bc46
@@ -193,6 +202,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 0da6f7ba86d5eac8a19cf563ac58642d
 DAUC 3G: opc = 0db1071f8767562ca43a0a64c41e8d08
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 679ac4dbacd7d233ff9d6806f4149ce3
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 4c539a26e1da000071cc0b769fd1aa96
@@ -214,6 +224,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 77b45843c88e58c10d202684515ed430
 DAUC 3G: opc = d483afae562409a326b5bb0b20c4d762
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 4c47eb3076dc55fe5106cb2034b8cd78
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 30ff25cdadd60000e08a00f7ed54d6fe
@@ -235,6 +246,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 729b17729270dd87ccdf1bfe29b4e9bb
 DAUC 3G: opc = 228c2f2f06ac3268a9e616ee16db4ba1
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 311c4c929744d675b720f3b7e9b1cbd0
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 5380d158cfc30000f4e1436e9f67e4b2
@@ -256,6 +268,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = d32dd23e89dc662354ca12eb79dd32fa
 DAUC 3G: opc = d22a4b4180a5325708a5ff70d9f67ec7
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = cf7d0ab1d94306950bf12018fbd46887
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 217af492728d00003bd338249751de80
@@ -277,6 +290,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = af7c65e1927221de591187a2c5987a53
 DAUC 3G: opc = a4cf5c8155c08a7eff418e5443b98e55
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 1f0f8578464fd59b64bed2d09436b57a
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 837fd7b744390000557a836fd534e542
@@ -298,6 +312,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 5bd7ecd3d3127a41d12539bed4e7cf71
 DAUC 3G: opc = 76089d3c0ff3efdc6e36721d4fceb747
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 59b75f14251c75031d0bcbac1c2c04c7
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 5be11495527d0000298064f82a439924
@@ -319,6 +334,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 6cd1c6ceb1e01e14f1b82316a90b7f3d
 DAUC 3G: opc = a219dc37f1dc7d66738b5843c799f206
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = f69b78f300a0568bce9f0cb93c4be4c9
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 1c408a858b1e0000e6e96310f83b5689
@@ -340,6 +356,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = b73a90cbcf3afb622dba83c58a8415df
 DAUC 3G: opc = df0c67868fa25f748b7044c6e7c245b8
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = b120f1c1a0102a2f507dd543de68281f
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = aefdaa5dddb90000c4741d698b7a7ed3
@@ -361,6 +378,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 5122250214c33e723a5dd523fc145fc0
 DAUC 3G: opc = 981d464c7c52eb6e5036234984ad0bcf
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 81e92b6c0ee0e12ebceba8d92a99dfa5
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = ada15aeb7b980000a99729b59d5688b2
@@ -382,6 +400,7 @@ aud3g.u.umts.sqn == 31
 DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
 DAUC 3G: k = 90dca4eda45b53cf0f12d7c9c3bc6a89
 DAUC 3G: opc = cb9cccc4b9258e6dca4760379fb82581
+DAUC 3G: for sqn ind 0, previous sqn was 31
 DAUC vector [0]: rand = 9fddc72092c6ad036b6e464789315b78
 DAUC vector [0]: sqn = 32
 DAUC vector [0]: autn = 83cfd54db9330000695685b2b9214472
