@@ -13,8 +13,7 @@ Build-Depends: debhelper (>= 9),
                libosmo-abis-dev,
                libosmo-netif-dev,
                libdbd-sqlite3,
-               libsqlite3-dev,
-               hardening-wrapper
+               libsqlite3-dev
 Standards-Version: 3.9.6
 Vcs-Browser: http://cgit.osmocom.org/osmo-hlr
 Vcs-Git: git://git.osmocom.org/osmo-hlr
