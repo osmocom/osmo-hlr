@@ -24,6 +24,14 @@
 
 #include <osmocom/core/logging.h>
 #include <osmocom/vty/vty.h>
+#include <osmocom/vty/command.h>
+#include "hlr.h"
+
+enum hlr_vty_node {
+	HLR_NODE = _LAST_OSMOVTY_NODE + 1,
+	GSUP_NODE,
+};
 
 int hlr_vty_is_config_node(struct vty *vty, int node);
-void hlr_vty_init(const struct log_info *cat);
+int hlr_vty_go_parent(struct vty *vty);
+void hlr_vty_init(struct hlr *hlr, const struct log_info *cat);

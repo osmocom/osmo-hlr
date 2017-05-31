@@ -415,6 +415,7 @@ static struct vty_app_info vty_info = {
 	.version	= PACKAGE_VERSION,
 	.copyright	= vlr_copyright,
 	.is_config_node	= hlr_vty_is_config_node,
+	.go_parent_cb   = hlr_vty_go_parent,
 };
 
 int main(int argc, char **argv)
@@ -435,7 +436,7 @@ int main(int argc, char **argv)
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
-	hlr_vty_init(&hlr_log_info);
+	hlr_vty_init(g_hlr, &hlr_log_info);
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {
@@ -465,8 +466,8 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, NULL, 2222, read_cb,
-					    &g_lu_ops);
+	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, g_hlr->gsup_bind_addr, 2222,
+					    read_cb, &g_lu_ops);
 	if (!g_hlr->gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);

@@ -34,4 +34,7 @@ struct hlr {
 	/* Control Interface */
 	struct ctrl_handle *ctrl;
 	const char *ctrl_bind_addr;
+
+	/* Local bind addr */
+	char *gsup_bind_addr;
 };
