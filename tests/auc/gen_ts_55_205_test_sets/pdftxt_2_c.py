@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
  
 # Convert test sets pasted from 3GPP TS 55.205 to C code.
  
