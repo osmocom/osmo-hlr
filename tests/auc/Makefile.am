@@ -22,11 +22,9 @@ EXTRA_DIST = \
 	auc_ts_55_205_test_sets.err \
 	$(NULL)
 
+check_PROGRAMS = auc_ts_55_205_test_sets
 
-noinst_PROGRAMS = \
-	auc_test \
-	auc_ts_55_205_test_sets \
-	$(NULL)
+noinst_PROGRAMS = auc_test
 
 auc_test_SOURCES = \
 	auc_test.c \

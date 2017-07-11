@@ -31,5 +31,7 @@ cd "$base"
 autoreconf --install --force
 ./configure
 $MAKE $PARALLEL_MAKE
-$MAKE check || cat-testlogs.sh
-$MAKE distcheck || cat-testlogs.sh
+if [ "x$label" != "xFreeBSD_amd64" ]; then
+    $MAKE check || cat-testlogs.sh
+    $MAKE distcheck || cat-testlogs.sh
+fi
