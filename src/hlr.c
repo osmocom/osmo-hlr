@@ -466,7 +466,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, g_hlr->gsup_bind_addr, 2222,
+	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, g_hlr->gsup_bind_addr, OSMO_GSUP_PORT,
 					    read_cb, &g_lu_ops);
 	if (!g_hlr->gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
