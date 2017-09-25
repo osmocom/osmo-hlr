@@ -163,6 +163,46 @@ class TestCtrlBase(unittest.TestCase):
         return responses
 
 
+class TestCtrlHLR(TestCtrlBase):
+
+    HLR_DB = 'hlr_ctrl_test.db'
+    HLR_SQL = '%s/sql/hlr.sql' % confpath
+    HLR_TEST_SQL = '%s/tests/test_subscriber.sql' % confpath
+
+    def setUp(self):
+        print('\n')
+        print(os.getcwd())
+        assert subprocess.call('sqlite3 %s < %s' % (self.HLR_DB, self.HLR_SQL), shell=True) == 0
+        assert subprocess.call('sqlite3 %s < %s' % (self.HLR_DB, self.HLR_TEST_SQL), shell=True) == 0
+        super(TestCtrlHLR, self).setUp()
+
+    def tearDown(self):
+        super(TestCtrlHLR, self).tearDown()
+        os.unlink("hlr_ctrl_test.db")
+
+    def ctrl_command(self):
+        return ["./src/osmo-hlr", "-c", "doc/examples/osmo-hlr.cfg", '-l', 'hlr_ctrl_test.db']
+
+    def ctrl_app(self):
+        return (4259, "./src/osmo-hlr", "OsmoHLR", "hlr")
+
+    def testCtrlErrs(self):
+        r = self.do_get('invalid')
+        self.assertEquals(r['mtype'], 'ERROR')
+        self.assertEquals(r['error'], 'Command not found')
+
+    def testEnableDisablePs(self):
+        self.assert_set('enable-ps', '901990000000001', 'OK')
+        self.assert_set('status-ps', '901990000000001', '1')
+        self.assert_set('enable-ps', '901990000000001', 'OK')
+        self.assert_set('status-ps', '901990000000001', '1')
+        self.assert_set('disable-ps', '901990000000001', 'OK')
+        self.assert_set('status-ps', '901990000000001', '0')
+        self.assert_set('disable-ps', '901990000000001', 'OK')
+        self.assert_set('status-ps', '901990000000001', '0')
+        self.assert_set('enable-ps', '901990000000001', 'OK')
+        self.assert_set('status-ps', '901990000000001', '1')
+
 if __name__ == '__main__':
     import argparse
     import sys
@@ -193,6 +233,8 @@ if __name__ == '__main__':
     os.chdir(workdir)
     print "Running tests for specific control commands"
     suite = unittest.TestSuite()
+    test = unittest.TestLoader().loadTestsFromTestCase(TestCtrlHLR)
+    suite.addTest(test)
     res = unittest.TextTestRunner(verbosity=verbose_level).run(suite)
     sys.exit(len(res.errors) + len(res.failures))
 
