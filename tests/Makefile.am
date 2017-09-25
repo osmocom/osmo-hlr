@@ -25,6 +25,7 @@ EXTRA_DIST = \
 	testsuite.at \
 	$(srcdir)/package.m4 \
 	$(TESTSUITE) \
+	ctrl_test_runner.py \
 	$(NULL)
 
 TESTSUITE = $(srcdir)/testsuite
@@ -33,8 +34,17 @@ DISTCLEANFILES = \
 	atconfig \
 	$(NULL)
 
+if ENABLE_EXT_TESTS
+python-tests: $(BUILT_SOURCES)
+	$(PYTHON) $(srcdir)/ctrl_test_runner.py -w $(abs_top_builddir) -v
+else
+python-tests: $(BUILT_SOURCES)
+	echo "Not running python-based tests (determined at configure-time)"
+endif
+
 check-local: atconfig $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
+	$(MAKE) $(AM_MAKEFLAGS) python-tests
 
 installcheck-local: atconfig $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir)' \

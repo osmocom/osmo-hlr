@@ -35,7 +35,7 @@ set -x
 
 cd "$base"
 autoreconf --install --force
-./configure
+./configure --enable-external-tests
 $MAKE $PARALLEL_MAKE
 if [ "x$label" != "xFreeBSD_amd64" ]; then
     $MAKE check || cat-testlogs.sh
