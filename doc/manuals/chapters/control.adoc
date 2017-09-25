@@ -1,0 +1,101 @@
+[[hlr-ctrl]]
+== Control interface
+
+The actual protocol is described in <<common-control-if>>, the variables common
+to all programs using it are described in <<ctrl_common_vars>>. This section
+describes the CTRL interface variables specific to OsmoHLR.
+
+All subscriber variables are available by different selectors, which are freely
+interchangeable:
+
+.Subscriber selectors available on OsmoHLR's Control interface
+[options="header",width="100%",cols="35%,65%"]
+|===
+|Selector|Comment
+|subscriber.*by-imsi-*'123456'.*|Subscriber selector by IMSI, replace "123456" with the actual IMSI
+|subscriber.*by-msisdn-*'123456'.*|Subscriber selector by MSISDN
+|subscriber.*by-id-*'123456'.*|Subscriber selector by database ID
+|===
+
+Each of the above selectors feature all of these control variables:
+
+.Subscriber variables available on OsmoHLR's Control interface
+[options="header",width="100%",cols="35%,8%,8%,8%,41%"]
+|===
+|Name|Access|Trap|Value|Comment
+|subscriber.by-\*.*info*|R|No||List (short) subscriber information
+|subscriber.by-\*.*info-aud*|R|No||List subscriber authentication tokens
+|subscriber.by-\*.*info-all*|R|No||List both 'info' and 'info-aud' in one
+|subscriber.by-\*.*cs-enabled*|RW|No|'1' or '0'|Enable/disable circuit-switched access
+|subscriber.by-\*.*ps-enabled*|RW|No|'1' or '0'|Enable/disable packet-switched access
+|===
+
+=== subscriber.by-*.info, info-aud, info-all
+
+Query the HLR database and return current subscriber record, in multiple lines
+of the format
+
+----
+name<tab>value
+----
+
+To keep the reply as short as possible, most values are omitted if they are
+empty or reflect the default. These are the returned values and their presence
+modalities; for their meaning, see <<subscriber-params>>:
+
+.Returned values by OsmoHLR's 'info', 'info-all' and 'info-aud' commands
+[options="header",width="100%",cols="15%,15%,30%,40%"]
+|===
+|Returned by 'info-all' and|Name|Format|Presence
+|'info'|id|-9223372036854775808 .. 9223372036854775807 (usually not negative)|always
+|'info'|imsi|6 to 15 decimal digits|always
+|'info'|msisdn|1 to 15 decimal digits|when non-empty
+|'info'|nam_cs|'1' or '0'|when '0'
+|'info'|nam_ps|'1' or '0'|when '0'
+|'info'|vlr_number|up to 15 decimal digits|when non-empty
+|'info'|sgsn_number|up to 15 decimal digits|when non-empty
+|'info'|sgsn_address||when non-empty
+|'info-aud'|aud2g.algo|one of 'comp128v1', 'comp128v2', 'comp128v3' or 'xor'|when valid 2G auth data is set
+|'info-aud'|aud2g.ki|32 hexadecimal digits|when valid 2G auth data is set
+|'info-aud'|aud3g.algo|so far always 'milenage'|when valid 3G auth data is set
+|'info-aud'|aud3g.k|32 hexadecimal digits|when valid 3G auth data is set
+|'info-aud'|aud3g.op|32 hexadecimal digits|when valid 3G auth data is set, *not* when OPC is set
+|'info-aud'|aud3g.opc|32 hexadecimal digits|when valid 3G auth data is set, *not* when OP is set
+|'info-aud'|aud3g.ind_bitlen|0..28|when valid 3G auth data is set
+|'info-aud'|aud3g.sqn|0 .. 18446744073709551615|when valid 3G auth data is set
+|===
+
+This is an example Control Interface transcript that illustrates the various
+'info' commands:
+
+----
+include::../example_subscriber_info.ctrl[]
+----
+
+=== subscriber.by-*.ps-enabled, cs-enabled
+
+Disable or enable packet-/circuit-switched access for the given IMSI;
+
+* 'ps-enabled' switches access to GPRS or UMTS data services,
+* 'cs-enabled' switches access to voice services.
+
+When disabled, the next time this subscriber attempts to do a Location Updating
+GSUP operation for the given domain (i.e. from the SGSN for 'ps-enabled', from
+the MSC/VLR for 'cs-enabled'), it will be rejected by OsmoHLR. Currently
+connected GSUP clients will be notified via GSUP when a subscriber is being
+disabled, so that the subscriber can be dropped in case it is currently
+attached.
+
+The current 'ps-enabled'/'cs-enabled' status can be queried by 'GET' commands,
+and also by looking at 'nam_ps' and 'nam_cs' in a 'subscriber.by-*.info'
+response.
+
+A value of "1" indicates that the given domain is enabled, which is the
+default; a value of "0" disables access.
+
+This is an example transcript that illustrates 'ps-enabled' and 'cs-enabled'
+commands:
+
+----
+include::../example_subscriber_cs_ps_enabled.ctrl[]
+----

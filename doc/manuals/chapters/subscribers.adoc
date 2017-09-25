@@ -1,0 +1,59 @@
+== Managing Subscribers
+
+Subscribers are kept in a local SQLite database file and can be managed via VTY
+and CTRL interfaces.
+
+See this section for some examples, and also refer to the OsmoHLR VTY reference
+manual <<vty-ref-osmohlr>> as well as the Control interface described in
+<<hlr-ctrl>>.
+
+=== Example: Add/Update/Delete Subscriber via VTY
+
+The following telnet VTY session adds a subscriber complete with 2G and 3G
+authentication tokens, and finally removes the subscriber again; it assumes
+that osmo-hlr is running and listening for telnet VTY connections on localhost:
+
+----
+$ telnet localhost 4258
+include::../example_subscriber_add_update_delete.vty[]
+----
+
+[[subscriber-params]]
+=== Subscriber Parameters
+
+The following parameters are managed for each subscriber of the HLR, modelled
+roughly after 3GPP TS 23.008, version 13.3.0; note that not all of these
+parameters are necessarily in active use:
+
+.OsmoHLR's subscriber parameters
+[options="header",width="100%",cols="20%,20%,60%"]
+|===
+|Name|Example|Description
+|imsi|901700000014701|identity of the SIM/USIM, 3GPP TS 23.008 chapter 2.1.1.1
+|msisdn|2342123|number to dial to reach this subscriber (multiple MSISDNs can be stored per subscriber), 3GPP TS 23.008 chapter 2.1.2
+|imeisv|4234234234234275|identity of the mobile device and software version, 3GPP TS 23.008 chapter 2.2.3
+|aud2g.algo|comp128v3|Authentication algorithm ID for 2G, corresponds to enum osmo_auth_algo
+|aud2g.ki||Subscriber's secret key (128bit)
+|aud3g.algo|milenage|Authentication algorithm ID for 3G and UMTS AKA, corresponds to enum osmo_auth_algo
+|aud3g.k|(32 hexadecimal digits)|Subscriber's secret key (128bit)
+|aud3g.op|(32 hexadecimal digits)|Operator's secret key (128bit)
+|aud3g.opc|(32 hexadecimal digits)|Secret key derived from OP and K (128bit), alternative to using OP which does not disclose OP to subscribers
+|aud3g.sqn|123|Sequence number of last used key (64bit unsigned)
+|aud3g.ind_bitlen|5|Nr of index bits at lower SQN end
+|apn||
+|vlr_number||3GPP TS 23.008 chapter 2.4.5
+|hlr_number||3GPP TS 23.008 chapter 2.4.6
+|sgsn_number||3GPP TS 23.008 chapter 2.4.8.1
+|sgsn_address||3GPP TS 23.008 chapter 2.13.10
+|ggsn_number||3GPP TS 23.008 chapter 2.4.8.2
+|gmlc_number||3GPP TS 23.008 chapter 2.4.9.2
+|smsc_number||3GPP TS 23.008 chapter 2.4.23
+|periodic_lu_tmr||3GPP TS 23.008 chapter 2.4.24
+|periodic_rau_tau_tmr||3GPP TS 23.008 chapter 2.13.115
+|nam_cs|1|Enable/disable voice access (3GPP TS 23.008 chapter 2.1.1.2: network access mode)
+|nam_ps|0|Enable/disable data access (3GPP TS 23.008 chapter 2.1.1.2: network access mode)
+|lmsi||3GPP TS 23.008 chapter 2.1.8
+|ms_purged_cs|0|3GPP TS 23.008 chapter 2.7.5
+|ms_purged_ps|1|3GPP TS 23.008 chapter 2.7.6
+|===
+

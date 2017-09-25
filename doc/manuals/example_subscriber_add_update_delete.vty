@@ -1,0 +1,34 @@
+OsmoHLR> enable
+OsmoHLR# subscriber imsi 123456789023000 create
+% Created subscriber 123456789023000
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+
+OsmoHLR# subscriber imsi 123456789023000 update msisdn 423
+% Updated subscriber IMSI='123456789023000' to MSISDN='423'
+
+OsmoHLR# subscriber msisdn 423 update aud3g milenage k deaf0ff1ced0d0dabbedd1ced1cef00d opc cededeffacedacefacedbadfadedbeef
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=5
+
+OsmoHLR# subscriber msisdn 423 update aud2g comp128v3 ki beefedcafefaceacedaddeddecadefee
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=beefedcafefaceacedaddeddecadefee
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=5
+
+OsmoHLR# subscriber imsi 123456789023000 delete
+% Deleted subscriber for IMSI '123456789023000'

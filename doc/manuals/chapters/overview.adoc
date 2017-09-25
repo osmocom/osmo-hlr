@@ -1,0 +1,69 @@
+[[overview]]
+== Overview
+
+This manual should help you getting started with OsmoHLR. It will cover
+aspects of configuring and running the OsmoHLR.
+
+[[intro_overview]]
+=== About OsmoHLR
+
+OsmoHLR is Osmocom's minimal implementation of a Home Location Register (HLR)
+for 2G and 3G GSM and UMTS mobile core networks. Its interfaces are:
+
+- GSUP, serving towards OsmoMSC and OsmoSGSN;
+- A local SQLite database;
+- The Osmocom typical telnet VTY and CTRL interfaces.
+
+Originally, the OpenBSC project's OsmoNITB all-in-one implementation had an
+integrated HLR, managing subscribers and SMS in the same local database. Along
+with the separate OsmoMSC and its new VLR component, OsmoHLR was implemented
+from scratch to alleviate various shortcomings of the internal HLR:
+
+- The separate HLR allows using centralized subscriber management for both
+  circuit-switched and packet-switched domains (i.e. one OsmoHLR for both
+  OsmoMSC and OsmoSGSN).
+
+- VLR and HLR brought full UMTS AKA (Authentication and Key Agreement) support,
+  i.e. Milenage authentication in both the full 3G variant as well as the
+  backwards compatible 2G variant.
+
+- In contrast to the OsmoNITB, the specific way the new OsmoMSC's VLR accesses
+  OsmoHLR brings fully asynchronous subscriber database access.
+
+Find the OsmoHLR issue tracker and wiki online at
+
+- https://osmocom.org/projects/osmo-hlr
+- https://osmocom.org/projects/osmo-hlr/wiki
+
+
+[[fig-gsm]]
+.Typical GSM network architecture used with OsmoHLR
+[graphviz]
+----
+digraph G {
+	rankdir=LR;
+	subgraph cluster_hlr {
+		label = "OsmoHLR";
+		GSUP [label="GSUP server"]
+		DB [label="SQLite DB"]
+		GSUP->DB
+		DB->CTRL [dir="back"]
+		DB->VTY [dir="back"]
+	}
+
+	Admin [label="Admin and\nMaintenance"]
+	SW [label="3rd party software\nintegration"]
+	VTY->Admin [dir="back"]
+	CTRL->SW [dir="back"]
+		
+	MSC [label="MSC/VLR"]
+	MSC->GSUP  [label="GSUP"]
+	SGSN->GSUP [label="GSUP"]
+
+	BSC->MSC
+	HNBGW->MSC
+	HNBGW->SGSN
+	PCU->SGSN
+}
+----
+
