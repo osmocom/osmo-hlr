@@ -38,9 +38,9 @@ struct db_context *db_open(void *ctx, const char *fname);
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		     struct osmo_sub_auth_data *aud2g,
 		     struct osmo_sub_auth_data *aud3g,
-		     uint64_t *suscr_id);
+		     int64_t *subscr_id);
 
-int db_update_sqn(struct db_context *dbc, uint64_t id,
+int db_update_sqn(struct db_context *dbc, int64_t id,
 		      uint64_t new_sqn);
 
 int db_get_auc(struct db_context *dbc, const char *imsi,
@@ -57,7 +57,7 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 struct hlr_subscriber {
 	struct llist_head list;
 
-	uint64_t	id;
+	int64_t		id;
 	char		imsi[GSM23003_IMSI_MAX_DIGITS+1];
 	char		msisdn[GT_MAX_DIGITS+1];
 	/* imeisv? */

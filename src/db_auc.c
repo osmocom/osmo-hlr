@@ -33,7 +33,7 @@
 #define LOGAUC(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
 /* update the SQN for a given subscriber ID */
-int db_update_sqn(struct db_context *dbc, uint64_t id,
+int db_update_sqn(struct db_context *dbc, int64_t id,
 		      uint64_t new_sqn)
 {
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_UPD_SQN];
@@ -77,7 +77,7 @@ int db_update_sqn(struct db_context *dbc, uint64_t id,
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		     struct osmo_sub_auth_data *aud2g,
 		     struct osmo_sub_auth_data *aud3g,
-		     uint64_t *subscr_id)
+		     int64_t *subscr_id)
 {
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_BY_IMSI];
 	int ret = 0;
@@ -192,7 +192,7 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	       const uint8_t *auts)
 {
 	struct osmo_sub_auth_data aud2g, aud3g;
-	uint64_t subscr_id;
+	int64_t subscr_id;
 	int ret = 0;
 	int rc;
 
