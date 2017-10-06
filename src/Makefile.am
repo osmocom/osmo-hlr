@@ -23,6 +23,7 @@ noinst_HEADERS = \
 	rand.h \
 	ctrl.h \
 	hlr_vty.h \
+	hlr_vty_subscr.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -46,6 +47,7 @@ osmo_hlr_SOURCES = \
 	logging.c \
 	rand_urandom.c \
 	hlr_vty.c \
+	hlr_vty_subscr.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \

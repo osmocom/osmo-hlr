@@ -26,6 +26,7 @@
 #include <osmocom/vty/logging.h>
 
 #include "hlr_vty.h"
+#include "hlr_vty_subscr.h"
 
 static struct hlr *g_hlr = NULL;
 
@@ -135,4 +136,6 @@ void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 	install_default(GSUP_NODE);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
+
+	hlr_vty_subscriber_init(hlr);
 }

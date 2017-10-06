@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	testsuite.at \
 	$(srcdir)/package.m4 \
 	$(TESTSUITE) \
+	test_subscriber.vty \
 	ctrl_test_runner.py \
 	$(NULL)
 
@@ -36,10 +37,26 @@ DISTCLEANFILES = \
 	$(NULL)
 
 if ENABLE_EXT_TESTS
-python-tests: $(BUILT_SOURCES)
+python-tests:
+# don't run vty and ctrl tests concurrently so that the ports don't conflict
+	$(MAKE) vty-test
 	$(PYTHON) $(srcdir)/ctrl_test_runner.py -w $(abs_top_builddir) -v
+
+VTY_TEST_DB = hlr_vty_test.db
+
+# To update the VTY script from current application behavior,
+# pass -u to vty_script_runner.py by doing:
+#   make vty-test U=-u
+vty-test:
+	-rm -f $(VTY_TEST_DB)
+	sqlite3 $(VTY_TEST_DB) < $(top_srcdir)/sql/hlr.sql
+	osmo_verify_transcript_vty.py -v \
+		-n OsmoHLR -p 4258 \
+		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l hlr_vty_test.db" \
+		$(U) $(srcdir)/*.vty
+	-rm -f $(VTY_TEST_DB)
 else
-python-tests: $(BUILT_SOURCES)
+python-tests:
 	echo "Not running python-based tests (determined at configure-time)"
 endif
 

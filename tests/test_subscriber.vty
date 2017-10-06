@@ -1,0 +1,348 @@
+OsmoHLR> enable
+
+OsmoHLR# list
+...
+  subscriber (imsi|msisdn|id) IDENT show
+  subscriber imsi IDENT create
+  subscriber (imsi|msisdn|id) IDENT delete
+  subscriber (imsi|msisdn|id) IDENT update msisdn MSISDN
+  subscriber (imsi|msisdn|id) IDENT update aud2g none
+  subscriber (imsi|msisdn|id) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
+  subscriber (imsi|msisdn|id) IDENT update aud3g none
+  subscriber (imsi|msisdn|id) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
+
+OsmoHLR# subscriber?
+  subscriber  Subscriber management commands
+
+OsmoHLR# subscriber ?
+  imsi    Identify subscriber by IMSI
+  msisdn  Identify subscriber by MSISDN (phone number)
+  id      Identify subscriber by database ID
+
+OsmoHLR# subscriber imsi ?
+  IDENT  IMSI/MSISDN/ID of the subscriber
+OsmoHLR# subscriber msisdn ?
+  IDENT  IMSI/MSISDN/ID of the subscriber
+OsmoHLR# subscriber id ?
+  IDENT  IMSI/MSISDN/ID of the subscriber
+
+OsmoHLR# subscriber imsi 123456789023000 show
+% No subscriber for imsi = '123456789023000'
+OsmoHLR# subscriber id 1 show
+% No subscriber for id = '1'
+OsmoHLR# subscriber msisdn 12345 show
+% No subscriber for msisdn = '12345'
+
+OsmoHLR# subscriber imsi 1234567890230001 create
+% Not a valid IMSI: 1234567890230001
+OsmoHLR# subscriber imsi 12345678902300x create
+% Not a valid IMSI: 12345678902300x
+OsmoHLR# subscriber imsi 12345 create
+% Not a valid IMSI: 12345
+
+OsmoHLR# subscriber imsi 123456789023000 create
+% Created subscriber 123456789023000
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+OsmoHLR# subscriber msisdn 12345 show
+% No subscriber for msisdn = '12345'
+
+OsmoHLR# subscriber imsi 123456789023000 update msisdn 12345
+% Updated subscriber IMSI='123456789023000' to MSISDN='12345'
+
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 12345
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 12345
+OsmoHLR# subscriber msisdn 12345 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 12345
+
+OsmoHLR# subscriber msisdn 12345 update msisdn 423
+% Updated subscriber IMSI='123456789023000' to MSISDN='423'
+OsmoHLR# subscriber msisdn 12345 show
+% No subscriber for msisdn = '12345'
+
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+
+OsmoHLR# subscriber imsi 123456789023000 update ?
+  msisdn  Set MSISDN (phone number) of the subscriber
+  aud2g   Set 2G authentication data
+  aud3g   Set UMTS authentication data (3G, and 2G with UMTS AKA)
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g ?
+  none       Delete 2G authentication data
+  comp128v1  Use COMP128v1 algorithm
+  comp128v2  Use COMP128v2 algorithm
+  comp128v3  Use COMP128v3 algorithm
+  xor        Use XOR algorithm
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ?
+  ki  Set Ki Encryption Key
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki ?
+  KI  Ki as 32 hexadecimal characters
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki val ?
+  <cr>  
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g xor ki Deaf0ff1ceD0d0DabbedD1ced1ceF00d
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: XOR
+             KI=deaf0ff1ced0d0dabbedd1ced1cef00d
+
+OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki BeefedCafeFaceAcedAddedDecadeFee
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v1
+             KI=beefedcafefaceacedaddeddecadefee
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v1
+             KI=beefedcafefaceacedaddeddecadefee
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v1
+             KI=beefedcafefaceacedaddeddecadefee
+
+OsmoHLR# subscriber id 1 update aud2g comp128v2 ki CededEffacedAceFacedBadFadedBeef
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v2
+             KI=cededeffacedacefacedbadfadedbeef
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v2
+             KI=cededeffacedacefacedbadfadedbeef
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v2
+             KI=cededeffacedacefacedbadfadedbeef
+
+OsmoHLR# subscriber msisdn 423 update aud2g comp128v3 ki C01ffedC1cadaeAc1d1f1edAcac1aB0a
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+
+OsmoHLR# subscriber id 1 update aud2g nonsense ki BeefedCafeFaceAcedAddedDecadeFee
+% Unknown command.
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+
+OsmoHLR# subscriber id 1 update aud2g milenage ki BeefedCafeFaceAcedAddedDecadeFee
+% Unknown command.
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+
+OsmoHLR# subscriber id 1 update aud2g xor ki CoiffedCicadaeAcidifiedAcaciaBoa
+% Invalid value for KI: 'CoiffedCicadaeAcidifiedAcaciaBoa'
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+
+OsmoHLR# subscriber id 1 update aud2g xor ki C01ffedC1cadaeAc1d1f1edAcac1aB0aX
+% Invalid value for KI: 'C01ffedC1cadaeAc1d1f1edAcac1aB0aX'
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v3
+             KI=c01ffedc1cadaeac1d1f1edacac1ab0a
+
+OsmoHLR# subscriber id 1 update aud2g none
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g ?
+  none      Delete 3G authentication data
+  milenage  Use Milenage algorithm
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage ?
+  k  Set Encryption Key K
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k ?
+  K  K as 32 hexadecimal characters
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d ?
+  op   Set OP key
+  opc  Set OPC key
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc ?
+  OP_C  OP or OPC as 32 hexadecimal characters
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CededEffacedAceFacedBadFadedBeef ?
+  [ind-bitlen]  Set IND bit length
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CededEffacedAceFacedBadFadedBeef ind-bitlen ?
+  [<0-28>]  IND bit length value (default: 5)
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CededEffacedAceFacedBadFadedBeef
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=5
+
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d op DeafBeddedBabeAcceededFadedDecaf
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OP=deafbeddedbabeacceededfadeddecaf
+             IND-bitlen=5
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g none
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CededEffacedAceFacedBadFadedBeef ind-bitlen 23
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=23
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k CoiffedCicadaeAcidifiedAcaciaBoa opc CededEffacedAceFacedBadFadedBeef
+% Invalid value for K: 'CoiffedCicadaeAcidifiedAcaciaBoa'
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=23
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CoiffedCicadaeAcidifiedAcaciaBoa
+% Invalid value for OPC: 'CoiffedCicadaeAcidifiedAcaciaBoa'
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=23
+
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d op CoiffedCicadaeAcidifiedAcaciaBoa
+% Invalid value for OP: 'CoiffedCicadaeAcidifiedAcaciaBoa'
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=23
+
+OsmoHLR# subscriber id 1 update aud2g comp128v2 ki CededEffacedAceFacedBadFadedBeef
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+    2G auth: COMP128v2
+             KI=cededeffacedacefacedbadfadedbeef
+    3G auth: MILENAGE
+             K=deaf0ff1ced0d0dabbedd1ced1cef00d
+             OPC=cededeffacedacefacedbadfadedbeef
+             IND-bitlen=23
+
+OsmoHLR# subscriber imsi 123456789023000 delete
+% Deleted subscriber for IMSI '123456789023000'
+
+OsmoHLR# subscriber imsi 123456789023000 show
+% No subscriber for imsi = '123456789023000'
+OsmoHLR# subscriber id 1 show
+% No subscriber for id = '1'
+OsmoHLR# subscriber msisdn 423 show
+% No subscriber for msisdn = '423'
+
+OsmoHLR# subscriber imsi 123456789023000 create
+% Created subscriber 123456789023000
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+
+OsmoHLR# subscriber imsi 123456789023000 delete
+% Deleted subscriber for IMSI '123456789023000'
