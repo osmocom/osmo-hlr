@@ -71,8 +71,8 @@ struct hlr_subscriber {
 	bool		ms_purged_ps;
 };
 
-int db_subscr_get(struct db_context *dbc, const char *imsi,
-		  struct hlr_subscriber *subscr);
+int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
+			  struct hlr_subscriber *subscr);
 int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable);
 int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,

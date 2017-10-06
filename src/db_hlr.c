@@ -37,8 +37,8 @@
 			x[sizeof(x)-1] = '\0';				\
 		} while (0)
 
-int db_subscr_get(struct db_context *dbc, const char *imsi,
-		  struct hlr_subscriber *subscr)
+int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
+			  struct hlr_subscriber *subscr)
 {
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMSI];
 	int rc;

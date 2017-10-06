@@ -95,7 +95,7 @@ bool lu_op_fill_subscr(struct lu_operation *luop, struct db_context *dbc,
 {
 	struct hlr_subscriber *subscr = &luop->subscr;
 
-	if (db_subscr_get(dbc, imsi, subscr) < 0)
+	if (db_subscr_get_by_imsi(dbc, imsi, subscr) < 0)
 		return false;
 
 	return true;

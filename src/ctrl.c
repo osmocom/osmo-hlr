@@ -38,7 +38,7 @@ static int handle_cmd_ps(struct hlr *ctx, struct ctrl_cmd *cmd, bool enable)
 	struct lu_operation *luop = NULL;
 	struct osmo_gsup_conn *co;
 
-	if (db_subscr_get(ctx->dbc, cmd->value, NULL) < 0) {
+	if (db_subscr_get_by_imsi(ctx->dbc, cmd->value, NULL) < 0) {
 		cmd->reply = "Subscriber Unknown in HLR";
 		return CTRL_CMD_ERROR;
 	}
