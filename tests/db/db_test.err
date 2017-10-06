@@ -29,7 +29,6 @@ struct hlr_subscriber {
 
 db_subscr_create(dbc, imsi0) --> -EIO
 DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
-DDB Error in sqlite3_reset: 2067
 DAUC IMSI='123456789000000': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
@@ -40,12 +39,10 @@ struct hlr_subscriber {
 
 db_subscr_create(dbc, imsi1) --> -EIO
 DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
-DDB Error in sqlite3_reset: 2067
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_create(dbc, imsi1) --> -EIO
 DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
-DDB Error in sqlite3_reset: 2067
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
@@ -56,12 +53,10 @@ struct hlr_subscriber {
 
 db_subscr_create(dbc, imsi2) --> -EIO
 DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
-DDB Error in sqlite3_reset: 2067
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_create(dbc, imsi2) --> -EIO
 DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
-DDB Error in sqlite3_reset: 2067
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0

@@ -70,20 +70,10 @@ static void sql3_sql_log_cb(void *arg, sqlite3 *s3, const char *stmt, int type)
 }
 
 /* remove bindings and reset statement to be re-executed */
-bool db_remove_reset(sqlite3_stmt *stmt)
+void db_remove_reset(sqlite3_stmt *stmt)
 {
-	int rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Error clerearing bindings: %d\n", rc);
-		return false;
-	}
-
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
-		return false;
-	}
-	return true;
+	sqlite3_clear_bindings(stmt);
+	sqlite3_reset(stmt);
 }
 
 /** bind text arg and do proper cleanup in case of failure. If param_name is
