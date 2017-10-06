@@ -40,7 +40,7 @@
 int db_subscr_get(struct db_context *dbc, const char *imsi,
 		  struct hlr_subscriber *subscr)
 {
-	sqlite3_stmt *stmt = dbc->stmt[SEL_BY_IMSI];
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMSI];
 	int rc;
 
 	if (!db_bind_imsi(stmt, imsi))
@@ -83,7 +83,7 @@ int db_subscr_get(struct db_context *dbc, const char *imsi,
 int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
 {
 	sqlite3_stmt *stmt =
-		dbc->stmt[enable ? SET_NAM_PS_BY_IMSI : UNSET_NAM_PS_BY_IMSI];
+		dbc->stmt[enable ? DB_STMT_SET_NAM_PS_BY_IMSI : DB_STMT_UNSET_NAM_PS_BY_IMSI];
 	int rc;
 
 	if (!db_bind_imsi(stmt, imsi))
@@ -111,15 +111,15 @@ int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,
 		 const char *vlr_or_sgsn_number, bool lu_is_ps)
 {
-	sqlite3_stmt *stmt = dbc->stmt[UPD_VLR_BY_ID];
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
 	const char *txt;
 	int rc, ret = 0;
 
 	if (lu_is_ps) {
-		stmt = dbc->stmt[UPD_SGSN_BY_ID];
+		stmt = dbc->stmt[DB_STMT_UPD_SGSN_BY_ID];
 		txt = subscr->sgsn_number;
 	} else {
-		stmt = dbc->stmt[UPD_VLR_BY_ID];
+		stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
 		txt = subscr->vlr_number;
 	}
 
@@ -150,13 +150,13 @@ out:
 
 int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
 {
-	sqlite3_stmt *stmt = dbc->stmt[UPD_VLR_BY_ID];
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
 	int rc, ret = 1;
 
 	if (is_ps)
-		stmt = dbc->stmt[UPD_PURGE_PS_BY_IMSI];
+		stmt = dbc->stmt[DB_STMT_UPD_PURGE_PS_BY_IMSI];
 	else
-		stmt = dbc->stmt[UPD_PURGE_CS_BY_IMSI];
+		stmt = dbc->stmt[DB_STMT_UPD_PURGE_CS_BY_IMSI];
 
 	if (!db_bind_imsi(stmt, imsi))
 		return -EINVAL;

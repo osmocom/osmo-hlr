@@ -36,7 +36,7 @@
 int db_update_sqn(struct db_context *dbc, uint64_t id,
 		      uint64_t new_sqn)
 {
-	sqlite3_stmt *stmt = dbc->stmt[AUC_UPD_SQN];
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_UPD_SQN];
 	int rc;
 
 	/* bind new SQN and subscriber ID */
@@ -79,7 +79,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		     struct osmo_sub_auth_data *aud3g,
 		     uint64_t *subscr_id)
 {
-	sqlite3_stmt *stmt = dbc->stmt[AUC_BY_IMSI];
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_BY_IMSI];
 	int ret = 0;
 	int rc;
 

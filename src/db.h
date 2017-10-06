@@ -4,22 +4,22 @@
 #include <sqlite3.h>
 
 enum stmt_idx {
-	SEL_BY_IMSI		= 0,
-	UPD_VLR_BY_ID		= 1,
-	UPD_SGSN_BY_ID		= 2,
-	AUC_BY_IMSI		= 3,
-	AUC_UPD_SQN		= 4,
-	UPD_PURGE_CS_BY_IMSI	= 5,
-	UPD_PURGE_PS_BY_IMSI	= 6,
-	SET_NAM_PS_BY_IMSI	= 7,
-	UNSET_NAM_PS_BY_IMSI	= 8,
-	_NUM_STMT
+	DB_STMT_SEL_BY_IMSI,
+	DB_STMT_UPD_VLR_BY_ID,
+	DB_STMT_UPD_SGSN_BY_ID,
+	DB_STMT_AUC_BY_IMSI,
+	DB_STMT_AUC_UPD_SQN,
+	DB_STMT_UPD_PURGE_CS_BY_IMSI,
+	DB_STMT_UPD_PURGE_PS_BY_IMSI,
+	DB_STMT_SET_NAM_PS_BY_IMSI,
+	DB_STMT_UNSET_NAM_PS_BY_IMSI,
+	_NUM_DB_STMT
 };
 
 struct db_context {
 	char *fname;
 	sqlite3 *db;
-	sqlite3_stmt *stmt[_NUM_STMT];
+	sqlite3_stmt *stmt[_NUM_DB_STMT];
 };
 
 bool db_remove_reset(sqlite3_stmt *stmt);
