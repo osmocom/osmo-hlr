@@ -105,6 +105,50 @@ bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text)
 	return true;
 }
 
+/** bind int arg and do proper cleanup in case of failure. If param_name is
+ * NULL, bind to the first parameter (useful for SQL statements that have only
+ * one parameter). */
+bool db_bind_int(sqlite3_stmt *stmt, const char *param_name, int nr)
+{
+	int rc;
+	int idx = param_name ? sqlite3_bind_parameter_index(stmt, param_name) : 1;
+	if (idx < 1) {
+		LOGP(DDB, LOGL_ERROR, "Error composing SQL, cannot bind parameter '%s'\n",
+		     param_name);
+		return false;
+	}
+	rc = sqlite3_bind_int(stmt, idx, nr);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error binding int64 to SQL parameter %s: %d\n",
+		     param_name ? param_name : "#1", rc);
+		db_remove_reset(stmt);
+		return false;
+	}
+	return true;
+}
+
+/** bind int64 arg and do proper cleanup in case of failure. If param_name is
+ * NULL, bind to the first parameter (useful for SQL statements that have only
+ * one parameter). */
+bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr)
+{
+	int rc;
+	int idx = param_name ? sqlite3_bind_parameter_index(stmt, param_name) : 1;
+	if (idx < 1) {
+		LOGP(DDB, LOGL_ERROR, "Error composing SQL, cannot bind parameter '%s'\n",
+		     param_name);
+		return false;
+	}
+	rc = sqlite3_bind_int64(stmt, idx, nr);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error binding int64 to SQL parameter %s: %d\n",
+		     param_name ? param_name : "#1", rc);
+		db_remove_reset(stmt);
+		return false;
+	}
+	return true;
+}
+
 void db_close(struct db_context *dbc)
 {
 	unsigned int i;
