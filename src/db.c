@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <sqlite3.h>
+#include <string.h>
 
 #include "logging.h"
 #include "db.h"
@@ -121,6 +122,7 @@ struct db_context *db_open(void *ctx, const char *fname)
 	struct db_context *dbc = talloc_zero(ctx, struct db_context);
 	unsigned int i;
 	int rc;
+	bool has_sqlite_config_sqllog = false;
 
 	LOGP(DDB, LOGL_NOTICE, "using database: %s\n", fname);
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
@@ -133,15 +135,21 @@ struct db_context *db_open(void *ctx, const char *fname)
 		if (!o)
 			break;
 		LOGP(DDB, LOGL_DEBUG, "SQLite3 compiled with '%s'\n", o);
+		if (!strcmp(o, "ENABLE_SQLLOG"))
+			has_sqlite_config_sqllog = true;
 	}
 
 	rc = sqlite3_config(SQLITE_CONFIG_LOG, sql3_error_log_cb, NULL);
 	if (rc != SQLITE_OK)
 		LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 error log callback\n");
 
-	rc = sqlite3_config(SQLITE_CONFIG_SQLLOG, sql3_sql_log_cb, NULL);
-	if (rc != SQLITE_OK)
-		LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 SQL statement log callback\n");
+	if (has_sqlite_config_sqllog) {
+		rc = sqlite3_config(SQLITE_CONFIG_SQLLOG, sql3_sql_log_cb, NULL);
+		if (rc != SQLITE_OK)
+			LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 SQL log callback\n");
+	} else
+			LOGP(DDB, LOGL_DEBUG, "Not setting SQL log callback:"
+			     " SQLite3 compiled without support for it\n");
 
 	rc = sqlite3_open(dbc->fname, &dbc->db);
 	if (rc != SQLITE_OK) {
