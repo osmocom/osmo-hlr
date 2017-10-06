@@ -244,6 +244,45 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, "foobar", "99"), -ENOENT);
 	ASSERT_SEL(msisdn, "99", -ENOENT);
 
+	comment("Set / unset nam_cs and nam_ps");
+
+	/*                                nam_val, is_ps */
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+
+	comment("Set / unset nam_cs and nam_ps *again*");
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_nam(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+
+	comment("Set nam_cs and nam_ps on non-existent / invalid IMSI");
+
+	ASSERT_RC(db_subscr_nam(dbc, unknown_imsi, false, true), -ENOENT);
+	ASSERT_RC(db_subscr_nam(dbc, unknown_imsi, false, false), -ENOENT);
+	ASSERT_SEL(imsi, unknown_imsi, -ENOENT);
+
+	ASSERT_RC(db_subscr_nam(dbc, "foobar", false, true), -ENOENT);
+	ASSERT_RC(db_subscr_nam(dbc, "foobar", false, false), -ENOENT);
+
 	comment("Delete non-existent / invalid IDs");
 
 	ASSERT_RC(db_subscr_delete_by_id(dbc, 999), -ENOENT);

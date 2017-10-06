@@ -259,31 +259,58 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 	return rc;
 }
 
-int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
+/* Enable or disable PS or CS for a subscriber.
+ * For the subscriber with the given imsi, set nam_ps (when is_ps == true) or
+ * nam_cs (when is_ps == false) to nam_val in the database.
+ * Returns 0 on success, -ENOENT when the given IMSI does not exist, -EINVAL if
+ * the SQL statement could not be composed, -ENOEXEC if running the SQL
+ * statement failed, -EIO if the amount of rows modified is unexpected.
+ */
+int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps)
 {
-	sqlite3_stmt *stmt =
-		dbc->stmt[enable ? DB_STMT_SET_NAM_PS_BY_IMSI : DB_STMT_UNSET_NAM_PS_BY_IMSI];
+	sqlite3_stmt *stmt;
 	int rc;
+	int ret = 0;
 
-	if (!db_bind_text(stmt, NULL, imsi))
-		return -EINVAL;
+	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_NAM_PS_BY_IMSI
+			       : DB_STMT_UPD_NAM_CS_BY_IMSI];
 
-	rc = sqlite3_step(stmt); /* execute the statement */
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+	if (!db_bind_int(stmt, "$val", nam_val ? 1 : 0))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		db_remove_reset(stmt);
-		return -ENOEXEC;
+		LOGHLR(imsi, LOGL_ERROR, "%s %s: SQL error: %s\n",
+		       nam_val ? "enable" : "disable",
+		       is_ps ? "PS" : "CS",
+		       sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
 	}
 
-	rc = sqlite3_changes(dbc->db); /* verify execution result */
-	if (rc != 1) {
-		LOGHLR(imsi, LOGL_ERROR, "SQL modified %d rows (expected 1)\n",
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot %s %s: no such subscriber: IMSI='%s'\n",
+		     nam_val ? "enable" : "disable",
+		     is_ps ? "PS" : "CS",
+		     imsi);
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != 1) {
+		LOGHLR(imsi, LOGL_ERROR, "%s %s: SQL modified %d rows (expected 1)\n",
+		       nam_val ? "enable" : "disable",
+		       is_ps ? "PS" : "CS",
 		       rc);
-		rc = -EINVAL;
+		ret = -EIO;
 	}
 
+out:
 	db_remove_reset(stmt);
-	return rc;
+	return ret;
 }
 
 int db_subscr_lu(struct db_context *dbc,

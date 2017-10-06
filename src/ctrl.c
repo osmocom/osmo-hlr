@@ -43,7 +43,7 @@ static int handle_cmd_ps(struct hlr *ctx, struct ctrl_cmd *cmd, bool enable)
 		return CTRL_CMD_ERROR;
 	}
 
-	if (db_subscr_ps(ctx->dbc, cmd->value, enable) < 0) {
+	if (db_subscr_nam(ctx->dbc, cmd->value, enable, true) < 0) {
 		cmd->reply = "Error updating DB";
 		return CTRL_CMD_ERROR;
 	}

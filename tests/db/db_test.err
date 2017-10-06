@@ -232,6 +232,150 @@ db_subscr_get_by_msisdn(dbc, "99", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: MSISDN='99': No such subscriber
 
 
+--- Set / unset nam_cs and nam_ps
+
+db_subscr_nam(dbc, imsi0, false, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, false, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_cs = false,
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, true, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, true, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+
+--- Set / unset nam_cs and nam_ps *again*
+
+db_subscr_nam(dbc, imsi0, false, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, false, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, false, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_cs = false,
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, false, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_cs = false,
+  .nam_ps = false,
+}
+
+db_subscr_nam(dbc, imsi0, true, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_cs = false,
+}
+
+db_subscr_nam(dbc, imsi0, true, true) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .nam_cs = false,
+}
+
+db_subscr_nam(dbc, imsi0, true, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+db_subscr_nam(dbc, imsi0, true, false) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+
+--- Set nam_cs and nam_ps on non-existent / invalid IMSI
+
+db_subscr_nam(dbc, unknown_imsi, false, true) --> -ENOENT
+DAUC Cannot disable PS: no such subscriber: IMSI='999999999'
+
+db_subscr_nam(dbc, unknown_imsi, false, false) --> -ENOENT
+DAUC Cannot disable CS: no such subscriber: IMSI='999999999'
+
+db_subscr_get_by_imsi(dbc, unknown_imsi, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='999999999': No such subscriber
+
+db_subscr_nam(dbc, "foobar", false, true) --> -ENOENT
+DAUC Cannot disable PS: no such subscriber: IMSI='foobar'
+
+db_subscr_nam(dbc, "foobar", false, false) --> -ENOENT
+DAUC Cannot disable CS: no such subscriber: IMSI='foobar'
+
+
 --- Delete non-existent / invalid IDs
 
 db_subscr_delete_by_id(dbc, 999) --> -ENOENT
