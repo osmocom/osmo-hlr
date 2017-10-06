@@ -77,16 +77,25 @@ bool db_remove_reset(sqlite3_stmt *stmt)
 	return true;
 }
 
-/* bind IMSI and do proper cleanup in case of failure */
-bool db_bind_imsi(sqlite3_stmt *stmt, const char *imsi)
+/** bind text arg and do proper cleanup in case of failure. If param_name is
+ * NULL, bind to the first parameter (useful for SQL statements that have only
+ * one parameter). */
+bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text)
 {
-	int rc = sqlite3_bind_text(stmt, 1, imsi, -1, SQLITE_STATIC);
+	int rc;
+	int idx = param_name ? sqlite3_bind_parameter_index(stmt, param_name) : 1;
+	if (idx < 1) {
+		LOGP(DDB, LOGL_ERROR, "Error composing SQL, cannot bind parameter '%s'\n",
+		     param_name);
+		return false;
+	}
+	rc = sqlite3_bind_text(stmt, idx, text, -1, SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Error binding IMSI %s: %d\n", imsi, rc);
+		LOGP(DDB, LOGL_ERROR, "Error binding text to SQL parameter %s: %d\n",
+		     param_name ? param_name : "#1", rc);
 		db_remove_reset(stmt);
 		return false;
 	}
-
 	return true;
 }
 

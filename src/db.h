@@ -23,7 +23,7 @@ struct db_context {
 };
 
 bool db_remove_reset(sqlite3_stmt *stmt);
-bool db_bind_imsi(sqlite3_stmt *stmt, const char *imsi);
+bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text);
 void db_close(struct db_context *dbc);
 struct db_context *db_open(void *ctx, const char *fname);
 

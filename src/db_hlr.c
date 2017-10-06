@@ -43,7 +43,7 @@ int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMSI];
 	int rc;
 
-	if (!db_bind_imsi(stmt, imsi))
+	if (!db_bind_text(stmt, NULL, imsi))
 		return -EINVAL;
 
 	/* execute the statement */
@@ -86,7 +86,7 @@ int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)
 		dbc->stmt[enable ? DB_STMT_SET_NAM_PS_BY_IMSI : DB_STMT_UNSET_NAM_PS_BY_IMSI];
 	int rc;
 
-	if (!db_bind_imsi(stmt, imsi))
+	if (!db_bind_text(stmt, NULL, imsi))
 		return -EINVAL;
 
 	rc = sqlite3_step(stmt); /* execute the statement */
@@ -158,7 +158,7 @@ int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
 	else
 		stmt = dbc->stmt[DB_STMT_UPD_PURGE_CS_BY_IMSI];
 
-	if (!db_bind_imsi(stmt, imsi))
+	if (!db_bind_text(stmt, NULL, imsi))
 		return -EINVAL;
 
 	/* execute the statement */
