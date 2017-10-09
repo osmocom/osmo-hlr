@@ -1,0 +1,251 @@
+
+===== test_subscr_create_update_sel_delete
+
+--- Create with valid / invalid IMSI
+
+db_subscr_create(dbc, imsi0) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_subscr_create(dbc, imsi1) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 2,
+  .imsi = '123456789000001',
+}
+
+db_subscr_create(dbc, imsi2) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 3,
+  .imsi = '123456789000002',
+}
+
+db_subscr_create(dbc, imsi0) --> -EIO
+DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
+DDB Error in sqlite3_reset: 2067
+DAUC IMSI='123456789000000': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_subscr_create(dbc, imsi1) --> -EIO
+DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
+DDB Error in sqlite3_reset: 2067
+DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
+
+db_subscr_create(dbc, imsi1) --> -EIO
+DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
+DDB Error in sqlite3_reset: 2067
+DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
+
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 2,
+  .imsi = '123456789000001',
+}
+
+db_subscr_create(dbc, imsi2) --> -EIO
+DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
+DDB Error in sqlite3_reset: 2067
+DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
+
+db_subscr_create(dbc, imsi2) --> -EIO
+DDB (2067) abort at 18 in [INSERT INTO subscriber (imsi) VALUES ($imsi)]: UNIQUE constraint failed: subscriber.imsi
+DDB Error in sqlite3_reset: 2067
+DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
+
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 3,
+  .imsi = '123456789000002',
+}
+
+db_subscr_create(dbc, "123456789 000003") --> -EINVAL
+DAUC Cannot create subscriber: invalid IMSI: '123456789 000003'
+
+db_subscr_get_by_imsi(dbc, "123456789000003", &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456789000003': Error executing SQL: 101
+
+db_subscr_create(dbc, "123456789000002123456") --> -EINVAL
+DAUC Cannot create subscriber: invalid IMSI: '123456789000002123456'
+
+db_subscr_get_by_imsi(dbc, "123456789000002123456", &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456789000002123456': Error executing SQL: 101
+
+db_subscr_create(dbc, "foobar123") --> -EINVAL
+DAUC Cannot create subscriber: invalid IMSI: 'foobar123'
+
+db_subscr_get_by_imsi(dbc, "foobar123", &g_subscr) --> -ENOEXEC
+DAUC IMSI='foobar123': Error executing SQL: 101
+
+db_subscr_create(dbc, "123") --> -EINVAL
+DAUC Cannot create subscriber: invalid IMSI: '123'
+
+db_subscr_get_by_imsi(dbc, "123", &g_subscr) --> -ENOEXEC
+DAUC IMSI='123': Error executing SQL: 101
+
+db_subscr_create(dbc, short_imsi) --> 0
+
+db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 4,
+  .imsi = '123456',
+}
+
+
+--- Set valid / invalid MSISDN
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "54321") --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "54321012345678912345678") --> -EINVAL
+DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: '54321012345678912345678'
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "543 21") --> -EINVAL
+DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: '543 21'
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "foobar123") --> -EINVAL
+DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: 'foobar123'
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "5") --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '5',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "543210123456789") --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+db_subscr_update_msisdn_by_imsi(dbc, imsi0, "5432101234567891") --> -EINVAL
+DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: '5432101234567891'
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+
+--- Set MSISDN on non-existent / invalid IMSI
+
+db_subscr_update_msisdn_by_imsi(dbc, unknown_imsi, "99") --> -ENOENT
+DAUC Cannot update MSISDN: no such subscriber: IMSI='999999999'
+
+db_subscr_update_msisdn_by_imsi(dbc, "foobar", "99") --> -ENOENT
+DAUC Cannot update MSISDN: no such subscriber: IMSI='foobar'
+
+
+--- Delete non-existent / invalid IDs
+
+db_subscr_delete_by_id(dbc, 999) --> -ENOENT
+DAUC Cannot delete: no such subscriber: ID=999
+
+db_subscr_delete_by_id(dbc, -10) --> -ENOENT
+DAUC Cannot delete: no such subscriber: ID=-10
+
+
+--- Delete subscribers
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+db_subscr_delete_by_id(dbc, id0) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456789000000': Error executing SQL: 101
+
+db_subscr_delete_by_id(dbc, id0) --> -ENOENT
+DAUC Cannot delete: no such subscriber: ID=1
+
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 2,
+  .imsi = '123456789000001',
+}
+
+db_subscr_delete_by_id(dbc, id1) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456789000001': Error executing SQL: 101
+
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 3,
+  .imsi = '123456789000002',
+}
+
+db_subscr_delete_by_id(dbc, id2) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456789000002': Error executing SQL: 101
+
+db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 4,
+  .imsi = '123456',
+}
+
+db_subscr_delete_by_id(dbc, id_short) --> 0
+
+db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> -ENOEXEC
+DAUC IMSI='123456': Error executing SQL: 101
+
+===== test_subscr_create_update_sel_delete: SUCCESS
+
