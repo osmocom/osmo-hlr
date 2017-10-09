@@ -60,16 +60,7 @@ int db_update_sqn(struct db_context *dbc, int64_t id,
 		return -2;
 	}
 
-	/* remove bindings and reset statement to be re-executed */
-	rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error clerearing bindings: %d\n", rc);
-	}
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error in sqlite3_reset: %d\n", rc);
-	}
-
+	db_remove_reset(stmt);
 	return 0;
 }
 
@@ -172,16 +163,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		ret = -ENOENT;
 
 out:
-	/* remove bindings and reset statement to be re-executed */
-	rc = sqlite3_clear_bindings(stmt);
-	if (rc != SQLITE_OK) {
-		LOGAUC(imsi, LOGL_ERROR, "Error in sqlite3_clear_bindings(): %d\n", rc);
-	}
-	rc = sqlite3_reset(stmt);
-	if (rc != SQLITE_OK) {
-		LOGAUC(imsi, LOGL_ERROR, "Error in sqlite3_reset(): %d\n", rc);
-	}
-
+	db_remove_reset(stmt);
 	return ret;
 }
 
