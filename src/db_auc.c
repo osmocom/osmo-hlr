@@ -87,14 +87,8 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	memset(aud2g, 0, sizeof(*aud2g));
 	memset(aud3g, 0, sizeof(*aud3g));
 
-	/* bind the IMSI value */
-	rc = sqlite3_bind_text(stmt, 1, imsi, -1,
-				SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		LOGAUC(imsi, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
-		ret = -EIO;
-		goto out;
-	}
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
