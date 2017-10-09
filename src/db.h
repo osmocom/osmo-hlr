@@ -13,6 +13,9 @@ enum stmt_idx {
 	DB_STMT_UPD_PURGE_PS_BY_IMSI,
 	DB_STMT_SET_NAM_PS_BY_IMSI,
 	DB_STMT_UNSET_NAM_PS_BY_IMSI,
+	DB_STMT_SUBSCR_CREATE,
+	DB_STMT_DEL_BY_ID,
+	DB_STMT_SET_MSISDN_BY_IMSI,
 	_NUM_DB_STMT
 };
 
@@ -72,6 +75,12 @@ struct hlr_subscriber {
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
 };
+
+int db_subscr_create(struct db_context *dbc, const char *imsi);
+int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id);
+
+int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
+				    const char *msisdn);
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);

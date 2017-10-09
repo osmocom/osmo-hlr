@@ -41,6 +41,9 @@ static const char *stmt_sql[] = {
 	[DB_STMT_UPD_PURGE_PS_BY_IMSI] = "UPDATE subscriber SET ms_purged_ps=1 WHERE imsi = ?",
 	[DB_STMT_SET_NAM_PS_BY_IMSI] = "UPDATE subscriber SET nam_ps=1 WHERE imsi = ?",
 	[DB_STMT_UNSET_NAM_PS_BY_IMSI] = "UPDATE subscriber SET nam_ps=0 WHERE imsi = ?",
+	[DB_STMT_SUBSCR_CREATE] = "INSERT INTO subscriber (imsi) VALUES ($imsi)",
+	[DB_STMT_DEL_BY_ID] = "DELETE FROM subscriber WHERE id = $subscriber_id",
+	[DB_STMT_SET_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = $msisdn WHERE imsi = $imsi",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

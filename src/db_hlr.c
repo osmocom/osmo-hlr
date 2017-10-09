@@ -19,9 +19,11 @@
 
 #include <string.h>
 #include <errno.h>
+#include <inttypes.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
+#include <osmocom/gsm/gsm23003.h>
 
 #include <sqlite3.h>
 
@@ -37,6 +39,120 @@
 			strncpy(x, _txt, sizeof(x));		\
 		x[sizeof(x)-1] = '\0';				\
 	} while (0)
+
+int db_subscr_create(struct db_context *dbc, const char *imsi)
+{
+	sqlite3_stmt *stmt;
+	int rc;
+
+	if (!osmo_imsi_str_valid(imsi)) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot create subscriber: invalid IMSI: '%s'\n",
+		     imsi);
+		return -EINVAL;
+	}
+
+	stmt = dbc->stmt[DB_STMT_SUBSCR_CREATE];
+
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGHLR(imsi, LOGL_ERROR, "Cannot create subscriber: SQL error: (%d) %s\n",
+		       rc, sqlite3_errmsg(dbc->db));
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
+{
+	int rc;
+	int ret = 0;
+
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_DEL_BY_ID];
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR,
+		       "Cannot delete subscriber ID=%"PRId64": SQL error: (%d) %s\n",
+		       subscr_id, rc, sqlite3_errmsg(dbc->db));
+		db_remove_reset(stmt);
+		return -EIO;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot delete: no such subscriber: ID=%"PRId64"\n",
+		     subscr_id);
+		ret = -ENOENT;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%"PRId64
+		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
+		ret = -EIO;
+	}
+
+	/* FIXME: also remove authentication data from auc_2g and auc_3g */
+
+	db_remove_reset(stmt);
+	return ret;
+}
+
+int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
+				    const char *msisdn)
+{
+	int rc;
+	int ret = 0;
+
+	if (!osmo_msisdn_str_valid(msisdn)) {
+		LOGHLR(imsi, LOGL_ERROR,
+		       "Cannot update subscriber: invalid MSISDN: '%s'\n",
+		       msisdn);
+		return -EINVAL;
+	}
+
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SET_MSISDN_BY_IMSI];
+
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+	if (!db_bind_text(stmt, "$msisdn", msisdn))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGHLR(imsi, LOGL_ERROR,
+		       "Cannot update subscriber's MSISDN: SQL error: (%d) %s\n",
+		       rc, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update MSISDN: no such subscriber: IMSI='%s'\n",
+		     imsi);
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != 1) {
+		LOGHLR(imsi, LOGL_ERROR, "Update MSISDN: SQL modified %d rows (expected 1)\n", rc);
+		ret = -EIO;
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
+
+}
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr)
