@@ -221,7 +221,7 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	 * we have on record. Only update if yes */
 
 	/* Perform the actual update of the DB */
-	rc = db_subscr_purge(g_hlr->dbc, gsup->imsi, is_ps);
+	rc = db_subscr_purge(g_hlr->dbc, gsup->imsi, true, is_ps);
 
 	if (rc == 1)
 		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_RESULT;

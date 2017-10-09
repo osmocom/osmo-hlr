@@ -356,27 +356,49 @@ out:
 	return ret;
 }
 
-int db_subscr_purge(struct db_context *dbc, const char *imsi, bool is_ps)
+int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
+		    bool purge_val, bool is_ps)
 {
-	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
-	int rc, ret = 1;
+	sqlite3_stmt *stmt;
+	int rc, ret = 0;
 
-	if (is_ps)
-		stmt = dbc->stmt[DB_STMT_UPD_PURGE_PS_BY_IMSI];
-	else
-		stmt = dbc->stmt[DB_STMT_UPD_PURGE_CS_BY_IMSI];
+	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_PURGE_PS_BY_IMSI
+			       : DB_STMT_UPD_PURGE_CS_BY_IMSI];
 
-	if (!db_bind_text(stmt, NULL, imsi))
-		return -EINVAL;
+	if (!db_bind_text(stmt, "$imsi", by_imsi))
+		return -EIO;
+	if (!db_bind_int(stmt, "$val", purge_val ? 1 : 0))
+		return -EIO;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DAUC, LOGL_ERROR, "Error setting Purged: %d\n", rc);
-		ret = -ENOEXEC;
+		LOGP(DAUC, LOGL_ERROR, "%s %s: SQL error: %s\n",
+		     purge_val ? "purge" : "un-purge",
+		     is_ps ? "PS" : "CS",
+		     sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
 	}
-	/* FIXME: return 0 in case IMSI not known */
 
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot %s %s: no such subscriber: IMSI='%s'\n",
+		     purge_val ? "purge" : "un-purge",
+		     is_ps ? "PS" : "CS",
+		     by_imsi);
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != 1) {
+		LOGHLR(by_imsi, LOGL_ERROR, "%s %s: SQL modified %d rows (expected 1)\n",
+		       purge_val ? "purge" : "un-purge",
+		       is_ps ? "PS" : "CS",
+		       rc);
+		ret = -EIO;
+	}
+
+out:
 	db_remove_reset(stmt);
 
 	return ret;

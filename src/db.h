@@ -94,5 +94,5 @@ int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool i
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		 const char *vlr_or_sgsn_number, bool is_ps);
 
-int db_subscr_purge(struct db_context *dbc,
-		const char *imsi, bool is_ps);
+int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
+		    bool purge_val, bool is_ps);

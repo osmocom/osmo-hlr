@@ -320,6 +320,44 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_RC(db_subscr_lu(dbc, 99999, "712", false), -ENOENT);
 	ASSERT_SEL(id, 99999, -ENOENT);
 
+	comment("Purge and un-purge PS and CS");
+
+	/*                               purge_val, is_ps */
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+
+	comment("Purge PS and CS *again*");
+
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, true), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, true, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_purge(dbc, imsi0, false, false), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+
+	comment("Purge on non-existent / invalid IMSI");
+
+	ASSERT_RC(db_subscr_purge(dbc, unknown_imsi, true, true), -ENOENT);
+	ASSERT_SEL(imsi, unknown_imsi, -ENOENT);
+	ASSERT_RC(db_subscr_purge(dbc, unknown_imsi, true, false), -ENOENT);
+	ASSERT_SEL(imsi, unknown_imsi, -ENOENT);
+
 	comment("Delete non-existent / invalid IDs");
 
 	ASSERT_RC(db_subscr_delete_by_id(dbc, 999), -ENOENT);
