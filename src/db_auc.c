@@ -34,34 +34,43 @@
 #define LOGAUC(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
 /* update the SQN for a given subscriber ID */
-int db_update_sqn(struct db_context *dbc, int64_t id,
-		      uint64_t new_sqn)
+int db_update_sqn(struct db_context *dbc, int64_t subscr_id, uint64_t new_sqn)
 {
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_UPD_SQN];
 	int rc;
+	int ret = 0;
 
-	/* bind new SQN and subscriber ID */
-	rc = sqlite3_bind_int64(stmt, 1, new_sqn);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding SQN: %d\n", rc);
-		return -1;
-	}
+	if (!db_bind_int64(stmt, "$sqn", new_sqn))
+		return -EIO;
 
-	rc = sqlite3_bind_int64(stmt, 2, id);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding Subscrber ID: %d\n", rc);
-		return -1;
-	}
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DAUC, LOGL_ERROR, "Error updating SQN: %d\n", rc);
-		return -2;
+		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%"PRId64
+		     ": SQL error: (%d) %s\n",
+		     subscr_id, rc, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
 	}
 
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%"PRId64
+		     ": no auc_3g entry for such subscriber\n", subscr_id);
+		ret = -ENOENT;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Update SQN for subscriber ID=%"PRId64
+		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
+		ret = -EIO;
+	}
+
+out:
 	db_remove_reset(stmt);
-	return 0;
+	return ret;
 }
 
 /* obtain the authentication data for a given imsi

@@ -53,7 +53,7 @@ static const char *stmt_sql[] = {
 		" LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id"
 		" LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id"
 		" WHERE imsi = ?",
-	[DB_STMT_AUC_UPD_SQN] = "UPDATE auc_3g SET sqn = ? WHERE subscriber_id = ?",
+	[DB_STMT_AUC_UPD_SQN] = "UPDATE auc_3g SET sqn = $sqn WHERE subscriber_id = $subscriber_id",
 	[DB_STMT_UPD_PURGE_CS_BY_IMSI] = "UPDATE subscriber SET ms_purged_cs = $val WHERE imsi = $imsi",
 	[DB_STMT_UPD_PURGE_PS_BY_IMSI] = "UPDATE subscriber SET ms_purged_ps = $val WHERE imsi = $imsi",
 	[DB_STMT_UPD_NAM_CS_BY_IMSI] = "UPDATE subscriber SET nam_cs = $val WHERE imsi = $imsi",

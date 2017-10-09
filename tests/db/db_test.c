@@ -664,6 +664,79 @@ static void test_subscr_aud()
 	comment_end();
 }
 
+static void test_subscr_sqn()
+{
+	int64_t id;
+
+	comment_start();
+
+	comment("Set SQN for unknown subscriber");
+
+	ASSERT_RC(db_update_sqn(dbc, 99, 999), -ENOENT);
+	ASSERT_SEL(id, 99, -ENOENT);
+
+	ASSERT_RC(db_update_sqn(dbc, 9999, 99), -ENOENT);
+	ASSERT_SEL(id, 9999, -ENOENT);
+
+	comment("Create subscriber");
+
+	ASSERT_RC(db_subscr_create(dbc, imsi0), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+
+	id = g_subscr.id;
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+
+	comment("Set SQN, but no 3G auth data present");
+
+	ASSERT_RC(db_update_sqn(dbc, id, 123), -ENOENT);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, 543), -ENOENT);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+
+	comment("Set auth 3G data");
+
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
+			  "BeefedCafeFaceAcedAddedDecadeFee", true,
+			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
+		0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	comment("Set SQN");
+
+	ASSERT_RC(db_update_sqn(dbc, id, 23315), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, 23315), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, 423), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	comment("Set SQN: thru uint64_t range, using the int64_t SQLite bind");
+
+	ASSERT_RC(db_update_sqn(dbc, id, 0), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, INT64_MAX), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, INT64_MIN), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	ASSERT_RC(db_update_sqn(dbc, id, UINT64_MAX), 0);
+	ASSERT_SEL_AUD(imsi0, 0, id);
+
+	comment("Delete subscriber");
+
+	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_RC(db_subscr_delete_by_id(dbc, id), 0);
+	ASSERT_SEL(imsi, imsi0, -ENOENT);
+
+	comment_end();
+}
+
 static struct {
 	bool verbose;
 } cmdline_opts = {
@@ -739,6 +812,7 @@ int main(int argc, char **argv)
 
 	test_subscr_create_update_sel_delete();
 	test_subscr_aud();
+	test_subscr_sqn();
 
 	printf("Done\n");
 	return 0;
