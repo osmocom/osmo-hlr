@@ -19,6 +19,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
@@ -91,7 +92,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 				SQLITE_STATIC);
 	if (rc != SQLITE_OK) {
 		LOGAUC(imsi, LOGL_ERROR, "Error binding IMSI: %d\n", rc);
-		ret = -1;
+		ret = -EIO;
 		goto out;
 	}
 
@@ -99,11 +100,11 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_DONE) {
 		LOGAUC(imsi, LOGL_INFO, "No such subscriber\n");
-		ret = 0;
+		ret = -ENOENT;
 		goto out;
 	} else if (rc != SQLITE_ROW) {
 		LOGAUC(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		ret = -1;
+		ret = -EIO;
 		goto out;
 	}
 
@@ -139,6 +140,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		k = sqlite3_column_text(stmt, 4);
 		if (!k) {
 			LOGAUC(imsi, LOGL_ERROR, "Error reading K: %d\n", rc);
+			ret = -EIO;
 			goto out;
 		}
 		osmo_hexparse((void*)k, (void*)&aud3g->u.umts.k, sizeof(aud3g->u.umts.k));
@@ -148,6 +150,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 			opc = sqlite3_column_text(stmt, 6);
 			if (!opc) {
 				LOGAUC(imsi, LOGL_ERROR, "Error reading OPC: %d\n", rc);
+				ret = -EIO;
 				goto out;
 			}
 			osmo_hexparse((void*)opc, (void*)&aud3g->u.umts.opc,
@@ -166,9 +169,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		LOGAUC(imsi, LOGL_DEBUG, "No 3G Auth Data\n");
 
 	if (aud2g->type == 0 && aud3g->type == 0)
-		ret = -1;
-	else
-		ret = 1;
+		ret = -ENOENT;
 
 out:
 	/* remove bindings and reset statement to be re-executed */
@@ -197,7 +198,7 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	int rc;
 
 	rc = db_get_auth_data(dbc, imsi, &aud2g, &aud3g, &subscr_id);
-	if (rc <= 0)
+	if (rc)
 		return rc;
 
 	aud3g.u.umts.ind = auc_3g_ind;

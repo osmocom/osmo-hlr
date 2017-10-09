@@ -75,7 +75,7 @@
 		g_aud3g = (struct osmo_sub_auth_data){}; \
 		g_id = 0; \
 		ASSERT_RC(db_get_auth_data(dbc, imsi, &g_aud2g, &g_aud3g, &g_id), expect_rc); \
-		if (g_rc == 1) { \
+		if (!g_rc) { \
 			dump_aud("2G", &g_aud2g); \
 			dump_aud("3G", &g_aud3g); \
 		}\
@@ -443,7 +443,7 @@ static void test_subscr_aud()
 	comment_start();
 
 	comment("Get auth data for non-existent subscriber");
-	ASSERT_SEL_AUD(unknown_imsi, 0, 0);
+	ASSERT_SEL_AUD(unknown_imsi, -ENOENT, 0);
 
 	comment("Create subscriber");
 
@@ -451,7 +451,7 @@ static void test_subscr_aud()
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	id = g_subscr.id;
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 
 	comment("Set auth data, 2G only");
@@ -459,35 +459,35 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	/* same again */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_COMP128v2, "BeadedBeeAced1EbbedDefacedFacade")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "DeafBeddedBabeAcceededFadedDecaf")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	comment("Remove 2G auth data");
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -497,12 +497,12 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")),
 		0);
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 
 	comment("Set auth data, 3G only");
@@ -512,7 +512,7 @@ static void test_subscr_aud()
 			  "BeefedCafeFaceAcedAddedDecadeFee", true,
 			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	/* same again */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -520,14 +520,14 @@ static void test_subscr_aud()
 			  "BeefedCafeFaceAcedAddedDecadeFee", true,
 			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "Deaf0ff1ceD0d0DabbedD1ced1ceF00d", true,
 			  "F1bbed0afD0eF0bD0ffed0ddF1fe0b0e", 0)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
@@ -535,21 +535,21 @@ static void test_subscr_aud()
 			  "DeafBeddedBabeAcceededFadedDecaf",
 			  OSMO_MILENAGE_IND_BITLEN_MAX)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "CededEffacedAceFacedBadFadedBeef", false,
 			  "BeefedCafeFaceAcedAddedDecadeFee", 5)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	comment("Remove 3G auth data");
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -561,14 +561,14 @@ static void test_subscr_aud()
 			  "CededEffacedAceFacedBadFadedBeef", false,
 			  "BeefedCafeFaceAcedAddedDecadeFee", 5)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_NONE,
 			  "asdfasdfasd", false,
 			  "asdfasdfasdf", 99999)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 
 	comment("Set auth data, 2G and 3G");
@@ -581,7 +581,7 @@ static void test_subscr_aud()
 			  "BeefedCafeFaceAcedAddedDecadeFee", false,
 			  "DeafBeddedBabeAcceededFadedDecaf", 5)),
 		0);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 
 	comment("Set invalid auth data");
@@ -589,36 +589,36 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(99999, "f000000000000f00000000000f000000")),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_XOR, "f000000000000f00000000000f000000f00000000")),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_XOR, "f00")),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_MILENAGE, "0123456789abcdef0123456789abcdef")),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "0f000000000000f00000000000f000000", false,
 			  "f000000000000f00000000000f000000", 5)),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "f000000000000f00000000000f000000", false,
 			  "000000000000f00000000000f000000", 5)),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
@@ -626,21 +626,21 @@ static void test_subscr_aud()
 			  "f000000000000f00000000000f000000",
 			  OSMO_MILENAGE_IND_BITLEN_MAX + 1)),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "X000000000000f00000000000f000000", false,
 			  "f000000000000f00000000000f000000", 5)),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
 			  "f000000000000f00000000000f000000", false,
 			  "f000000000000 f00000000000 f000000", 5)),
 		-EINVAL);
-	ASSERT_SEL_AUD(imsi0, 1, id);
+	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	comment("Delete subscriber");
 
@@ -656,7 +656,7 @@ static void test_subscr_aud()
 	/* For this test to work, we want to get the same subscriber ID back,
 	 * and make sure there are no auth data leftovers for this ID. */
 	OSMO_ASSERT(id == g_subscr.id);
-	ASSERT_SEL_AUD(imsi0, -1, id);
+	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
 
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id), 0);
 	ASSERT_SEL(imsi, imsi0, -ENOENT);

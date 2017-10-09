@@ -716,7 +716,7 @@ DAUC Cannot read subscriber from db: IMSI='123456': No such subscriber
 
 --- Get auth data for non-existent subscriber
 
-db_get_auth_data(dbc, unknown_imsi, &g_aud2g, &g_aud3g, &g_id) --> 0
+db_get_auth_data(dbc, unknown_imsi, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='999999999': No such subscriber
 
 
@@ -731,7 +731,7 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -741,7 +741,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -753,7 +753,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -765,7 +765,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v2, "BeadedBeeAced1EbbedDefacedFacade")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -777,7 +777,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "DeafBeddedBabeAcceededFadedDecaf")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -789,7 +789,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -804,7 +804,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -813,7 +813,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> -EN
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
@@ -825,7 +825,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -835,7 +835,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -851,7 +851,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -867,7 +867,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "Deaf0ff1ceD0d0DabbedD1ced1ceF00d", true, "F1bbed0afD0eF0bD0ffed0ddF1fe0b0e", 0)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -882,7 +882,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", false, "DeafBeddedBabeAcceededFadedDecaf", OSMO_MILENAGE_IND_BITLEN_MAX)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -898,7 +898,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "CededEffacedAceFacedBadFadedBeef", false, "BeefedCafeFaceAcedAddedDecadeFee", 5)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -917,7 +917,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -926,7 +926,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, N
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "CededEffacedAceFacedBadFadedBeef", false, "BeefedCafeFaceAcedAddedDecadeFee", 5)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
@@ -942,7 +942,7 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, "asdfasdfasd", false, "asdfasdfasdf", 99999)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -954,7 +954,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "CededEff
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", false, "DeafBeddedBabeAcceededFadedDecaf", 5)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -977,7 +977,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(99999, "f000000000000f00000000000f000000")) --> -EINVAL
 DAUC Cannot update auth tokens: Unknown auth algo: 99999
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -997,7 +997,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f000000000000f00000000000f000000f00000000")) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid KI: 'f000000000000f00000000000f000000f00000000'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1017,7 +1017,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f00")) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid KI: 'f00'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1037,7 +1037,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_MILENAGE, "0123456789abcdef0123456789abcdef")) --> -EINVAL
 DAUC Cannot update auth tokens: auth algo not suited for 2G: MILENAGE
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1057,7 +1057,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "0f000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", 5)) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid OP/OPC: '0f000000000000f00000000000f000000'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1077,7 +1077,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "000000000000f00000000000f000000", 5)) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid K: '000000000000f00000000000f000000'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1097,7 +1097,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", OSMO_MILENAGE_IND_BITLEN_MAX + 1)) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid ind_bitlen: 29
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1117,7 +1117,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "X000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", 5)) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid OP/OPC: 'X000000000000f00000000000f000000'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1137,7 +1137,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "f000000000000 f00000000000 f000000", 5)) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid K: 'f000000000000 f00000000000 f000000'
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
@@ -1179,7 +1179,7 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
