@@ -91,10 +91,8 @@ int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 			struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
-int db_subscr_lu(struct db_context *dbc,
-		 const struct hlr_subscriber *subscr,
-		 const char *vlr_or_sgsn_number,
-		 bool lu_is_ps);
+int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
+		 const char *vlr_or_sgsn_number, bool is_ps);
 
 int db_subscr_purge(struct db_context *dbc,
 		const char *imsi, bool is_ps);

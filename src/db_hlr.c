@@ -313,44 +313,46 @@ out:
 	return ret;
 }
 
-int db_subscr_lu(struct db_context *dbc,
-		 const struct hlr_subscriber *subscr,
-		 const char *vlr_or_sgsn_number, bool lu_is_ps)
+int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
+		 const char *vlr_or_sgsn_number, bool is_ps)
 {
-	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
-	const char *txt;
+	sqlite3_stmt *stmt;
 	int rc, ret = 0;
 
-	if (lu_is_ps) {
-		stmt = dbc->stmt[DB_STMT_UPD_SGSN_BY_ID];
-		txt = subscr->sgsn_number;
-	} else {
-		stmt = dbc->stmt[DB_STMT_UPD_VLR_BY_ID];
-		txt = subscr->vlr_number;
-	}
+	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_SGSN_BY_ID
+			       : DB_STMT_UPD_VLR_BY_ID];
 
-	rc = sqlite3_bind_int64(stmt, 1, subscr->id);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding ID: %d\n", rc);
-		return -EINVAL;
-	}
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
 
-	rc = sqlite3_bind_text(stmt, 2, txt, -1, SQLITE_STATIC);
-	if (rc != SQLITE_OK) {
-		LOGP(DAUC, LOGL_ERROR, "Error binding VLR/SGSN Number: %d\n", rc);
-		ret = -EBADMSG;
-		goto out;
-	}
+	if (!db_bind_text(stmt, "$number", vlr_or_sgsn_number))
+		return -EIO;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DAUC, LOGL_ERROR, "Error updating SQN: %d\n", rc);
-		ret = -ENOEXEC;
+		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%"PRId64": SQL Error: %s\n",
+		     is_ps? "SGSN" : "VLR", subscr_id, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
 	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update %s number for subscriber ID=%"PRId64
+		     ": no such subscriber\n",
+		     is_ps? "SGSN" : "VLR", subscr_id);
+		ret = -ENOENT;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%"PRId64
+		       ": SQL modified %d rows (expected 1)\n",
+		       is_ps? "SGSN" : "VLR", subscr_id, rc);
+		ret = -EIO;
+	}
+
 out:
 	db_remove_reset(stmt);
-
 	return ret;
 }
 
