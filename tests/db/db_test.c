@@ -70,6 +70,7 @@ static struct db_context *dbc = NULL;
 static void *ctx = NULL;
 static struct hlr_subscriber g_subscr;
 static int g_rc;
+static int64_t g_id;
 
 #define Pfv(name, fmt, val) \
 	fprintf(stderr, "  ." #name " = " fmt ",\n", val)
@@ -186,16 +187,16 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_SEL(imsi, imsi2, 0);
 
 	ASSERT_RC(db_subscr_create(dbc, "123456789 000003"), -EINVAL);
-	ASSERT_SEL(imsi, "123456789000003", -ENOEXEC);
+	ASSERT_SEL(imsi, "123456789000003", -ENOENT);
 
 	ASSERT_RC(db_subscr_create(dbc, "123456789000002123456"), -EINVAL);
-	ASSERT_SEL(imsi, "123456789000002123456", -ENOEXEC);
+	ASSERT_SEL(imsi, "123456789000002123456", -ENOENT);
 
 	ASSERT_RC(db_subscr_create(dbc, "foobar123"), -EINVAL);
-	ASSERT_SEL(imsi, "foobar123", -ENOEXEC);
+	ASSERT_SEL(imsi, "foobar123", -ENOENT);
 
 	ASSERT_RC(db_subscr_create(dbc, "123"), -EINVAL);
-	ASSERT_SEL(imsi, "123", -ENOEXEC);
+	ASSERT_SEL(imsi, "123", -ENOENT);
 
 	ASSERT_RC(db_subscr_create(dbc, short_imsi), 0);
 	ASSERT_SEL(imsi, short_imsi, 0);
@@ -207,30 +208,41 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_SEL(imsi, imsi0, 0);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0, "54321"), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "54321", 0);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "54321012345678912345678"), -EINVAL);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "54321", 0);
+	ASSERT_SEL(msisdn, "54321012345678912345678", -ENOENT);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "543 21"), -EINVAL);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "543 21", -ENOENT);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "foobar123"), -EINVAL);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "foobar123", -ENOENT);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "5"), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "5", 0);
+	ASSERT_SEL(msisdn, "54321", -ENOENT);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "543210123456789"), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "543210123456789", 0);
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, imsi0,
 					  "5432101234567891"), -EINVAL);
 	ASSERT_SEL(imsi, imsi0, 0);
+	ASSERT_SEL(msisdn, "5432101234567891", -ENOENT);
 
 	comment("Set MSISDN on non-existent / invalid IMSI");
 
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, unknown_imsi, "99"), -ENOENT);
+	ASSERT_SEL(msisdn, "99", -ENOENT);
 
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, "foobar", "99"), -ENOENT);
+	ASSERT_SEL(msisdn, "99", -ENOENT);
 
 	comment("Delete non-existent / invalid IDs");
 
@@ -241,20 +253,20 @@ static void test_subscr_create_update_sel_delete()
 
 	ASSERT_SEL(imsi, imsi0, 0);
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id0), 0);
-	ASSERT_SEL(imsi, imsi0, -ENOEXEC);
+	ASSERT_SEL(imsi, imsi0, -ENOENT);
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id0), -ENOENT);
 
 	ASSERT_SEL(imsi, imsi1, 0);
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id1), 0);
-	ASSERT_SEL(imsi, imsi1, -ENOEXEC);
+	ASSERT_SEL(imsi, imsi1, -ENOENT);
 
 	ASSERT_SEL(imsi, imsi2, 0);
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id2), 0);
-	ASSERT_SEL(imsi, imsi2, -ENOEXEC);
+	ASSERT_SEL(imsi, imsi2, -ENOENT);
 
 	ASSERT_SEL(imsi, short_imsi, 0);
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id_short), 0);
-	ASSERT_SEL(imsi, short_imsi, -ENOEXEC);
+	ASSERT_SEL(imsi, short_imsi, -ENOENT);
 
 	comment_end();
 }

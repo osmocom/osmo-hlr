@@ -154,27 +154,26 @@ out:
 
 }
 
-int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
-			  struct hlr_subscriber *subscr)
+/* Common code for db_subscr_get_by_*() functions. */
+static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscriber *subscr,
+		  const char **err)
 {
-	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMSI];
 	int rc;
-
-	if (!db_bind_text(stmt, NULL, imsi))
-		return -EINVAL;
+	int ret = 0;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
+	if (rc == SQLITE_DONE) {
+		ret = -ENOENT;
+		goto out;
+	}
 	if (rc != SQLITE_ROW) {
-		LOGHLR(imsi, LOGL_ERROR, "Error executing SQL: %d\n", rc);
-		db_remove_reset(stmt);
-		return -ENOEXEC;
+		ret = -EIO;
+		goto out;
 	}
 
-	if (!subscr) {
-		db_remove_reset(stmt);
-		return 0;
-	}
+	if (!subscr)
+		goto out;
 
 	/* obtain the various columns */
 	subscr->id = sqlite3_column_int64(stmt, 0);
@@ -192,9 +191,72 @@ int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 	subscr->ms_purged_cs = sqlite3_column_int(stmt, 11);
 	subscr->ms_purged_ps = sqlite3_column_int(stmt, 12);
 
+out:
 	db_remove_reset(stmt);
 
-	return 0;
+	switch (ret) {
+	case 0:
+		*err = NULL;
+		break;
+	case -ENOENT:
+		*err = "No such subscriber";
+		break;
+	default:
+		*err = sqlite3_errmsg(dbc->db);
+		break;
+	}
+	return ret;
+}
+
+int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
+			  struct hlr_subscriber *subscr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMSI];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, NULL, imsi))
+		return -EIO;
+
+	rc = db_sel(dbc, stmt, subscr, &err);
+	if (rc)
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: IMSI='%s': %s\n",
+		     imsi, err);
+	return rc;
+}
+
+int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
+			    struct hlr_subscriber *subscr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_MSISDN];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, NULL, msisdn))
+		return -EIO;
+
+	rc = db_sel(dbc, stmt, subscr, &err);
+	if (rc)
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: MSISDN='%s': %s\n",
+		     msisdn, err);
+	return rc;
+}
+
+int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
+			struct hlr_subscriber *subscr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_ID];
+	const char *err;
+	int rc;
+
+	if (!db_bind_int64(stmt, NULL, id))
+		return -EIO;
+
+	rc = db_sel(dbc, stmt, subscr, &err);
+	if (rc)
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: ID=%"PRId64": %s\n",
+		     id, err);
+	return rc;
 }
 
 int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable)

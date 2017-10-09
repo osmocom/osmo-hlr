@@ -68,26 +68,26 @@ struct hlr_subscriber {
 db_subscr_create(dbc, "123456789 000003") --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123456789 000003'
 
-db_subscr_get_by_imsi(dbc, "123456789000003", &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456789000003': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, "123456789000003", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000003': No such subscriber
 
 db_subscr_create(dbc, "123456789000002123456") --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123456789000002123456'
 
-db_subscr_get_by_imsi(dbc, "123456789000002123456", &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456789000002123456': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, "123456789000002123456", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000002123456': No such subscriber
 
 db_subscr_create(dbc, "foobar123") --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: 'foobar123'
 
-db_subscr_get_by_imsi(dbc, "foobar123", &g_subscr) --> -ENOEXEC
-DAUC IMSI='foobar123': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, "foobar123", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='foobar123': No such subscriber
 
 db_subscr_create(dbc, "123") --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123'
 
-db_subscr_get_by_imsi(dbc, "123", &g_subscr) --> -ENOEXEC
-DAUC IMSI='123': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, "123", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123': No such subscriber
 
 db_subscr_create(dbc, short_imsi) --> 0
 
@@ -115,6 +115,13 @@ struct hlr_subscriber {
   .msisdn = '54321',
 }
 
+db_subscr_get_by_msisdn(dbc, "54321", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
 db_subscr_update_msisdn_by_imsi(dbc, imsi0, "54321012345678912345678") --> -EINVAL
 DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: '54321012345678912345678'
 
@@ -124,6 +131,16 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
   .msisdn = '54321',
 }
+
+db_subscr_get_by_msisdn(dbc, "54321", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '54321',
+}
+
+db_subscr_get_by_msisdn(dbc, "54321012345678912345678", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='54321012345678912345678': No such subscriber
 
 db_subscr_update_msisdn_by_imsi(dbc, imsi0, "543 21") --> -EINVAL
 DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: '543 21'
@@ -135,6 +152,9 @@ struct hlr_subscriber {
   .msisdn = '54321',
 }
 
+db_subscr_get_by_msisdn(dbc, "543 21", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='543 21': No such subscriber
+
 db_subscr_update_msisdn_by_imsi(dbc, imsi0, "foobar123") --> -EINVAL
 DAUC IMSI='123456789000000': Cannot update subscriber: invalid MSISDN: 'foobar123'
 
@@ -145,6 +165,9 @@ struct hlr_subscriber {
   .msisdn = '54321',
 }
 
+db_subscr_get_by_msisdn(dbc, "foobar123", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='foobar123': No such subscriber
+
 db_subscr_update_msisdn_by_imsi(dbc, imsi0, "5") --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
@@ -154,9 +177,26 @@ struct hlr_subscriber {
   .msisdn = '5',
 }
 
+db_subscr_get_by_msisdn(dbc, "5", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '5',
+}
+
+db_subscr_get_by_msisdn(dbc, "54321", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='54321': No such subscriber
+
 db_subscr_update_msisdn_by_imsi(dbc, imsi0, "543210123456789") --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+}
+
+db_subscr_get_by_msisdn(dbc, "543210123456789", &g_subscr) --> 0
 struct hlr_subscriber {
   .id = 1,
   .imsi = '123456789000000',
@@ -173,14 +213,23 @@ struct hlr_subscriber {
   .msisdn = '543210123456789',
 }
 
+db_subscr_get_by_msisdn(dbc, "5432101234567891", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='5432101234567891': No such subscriber
+
 
 --- Set MSISDN on non-existent / invalid IMSI
 
 db_subscr_update_msisdn_by_imsi(dbc, unknown_imsi, "99") --> -ENOENT
 DAUC Cannot update MSISDN: no such subscriber: IMSI='999999999'
 
+db_subscr_get_by_msisdn(dbc, "99", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='99': No such subscriber
+
 db_subscr_update_msisdn_by_imsi(dbc, "foobar", "99") --> -ENOENT
 DAUC Cannot update MSISDN: no such subscriber: IMSI='foobar'
+
+db_subscr_get_by_msisdn(dbc, "99", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: MSISDN='99': No such subscriber
 
 
 --- Delete non-existent / invalid IDs
@@ -203,8 +252,8 @@ struct hlr_subscriber {
 
 db_subscr_delete_by_id(dbc, id0) --> 0
 
-db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456789000000': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000000': No such subscriber
 
 db_subscr_delete_by_id(dbc, id0) --> -ENOENT
 DAUC Cannot delete: no such subscriber: ID=1
@@ -217,8 +266,8 @@ struct hlr_subscriber {
 
 db_subscr_delete_by_id(dbc, id1) --> 0
 
-db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456789000001': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000001': No such subscriber
 
 db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -228,8 +277,8 @@ struct hlr_subscriber {
 
 db_subscr_delete_by_id(dbc, id2) --> 0
 
-db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456789000002': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000002': No such subscriber
 
 db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -239,8 +288,8 @@ struct hlr_subscriber {
 
 db_subscr_delete_by_id(dbc, id_short) --> 0
 
-db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> -ENOEXEC
-DAUC IMSI='123456': Error executing SQL: 101
+db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456': No such subscriber
 
 ===== test_subscr_create_update_sel_delete: SUCCESS
 

@@ -5,6 +5,8 @@
 
 enum stmt_idx {
 	DB_STMT_SEL_BY_IMSI,
+	DB_STMT_SEL_BY_MSISDN,
+	DB_STMT_SEL_BY_ID,
 	DB_STMT_UPD_VLR_BY_ID,
 	DB_STMT_UPD_SGSN_BY_ID,
 	DB_STMT_AUC_BY_IMSI,
@@ -84,6 +86,10 @@ int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);
+int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
+			    struct hlr_subscriber *subscr);
+int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
+			struct hlr_subscriber *subscr);
 int db_subscr_ps(struct db_context *dbc, const char *imsi, bool enable);
 int db_subscr_lu(struct db_context *dbc,
 		 const struct hlr_subscriber *subscr,

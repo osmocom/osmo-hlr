@@ -26,8 +26,25 @@
 #include "logging.h"
 #include "db.h"
 
+#define SEL_COLUMNS \
+	"id," \
+	"imsi," \
+	"msisdn," \
+	"vlr_number," \
+	"sgsn_number," \
+	"sgsn_address," \
+	"periodic_lu_tmr," \
+	"periodic_rau_tau_tmr," \
+	"nam_cs," \
+	"nam_ps," \
+	"lmsi," \
+	"ms_purged_cs," \
+	"ms_purged_ps"
+
 static const char *stmt_sql[] = {
-	[DB_STMT_SEL_BY_IMSI] = "SELECT id,imsi,msisdn,vlr_number,sgsn_number,sgsn_address,periodic_lu_tmr,periodic_rau_tau_tmr,nam_cs,nam_ps,lmsi,ms_purged_cs,ms_purged_ps FROM subscriber WHERE imsi = ?",
+	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
+	[DB_STMT_SEL_BY_MSISDN] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE msisdn = ?",
+	[DB_STMT_SEL_BY_ID] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE id = ?",
 	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = ? WHERE id = ?",
 	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = ? WHERE id = ?",
 	[DB_STMT_AUC_BY_IMSI] =
