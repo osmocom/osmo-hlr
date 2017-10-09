@@ -29,7 +29,12 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT id,imsi,msisdn,vlr_number,sgsn_number,sgsn_address,periodic_lu_tmr,periodic_rau_tau_tmr,nam_cs,nam_ps,lmsi,ms_purged_cs,ms_purged_ps FROM subscriber WHERE imsi = ?",
 	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = ? WHERE id = ?",
 	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = ? WHERE id = ?",
-	[DB_STMT_AUC_BY_IMSI] = "SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn, ind_bitlen FROM subscriber LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id WHERE imsi = ?",
+	[DB_STMT_AUC_BY_IMSI] =
+		"SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn, ind_bitlen"
+		" FROM subscriber"
+		" LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id"
+		" LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id"
+		" WHERE imsi = ?",
 	[DB_STMT_AUC_UPD_SQN] = "UPDATE auc_3g SET sqn = ? WHERE subscriber_id = ?",
 	[DB_STMT_UPD_PURGE_CS_BY_IMSI] = "UPDATE subscriber SET ms_purged_cs=1 WHERE imsi = ?",
 	[DB_STMT_UPD_PURGE_PS_BY_IMSI] = "UPDATE subscriber SET ms_purged_ps=1 WHERE imsi = ?",
