@@ -28,7 +28,7 @@
 #include "logging.h"
 #include "db.h"
 
-#define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "%s: " fmt, imsi, ## args)
+#define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
 #define SL3_TXT(x, stmt, idx)					do {	\
 		const char *_txt = (const char *) sqlite3_column_text(stmt, idx);	\

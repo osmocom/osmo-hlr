@@ -30,7 +30,7 @@
 #include "auc.h"
 #include "rand.h"
 
-#define LOGAUC(imsi, level, fmt, args ...)	LOGP(DAUC, level, "%s: " fmt, imsi, ## args)
+#define LOGAUC(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
 /* update the SQN for a given subscriber ID */
 int db_update_sqn(struct db_context *dbc, uint64_t id,
@@ -98,7 +98,7 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc == SQLITE_DONE) {
-		LOGAUC(imsi, LOGL_INFO, "Unknown\n");
+		LOGAUC(imsi, LOGL_INFO, "No such subscriber\n");
 		ret = 0;
 		goto out;
 	} else if (rc != SQLITE_ROW) {
