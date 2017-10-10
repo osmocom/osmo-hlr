@@ -711,3 +711,483 @@ DAUC Cannot read subscriber from db: IMSI='123456': No such subscriber
 
 ===== test_subscr_create_update_sel_delete: SUCCESS
 
+
+===== test_subscr_aud
+
+--- Get auth data for non-existent subscriber
+
+db_get_auth_data(dbc, unknown_imsi, &g_aud2g, &g_aud3g, &g_id) --> 0
+DAUC IMSI='999999999': No such subscriber
+
+
+
+--- Create subscriber
+
+db_subscr_create(dbc, imsi0) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+
+--- Set auth data, 2G only
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v1,
+  .u.gsm.ki = '0123456789abcdef0123456789abcdef',
+}
+3G: none
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v1,
+  .u.gsm.ki = '0123456789abcdef0123456789abcdef',
+}
+3G: none
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v2, "BeadedBeeAced1EbbedDefacedFacade")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v2,
+  .u.gsm.ki = 'beadedbeeaced1ebbeddefacedfacade',
+}
+3G: none
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "DeafBeddedBabeAcceededFadedDecaf")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'deafbeddedbabeacceededfadeddecaf',
+}
+3G: none
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = XOR,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: none
+
+
+--- Remove 2G auth data
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> -ENOENT
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = XOR,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: none
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+
+--- Set auth data, 3G only
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 1,
+  .u.umts.k = 'c01ffedc1cadaeac1d1f1edacac1ab0a',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 1,
+  .u.umts.k = 'c01ffedc1cadaeac1d1f1edacac1ab0a',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "Deaf0ff1ceD0d0DabbedD1ced1ceF00d", true, "F1bbed0afD0eF0bD0ffed0ddF1fe0b0e", 0)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'deaf0ff1ced0d0dabbedd1ced1cef00d',
+  .u.umts.opc_is_op = 1,
+  .u.umts.k = 'f1bbed0afd0ef0bd0ffed0ddf1fe0b0e',
+  .u.umts.amf = '0000',
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", false, "DeafBeddedBabeAcceededFadedDecaf", OSMO_MILENAGE_IND_BITLEN_MAX)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 28,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "CededEffacedAceFacedBadFadedBeef", false, "BeefedCafeFaceAcedAddedDecadeFee", 5)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'cededeffacedacefacedbadfadedbeef',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+
+--- Remove 3G auth data
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)) --> -ENOENT
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "CededEffacedAceFacedBadFadedBeef", false, "BeefedCafeFaceAcedAddedDecadeFee", 5)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+DAUC IMSI='123456789000000': No 2G Auth Data
+
+2G: none
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'cededeffacedacefacedbadfadedbeef',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, "asdfasdfasd", false, "asdfasdfasdf", 99999)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+
+--- Set auth data, 2G and 3G
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "CededEffacedAceFacedBadFadedBeef")) --> 0
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", false, "DeafBeddedBabeAcceededFadedDecaf", 5)) --> 0
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+
+--- Set invalid auth data
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(99999, "f000000000000f00000000000f000000")) --> -EINVAL
+DAUC Cannot update auth tokens: Unknown auth algo: 99999
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f000000000000f00000000000f000000f00000000")) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid KI: 'f000000000000f00000000000f000000f00000000'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f00")) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid KI: 'f00'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_MILENAGE, "0123456789abcdef0123456789abcdef")) --> -EINVAL
+DAUC Cannot update auth tokens: auth algo not suited for 2G: MILENAGE
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "0f000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", 5)) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid OP/OPC: '0f000000000000f00000000000f000000'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "000000000000f00000000000f000000", 5)) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid K: '000000000000f00000000000f000000'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", OSMO_MILENAGE_IND_BITLEN_MAX + 1)) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid ind_bitlen: 29
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "X000000000000f00000000000f000000", false, "f000000000000f00000000000f000000", 5)) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid OP/OPC: 'X000000000000f00000000000f000000'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "f000000000000f00000000000f000000", false, "f000000000000 f00000000000 f000000", 5)) --> -EINVAL
+DAUC Cannot update auth tokens: Invalid K: 'f000000000000 f00000000000 f000000'
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 1
+
+2G: struct osmo_sub_auth_data {
+  .type = GSM,
+  .algo = COMP128v3,
+  .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
+}
+3G: struct osmo_sub_auth_data {
+  .type = UMTS,
+  .algo = MILENAGE,
+  .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
+  .u.umts.opc_is_op = 0,
+  .u.umts.k = 'deafbeddedbabeacceededfadeddecaf',
+  .u.umts.amf = '0000',
+  .u.umts.ind_bitlen = 5,
+}
+
+
+--- Delete subscriber
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_subscr_delete_by_id(dbc, id) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000000': No such subscriber
+
+
+--- Re-add subscriber and verify auth data didn't come back
+
+db_subscr_create(dbc, imsi0) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -1
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+db_subscr_delete_by_id(dbc, id) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMSI='123456789000000': No such subscriber
+
+===== test_subscr_aud: SUCCESS
+

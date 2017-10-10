@@ -61,6 +61,14 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SUBSCR_CREATE] = "INSERT INTO subscriber (imsi) VALUES ($imsi)",
 	[DB_STMT_DEL_BY_ID] = "DELETE FROM subscriber WHERE id = $subscriber_id",
 	[DB_STMT_SET_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = $msisdn WHERE imsi = $imsi",
+	[DB_STMT_AUC_2G_INSERT] =
+		"INSERT INTO auc_2g (subscriber_id, algo_id_2g, ki)"
+		" VALUES($subscriber_id, $algo_id_2g, $ki)",
+	[DB_STMT_AUC_2G_DELETE] = "DELETE FROM auc_2g WHERE subscriber_id = $subscriber_id",
+	[DB_STMT_AUC_3G_INSERT] =
+		"INSERT INTO auc_3g (subscriber_id, algo_id_3g, k, op, opc, ind_bitlen)"
+		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
+	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

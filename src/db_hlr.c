@@ -71,6 +71,7 @@ int db_subscr_create(struct db_context *dbc, const char *imsi)
 int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 {
 	int rc;
+	struct sub_auth_data_str aud;
 	int ret = 0;
 
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_DEL_BY_ID];
@@ -99,10 +100,27 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
 		ret = -EIO;
 	}
-
-	/* FIXME: also remove authentication data from auc_2g and auc_3g */
-
 	db_remove_reset(stmt);
+
+	/* make sure to remove authentication data for this subscriber id, for
+	 * both 2G and 3G. */
+
+	aud = (struct sub_auth_data_str){
+		.type = OSMO_AUTH_TYPE_GSM,
+		.algo = OSMO_AUTH_ALG_NONE,
+	};
+	rc = db_subscr_update_aud_by_id(dbc, subscr_id, &aud);
+	if (ret == -ENOENT && !rc)
+		ret = 0;
+
+	aud = (struct sub_auth_data_str){
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.algo = OSMO_AUTH_ALG_NONE,
+	};
+	rc = db_subscr_update_aud_by_id(dbc, subscr_id, &aud);
+	if (ret == -ENOENT && !rc)
+		ret = 0;
+
 	return ret;
 }
 
@@ -152,6 +170,192 @@ out:
 	db_remove_reset(stmt);
 	return ret;
 
+}
+
+/* Insert or update 2G or 3G authentication tokens in the database.
+ * If aud->type is OSMO_AUTH_TYPE_GSM, the auc_2g table entry for the
+ * subscriber will be added or modified; if aud->algo is OSMO_AUTH_ALG_NONE,
+ * however, the auc_2g entry for the subscriber is deleted. If aud->type is
+ * OSMO_AUTH_TYPE_UMTS, the auc_3g table is updated; again, if aud->algo is
+ * OSMO_AUTH_ALG_NONE, the auc_3g entry is deleted.
+ * Returns 0 if successful, -EINVAL for unknown aud->type, -ENOENT for unknown
+ * subscr_id, -EIO for SQL errors.
+ */
+int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
+			       const struct sub_auth_data_str *aud)
+{
+	sqlite3_stmt *stmt_del;
+	sqlite3_stmt *stmt_ins;
+	sqlite3_stmt *stmt;
+	const char *label;
+	int rc;
+	int ret = 0;
+
+	switch (aud->type) {
+	case OSMO_AUTH_TYPE_GSM:
+		label = "auc_2g";
+		stmt_del = dbc->stmt[DB_STMT_AUC_2G_DELETE];
+		stmt_ins = dbc->stmt[DB_STMT_AUC_2G_INSERT];
+
+		switch (aud->algo) {
+		case OSMO_AUTH_ALG_NONE:
+		case OSMO_AUTH_ALG_COMP128v1:
+		case OSMO_AUTH_ALG_COMP128v2:
+		case OSMO_AUTH_ALG_COMP128v3:
+		case OSMO_AUTH_ALG_XOR:
+			break;
+		case OSMO_AUTH_ALG_MILENAGE:
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " auth algo not suited for 2G: %s\n",
+			     osmo_auth_alg_name(aud->algo));
+			return -EINVAL;
+		default:
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Unknown auth algo: %d\n", aud->algo);
+			return -EINVAL;
+		}
+
+		if (aud->algo == OSMO_AUTH_ALG_NONE)
+			break;
+		if (!osmo_is_hexstr(aud->u.gsm.ki, 32, 32, true)) {
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Invalid KI: '%s'\n", aud->u.gsm.ki);
+			return -EINVAL;
+		}
+		break;
+
+	case OSMO_AUTH_TYPE_UMTS:
+		label = "auc_3g";
+		stmt_del = dbc->stmt[DB_STMT_AUC_3G_DELETE];
+		stmt_ins = dbc->stmt[DB_STMT_AUC_3G_INSERT];
+		switch (aud->algo) {
+		case OSMO_AUTH_ALG_NONE:
+		case OSMO_AUTH_ALG_MILENAGE:
+			break;
+		case OSMO_AUTH_ALG_COMP128v1:
+		case OSMO_AUTH_ALG_COMP128v2:
+		case OSMO_AUTH_ALG_COMP128v3:
+		case OSMO_AUTH_ALG_XOR:
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " auth algo not suited for 3G: %s\n",
+			     osmo_auth_alg_name(aud->algo));
+			return -EINVAL;
+		default:
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Unknown auth algo: %d\n", aud->algo);
+			return -EINVAL;
+		}
+
+		if (aud->algo == OSMO_AUTH_ALG_NONE)
+			break;
+		if (!osmo_is_hexstr(aud->u.umts.k, 32, 32, true)) {
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Invalid K: '%s'\n", aud->u.umts.k);
+			return -EINVAL;
+		}
+		if (!osmo_is_hexstr(aud->u.umts.opc, 32, 32, true)) {
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Invalid OP/OPC: '%s'\n", aud->u.umts.opc);
+			return -EINVAL;
+		}
+		if (aud->u.umts.ind_bitlen > OSMO_MILENAGE_IND_BITLEN_MAX) {
+			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+			     " Invalid ind_bitlen: %d\n", aud->u.umts.ind_bitlen);
+			return -EINVAL;
+		}
+		break;
+	default:
+		LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
+		     " unknown auth type: %d\n", aud->type);
+		return -EINVAL;
+	}
+
+	stmt = stmt_del;
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR,
+		     "Cannot delete %s row: SQL error: (%d) %s\n",
+		     label, rc, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc)
+		/* Leave "no such entry" logging to the caller -- during
+		 * db_subscr_delete_by_id(), we call this to make sure it is
+		 * empty, and no entry is not an error then.*/
+		ret = -ENOENT;
+	else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%"PRId64
+		     " from %s: SQL modified %d rows (expected 1)\n",
+		     subscr_id, label, rc);
+		ret = -EIO;
+	}
+
+	db_remove_reset(stmt);
+
+	/* Error situation? Return now. */
+	if (ret && ret != -ENOENT)
+		return ret;
+
+	/* Just delete requested? */
+	if (aud->algo == OSMO_AUTH_ALG_NONE)
+		return ret;
+
+	/* Don't return -ENOENT if inserting new data. */
+	ret = 0;
+
+	/* Insert new row */
+	stmt = stmt_ins;
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
+
+	switch (aud->type) {
+	case OSMO_AUTH_TYPE_GSM:
+		if (!db_bind_int(stmt, "$algo_id_2g", aud->algo))
+			return -EIO;
+		if (!db_bind_text(stmt, "$ki", aud->u.gsm.ki))
+			return -EIO;
+		break;
+	case OSMO_AUTH_TYPE_UMTS:
+		if (!db_bind_int(stmt, "$algo_id_3g", aud->algo))
+			return -EIO;
+		if (!db_bind_text(stmt, "$k", aud->u.umts.k))
+			return -EIO;
+		if (!db_bind_text(stmt, "$op",
+				  aud->u.umts.opc_is_op ? aud->u.umts.opc : NULL))
+			return -EIO;
+		if (!db_bind_text(stmt, "$opc",
+				  aud->u.umts.opc_is_op ? NULL : aud->u.umts.opc))
+			return -EIO;
+		if (!db_bind_int(stmt, "$ind_bitlen", aud->u.umts.ind_bitlen))
+			return -EIO;
+		break;
+	default:
+		OSMO_ASSERT(false);
+	}
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR,
+		     "Cannot insert %s row: SQL error: (%d) %s\n",
+		     label, rc, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
 }
 
 /* Common code for db_subscr_get_by_*() functions. */

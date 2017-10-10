@@ -18,6 +18,10 @@ enum stmt_idx {
 	DB_STMT_SUBSCR_CREATE,
 	DB_STMT_DEL_BY_ID,
 	DB_STMT_SET_MSISDN_BY_IMSI,
+	DB_STMT_AUC_2G_INSERT,
+	DB_STMT_AUC_2G_DELETE,
+	DB_STMT_AUC_3G_INSERT,
+	DB_STMT_AUC_3G_DELETE,
 	_NUM_DB_STMT
 };
 
@@ -78,11 +82,36 @@ struct hlr_subscriber {
 	bool		ms_purged_ps;
 };
 
+/* Like struct osmo_sub_auth_data, but the keys are in hexdump representation.
+ * This is useful because SQLite requires them in hexdump format, and callers
+ * like the VTY and CTRL interface also have them available as hexdump to begin
+ * with. In the binary format, a VTY command would first need to hexparse,
+ * after which the db function would again hexdump, copying to separate
+ * buffers. The roundtrip can be saved by providing char* to begin with. */
+struct sub_auth_data_str {
+	enum osmo_sub_auth_type type;
+	enum osmo_auth_algo algo;
+	union {
+		struct {
+			const char *opc;
+			const char *k;
+			uint64_t sqn;
+			int opc_is_op;
+			unsigned int ind_bitlen;
+		} umts;
+		struct {
+			const char *ki;
+		} gsm;
+	} u;
+};
+
 int db_subscr_create(struct db_context *dbc, const char *imsi);
 int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id);
 
 int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 				    const char *msisdn);
+int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
+			       const struct sub_auth_data_str *aud);
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);
