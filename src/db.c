@@ -132,16 +132,16 @@ struct db_context *db_open(void *ctx, const char *fname)
 		const char *o = sqlite3_compileoption_get(i);
 		if (!o)
 			break;
-		LOGP(DDB, LOGL_DEBUG, "SQlite3 compiled with '%s'\n", o);
+		LOGP(DDB, LOGL_DEBUG, "SQLite3 compiled with '%s'\n", o);
 	}
 
 	rc = sqlite3_config(SQLITE_CONFIG_LOG, sql3_error_log_cb, NULL);
 	if (rc != SQLITE_OK)
-		LOGP(DDB, LOGL_NOTICE, "Unable to set SQlite3 error log callback\n");
+		LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 error log callback\n");
 
 	rc = sqlite3_config(SQLITE_CONFIG_SQLLOG, sql3_sql_log_cb, NULL);
 	if (rc != SQLITE_OK)
-		LOGP(DDB, LOGL_NOTICE, "Unable to set SQlite3 SQL statement log callback\n");
+		LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 SQL statement log callback\n");
 
 	rc = sqlite3_open(dbc->fname, &dbc->db);
 	if (rc != SQLITE_OK) {
@@ -153,7 +153,7 @@ struct db_context *db_open(void *ctx, const char *fname)
 	/* enable extended result codes */
 	rc = sqlite3_extended_result_codes(dbc->db, 1);
 	if (rc != SQLITE_OK)
-		LOGP(DDB, LOGL_ERROR, "Unable to enable SQlite3 extended result codes\n");
+		LOGP(DDB, LOGL_ERROR, "Unable to enable SQLite3 extended result codes\n");
 
 	char *err_msg;
 	rc = sqlite3_exec(dbc->db, "PRAGMA journal_mode=WAL; PRAGMA synchonous = NORMAL;", 0, 0, &err_msg);
