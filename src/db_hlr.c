@@ -30,12 +30,13 @@
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
-#define SL3_TXT(x, stmt, idx)					do {	\
-		const char *_txt = (const char *) sqlite3_column_text(stmt, idx);	\
-		if (_txt)						\
-			strncpy(x, _txt, sizeof(x));			\
-			x[sizeof(x)-1] = '\0';				\
-		} while (0)
+#define SL3_TXT(x, stmt, idx) 					\
+	do {							\
+		const char *_txt = (const char *) sqlite3_column_text(stmt, idx);\
+		if (_txt)					\
+			strncpy(x, _txt, sizeof(x));		\
+		x[sizeof(x)-1] = '\0';				\
+	} while (0)
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr)
