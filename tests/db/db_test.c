@@ -34,6 +34,19 @@
 #define comment(fmt, args...) fprintf(stderr, "\n--- " fmt "\n\n", ## args);
 #define comment_end() fprintf(stderr, "===== %s: SUCCESS\n\n", __func__);
 
+#define fill_invalid(x) _fill_invalid(&x, sizeof(x))
+static void _fill_invalid(void *dest, size_t size)
+{
+	uint8_t *pos = dest;
+	size_t remain = size;
+	int wrote = 0;
+	do {
+		remain -= wrote;
+		pos += wrote;
+		wrote = snprintf((void*)pos, remain, "-invalid-data");
+	} while (wrote < remain);
+}
+
 /* Perform a function call and verbosely assert that its return value is as expected.
  * The return code is then available in g_rc. */
 #define ASSERT_RC(call, expect_rc) \
@@ -53,7 +66,7 @@
 #define ASSERT_SEL(by, val, expect_rc) \
 	do { \
 		int rc; \
-		g_subscr = (struct hlr_subscriber){}; \
+		fill_invalid(g_subscr); \
 		fprintf(stderr, "db_subscr_get_by_" #by "(dbc, " #val ", &g_subscr) --> " \
                                 #expect_rc "\n"); \
 		rc = db_subscr_get_by_##by(dbc, val, &g_subscr); \
@@ -71,8 +84,8 @@
  * The results are then available in g_aud2g and g_aud3g. */
 #define ASSERT_SEL_AUD(imsi, expect_rc, expect_id) \
 	do { \
-		g_aud2g = (struct osmo_sub_auth_data){}; \
-		g_aud3g = (struct osmo_sub_auth_data){}; \
+		fill_invalid(g_aud2g); \
+		fill_invalid(g_aud3g); \
 		g_id = 0; \
 		ASSERT_RC(db_get_auth_data(dbc, imsi, &g_aud2g, &g_aud3g, &g_id), expect_rc); \
 		if (!g_rc) { \

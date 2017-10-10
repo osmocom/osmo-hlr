@@ -379,6 +379,8 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	if (!subscr)
 		goto out;
 
+	*subscr = (struct hlr_subscriber){};
+
 	/* obtain the various columns */
 	subscr->id = sqlite3_column_int64(stmt, 0);
 	SL3_TXT(subscr->imsi, stmt, 1);
