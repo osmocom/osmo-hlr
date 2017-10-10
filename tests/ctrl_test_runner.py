@@ -178,7 +178,7 @@ class TestCtrlHLR(TestCtrlBase):
 
     def tearDown(self):
         super(TestCtrlHLR, self).tearDown()
-        os.unlink("hlr_ctrl_test.db")
+        os.unlink(self.HLR_DB)
 
     def ctrl_command(self):
         return ["./src/osmo-hlr", "-c", "doc/examples/osmo-hlr.cfg", '-l', 'hlr_ctrl_test.db']
