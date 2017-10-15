@@ -1,0 +1,27 @@
+GET 1 invalid
+ERROR 1 Command not found
+SET 2 invalid nonsense
+ERROR 2 Command not found
+
+SET 3 enable-ps 901990000000001
+SET_REPLY 3 enable-ps OK
+SET 4 status-ps 901990000000001
+SET_REPLY 4 status-ps 1
+SET 5 enable-ps 901990000000001
+SET_REPLY 5 enable-ps OK
+SET 6 status-ps 901990000000001
+SET_REPLY 6 status-ps 1
+
+SET 7 disable-ps 901990000000001
+SET_REPLY 7 disable-ps OK
+SET 8 status-ps 901990000000001
+SET_REPLY 8 status-ps 0
+SET 9 disable-ps 901990000000001
+SET_REPLY 9 disable-ps OK
+SET 10 status-ps 901990000000001
+SET_REPLY 10 status-ps 0
+
+SET 11 enable-ps 901990000000001
+SET_REPLY 11 enable-ps OK
+SET 12 status-ps 901990000000001
+SET_REPLY 12 status-ps 1

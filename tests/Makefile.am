@@ -28,7 +28,8 @@ EXTRA_DIST = \
 	$(TESTSUITE) \
 	test_nodes.vty \
 	test_subscriber.vty \
-	ctrl_test_runner.py \
+	test_subscriber.sql \
+	test_subscriber.ctrl \
 	$(NULL)
 
 TESTSUITE = $(srcdir)/testsuite
@@ -41,7 +42,7 @@ if ENABLE_EXT_TESTS
 python-tests:
 # don't run vty and ctrl tests concurrently so that the ports don't conflict
 	$(MAKE) vty-test
-	$(PYTHON) $(srcdir)/ctrl_test_runner.py -w $(abs_top_builddir) -v
+	$(MAKE) ctrl-test
 
 VTY_TEST_DB = hlr_vty_test.db
 
@@ -56,6 +57,22 @@ vty-test:
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l hlr_vty_test.db" \
 		$(U) $(srcdir)/*.vty
 	-rm -f $(VTY_TEST_DB)
+
+CTRL_TEST_DB = hlr_ctrl_test.db
+
+# To update the CTRL script from current application behavior,
+# pass -u to ctrl_script_runner.py by doing:
+#   make ctrl-test U=-u
+ctrl-test:
+	-rm -f $(CTRL_TEST_DB)
+	sqlite3 $(CTRL_TEST_DB) < $(top_srcdir)/sql/hlr.sql
+	sqlite3 $(CTRL_TEST_DB) < $(srcdir)/test_subscriber.sql
+	osmo_verify_transcript_ctrl.py -v \
+		-p 4259 \
+		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l hlr_ctrl_test.db" \
+		$(U) $(srcdir)/*.ctrl
+	-rm -f $(CTRL_TEST_DB)
+
 else
 python-tests:
 	echo "Not running python-based tests (determined at configure-time)"
