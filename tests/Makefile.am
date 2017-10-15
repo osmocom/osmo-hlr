@@ -26,6 +26,7 @@ EXTRA_DIST = \
 	testsuite.at \
 	$(srcdir)/package.m4 \
 	$(TESTSUITE) \
+	test_nodes.vty \
 	test_subscriber.vty \
 	ctrl_test_runner.py \
 	$(NULL)
