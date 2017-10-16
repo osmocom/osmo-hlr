@@ -114,6 +114,14 @@ struct lu_operation *lu_op_alloc(struct osmo_gsup_server *srv)
 	return luop;
 }
 
+void lu_op_free(struct lu_operation *luop)
+{
+	/* Only attempt to remove when it was ever added to a list. */
+	if (luop->list.next)
+		llist_del(&luop->list);
+	talloc_free(luop);
+}
+
 struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn)
 {
 	uint8_t *peer_addr;
@@ -183,8 +191,7 @@ void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 
 	_luop_tx_gsup(luop, &gsup);
 
-	llist_del(&luop->list);
-	talloc_free(luop);
+	lu_op_free(luop);
 }
 
 /*! Transmit UPD_LOC_RESULT and destroy lu_operation */
@@ -197,8 +204,7 @@ void lu_op_tx_ack(struct lu_operation *luop)
 
 	_luop_tx_gsup(luop, &gsup);
 
-	llist_del(&luop->list);
-	talloc_free(luop);
+	lu_op_free(luop);
 }
 
 /*! Send Cancel Location to old VLR/SGSN */

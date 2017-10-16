@@ -79,3 +79,5 @@ void lu_op_tx_ack(struct lu_operation *luop);
 void lu_op_tx_cancel_old(struct lu_operation *luop);
 void lu_op_tx_insert_subscr_data(struct lu_operation *luop);
 void lu_op_tx_del_subscr_data(struct lu_operation *luop);
+
+void lu_op_free(struct lu_operation *luop);
