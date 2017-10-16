@@ -54,6 +54,7 @@ static int handle_cmd_ps(struct hlr *ctx, struct ctrl_cmd *cmd, bool enable)
 			luop = lu_op_alloc_conn(co);
 			lu_op_fill_subscr(luop, ctx->dbc, cmd->value);
 			lu_op_tx_del_subscr_data(luop);
+			lu_op_free(luop);
 		}
 	}
 
