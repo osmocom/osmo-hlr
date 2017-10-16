@@ -28,7 +28,10 @@
 #include <sqlite3.h>
 
 #include "logging.h"
+#include "hlr.h"
 #include "db.h"
+#include "gsup_server.h"
+#include "luop.h"
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
@@ -608,4 +611,52 @@ out:
 	db_remove_reset(stmt);
 
 	return ret;
+}
+
+/*! Update nam_cs/nam_ps in the db and trigger notifications to GSUP clients.
+ * \param hlr     Global hlr context.
+ * \param subscr  Subscriber from a fresh db_subscr_get_by_*() call.
+ * \param nam_val True to enable CS/PS, false to disable.
+ * \param is_ps   True to enable/disable PS, false for CS.
+ * \returns 0 on success, ENOEXEC if there is no need to change, a negative
+ *          value on error.
+ */
+int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps)
+{
+	int rc;
+        struct lu_operation *luop;
+        struct osmo_gsup_conn *co;
+	bool is_val = is_ps? subscr->nam_ps : subscr->nam_cs;
+
+	if (is_val == nam_val) {
+		LOGHLR(subscr->imsi, LOGL_DEBUG, "Already has the requested value when asked to %s %s\n",
+		       nam_val ? "enable" : "disable", is_ps ? "PS" : "CS");
+		return ENOEXEC;
+	}
+
+	rc = db_subscr_nam(hlr->dbc, subscr->imsi, nam_val, is_ps);
+	if (rc)
+		return rc > 0? -rc : rc;
+
+	/* If we're disabling, send a notice out to the GSUP client that is
+	 * responsible. Otherwise no need. */
+	if (nam_val)
+		return 0;
+
+	/* FIXME: only send to single SGSN where latest update for IMSI came from */
+	llist_for_each_entry(co, &hlr->gs->clients, list) {
+		luop = lu_op_alloc_conn(co);
+		if (!luop) {
+			LOGHLR(subscr->imsi, LOGL_ERROR,
+			       "Cannot notify GSUP client, cannot allocate lu_operation,"
+			       " for %s:%u\n",
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
+		luop->subscr = *subscr;
+		lu_op_tx_del_subscr_data(luop);
+		lu_op_free(luop);
+	}
+	return 0;
 }

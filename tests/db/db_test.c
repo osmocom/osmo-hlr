@@ -837,3 +837,9 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			struct osmo_sub_auth_data *aud3g,
 			const uint8_t *rand_auts, const uint8_t *auts)
 { OSMO_ASSERT(false); return -1; }
+void *lu_op_alloc_conn(void *conn)
+{ OSMO_ASSERT(false); return NULL; }
+void lu_op_tx_del_subscr_data(void *luop)
+{ OSMO_ASSERT(false); }
+void lu_op_free(void *luop)
+{ OSMO_ASSERT(false); }

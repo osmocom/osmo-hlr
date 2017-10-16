@@ -35,31 +35,19 @@
 
 static int handle_cmd_ps(struct hlr *ctx, struct ctrl_cmd *cmd, bool enable)
 {
-	struct lu_operation *luop = NULL;
-	struct osmo_gsup_conn *co;
+	struct hlr_subscriber subscr;
 
-	if (db_subscr_get_by_imsi(ctx->dbc, cmd->value, NULL) < 0) {
+	if (db_subscr_get_by_imsi(ctx->dbc, cmd->value, &subscr) < 0) {
 		cmd->reply = "Subscriber Unknown in HLR";
 		return CTRL_CMD_ERROR;
 	}
 
-	if (db_subscr_nam(ctx->dbc, cmd->value, enable, true) < 0) {
+	if (hlr_subscr_nam(ctx, &subscr, enable, true) < 0) {
 		cmd->reply = "Error updating DB";
 		return CTRL_CMD_ERROR;
 	}
 
-	/* FIXME: only send to single SGSN where latest update for IMSI came from */
-	if (!enable) {
-		llist_for_each_entry(co, &ctx->gs->clients, list) {
-			luop = lu_op_alloc_conn(co);
-			lu_op_fill_subscr(luop, ctx->dbc, cmd->value);
-			lu_op_tx_del_subscr_data(luop);
-			lu_op_free(luop);
-		}
-	}
-
 	cmd->reply = "OK";
-
 	return CTRL_CMD_REPLY;
 }
 

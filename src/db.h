@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 
+struct hlr;
+
 enum stmt_idx {
 	DB_STMT_SEL_BY_IMSI,
 	DB_STMT_SEL_BY_MSISDN,
@@ -125,3 +127,5 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
+
+int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
