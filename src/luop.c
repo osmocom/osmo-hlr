@@ -127,8 +127,10 @@ struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn)
 	uint8_t *peer_addr;
 	struct lu_operation *luop = lu_op_alloc(conn->server);
 	int rc = osmo_gsup_conn_ccm_get(conn, &peer_addr, IPAC_IDTAG_SERNR);
-	if (rc < 0)
+	if (rc < 0) {
+		lu_op_free(luop);
 		return NULL;
+	}
 
 	luop->peer = talloc_memdup(luop, peer_addr, rc);
 
