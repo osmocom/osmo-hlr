@@ -24,7 +24,11 @@
 
 #include <osmocom/ctrl/control_if.h>
 
-#include "gsup_server.h"
+enum hlr_ctrl_node {
+	CTRL_NODE_SUBSCR = _LAST_CTRL_NODE,
+	CTRL_NODE_SUBSCR_BY,
+	_LAST_CTRL_NODE_HLR
+};
 
 int hlr_ctrl_cmds_install();
 struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr);
