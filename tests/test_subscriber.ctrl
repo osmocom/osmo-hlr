@@ -1,27 +1,598 @@
-GET 1 invalid
-ERROR 1 Command not found
-SET 2 invalid nonsense
-ERROR 2 Command not found
+GET 1 subscriber.by-imsi-901990000000001.info
+GET_REPLY 1 subscriber.by-imsi-901990000000001.info 
+id	1
+imsi	901990000000001
+msisdn	1
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
 
-SET 3 enable-ps 901990000000001
-SET_REPLY 3 enable-ps OK
-SET 4 status-ps 901990000000001
-SET_REPLY 4 status-ps 1
-SET 5 enable-ps 901990000000001
-SET_REPLY 5 enable-ps OK
-SET 6 status-ps 901990000000001
-SET_REPLY 6 status-ps 1
+GET 2 subscriber.by-imsi-901990000000001.info-aud
+GET_REPLY 2 subscriber.by-imsi-901990000000001.info-aud 
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
 
-SET 7 disable-ps 901990000000001
-SET_REPLY 7 disable-ps OK
-SET 8 status-ps 901990000000001
-SET_REPLY 8 status-ps 0
-SET 9 disable-ps 901990000000001
-SET_REPLY 9 disable-ps OK
-SET 10 status-ps 901990000000001
-SET_REPLY 10 status-ps 0
+GET 3 subscriber.by-imsi-901990000000001.info-all
+GET_REPLY 3 subscriber.by-imsi-901990000000001.info-all 
+id	1
+imsi	901990000000001
+msisdn	1
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
 
-SET 11 enable-ps 901990000000001
-SET_REPLY 11 enable-ps OK
-SET 12 status-ps 901990000000001
-SET_REPLY 12 status-ps 1
+GET 4 subscriber.by-imsi-901990000000002.info
+GET_REPLY 4 subscriber.by-imsi-901990000000002.info 
+id	2
+imsi	901990000000002
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 5 subscriber.by-imsi-901990000000002.info-aud
+GET_REPLY 5 subscriber.by-imsi-901990000000002.info-aud 
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	4223
+
+GET 6 subscriber.by-imsi-901990000000002.info-all
+GET_REPLY 6 subscriber.by-imsi-901990000000002.info-all 
+id	2
+imsi	901990000000002
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	4223
+
+GET 7 subscriber.by-imsi-901990000000003.info
+GET_REPLY 7 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 8 subscriber.by-imsi-901990000000003.info-aud
+GET_REPLY 8 subscriber.by-imsi-901990000000003.info-aud 
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 9 subscriber.by-imsi-901990000000003.info-all
+GET_REPLY 9 subscriber.by-imsi-901990000000003.info-all 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 10 subscriber.by-imsi-901990000000003.ps-enabled
+GET_REPLY 10 subscriber.by-imsi-901990000000003.ps-enabled 1
+
+SET 11 subscriber.by-imsi-901990000000003.ps-enabled 0
+SET_REPLY 11 subscriber.by-imsi-901990000000003.ps-enabled OK
+GET 12 subscriber.by-imsi-901990000000003.ps-enabled
+GET_REPLY 12 subscriber.by-imsi-901990000000003.ps-enabled 0
+
+GET 13 subscriber.by-imsi-901990000000003.info
+GET_REPLY 13 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 14 subscriber.by-imsi-901990000000003.ps-enabled 0
+SET_REPLY 14 subscriber.by-imsi-901990000000003.ps-enabled OK
+GET 15 subscriber.by-imsi-901990000000003.ps-enabled
+GET_REPLY 15 subscriber.by-imsi-901990000000003.ps-enabled 0
+
+SET 16 subscriber.by-imsi-901990000000003.ps-enabled 1
+SET_REPLY 16 subscriber.by-imsi-901990000000003.ps-enabled OK
+GET 17 subscriber.by-imsi-901990000000003.ps-enabled
+GET_REPLY 17 subscriber.by-imsi-901990000000003.ps-enabled 1
+
+GET 18 subscriber.by-imsi-901990000000003.info
+GET_REPLY 18 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 19 subscriber.by-imsi-901990000000003.ps-enabled 1
+SET_REPLY 19 subscriber.by-imsi-901990000000003.ps-enabled OK
+GET 20 subscriber.by-imsi-901990000000003.ps-enabled
+GET_REPLY 20 subscriber.by-imsi-901990000000003.ps-enabled 1
+
+GET 21 subscriber.by-imsi-901990000000003.cs-enabled
+GET_REPLY 21 subscriber.by-imsi-901990000000003.cs-enabled 1
+
+SET 22 subscriber.by-imsi-901990000000003.cs-enabled 0
+SET_REPLY 22 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 23 subscriber.by-imsi-901990000000003.cs-enabled
+GET_REPLY 23 subscriber.by-imsi-901990000000003.cs-enabled 0
+
+GET 24 subscriber.by-imsi-901990000000003.info
+GET_REPLY 24 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 25 subscriber.by-imsi-901990000000003.cs-enabled 0
+SET_REPLY 25 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 26 subscriber.by-imsi-901990000000003.cs-enabled
+GET_REPLY 26 subscriber.by-imsi-901990000000003.cs-enabled 0
+
+SET 27 subscriber.by-imsi-901990000000003.cs-enabled 1
+SET_REPLY 27 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 28 subscriber.by-imsi-901990000000003.cs-enabled
+GET_REPLY 28 subscriber.by-imsi-901990000000003.cs-enabled 1
+
+GET 29 subscriber.by-imsi-901990000000003.info
+GET_REPLY 29 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 30 subscriber.by-imsi-901990000000003.cs-enabled 1
+SET_REPLY 30 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 31 subscriber.by-imsi-901990000000003.cs-enabled
+GET_REPLY 31 subscriber.by-imsi-901990000000003.cs-enabled 1
+
+SET 32 subscriber.by-imsi-901990000000003.ps-enabled 0
+SET_REPLY 32 subscriber.by-imsi-901990000000003.ps-enabled OK
+SET 33 subscriber.by-imsi-901990000000003.cs-enabled 0
+SET_REPLY 33 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 34 subscriber.by-imsi-901990000000003.info
+GET_REPLY 34 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 35 subscriber.by-imsi-901990000000003.ps-enabled 1
+SET_REPLY 35 subscriber.by-imsi-901990000000003.ps-enabled OK
+SET 36 subscriber.by-imsi-901990000000003.cs-enabled 1
+SET_REPLY 36 subscriber.by-imsi-901990000000003.cs-enabled OK
+GET 37 subscriber.by-imsi-901990000000003.info
+GET_REPLY 37 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+
+
+GET 38 subscriber.by-msisdn-103.info
+GET_REPLY 38 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 39 subscriber.by-msisdn-103.info-aud
+GET_REPLY 39 subscriber.by-msisdn-103.info-aud 
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 40 subscriber.by-msisdn-103.info-all
+GET_REPLY 40 subscriber.by-msisdn-103.info-all 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 41 subscriber.by-msisdn-103.ps-enabled
+GET_REPLY 41 subscriber.by-msisdn-103.ps-enabled 1
+
+SET 42 subscriber.by-msisdn-103.ps-enabled 0
+SET_REPLY 42 subscriber.by-msisdn-103.ps-enabled OK
+GET 43 subscriber.by-msisdn-103.ps-enabled
+GET_REPLY 43 subscriber.by-msisdn-103.ps-enabled 0
+
+GET 44 subscriber.by-msisdn-103.info
+GET_REPLY 44 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 45 subscriber.by-msisdn-103.ps-enabled 0
+SET_REPLY 45 subscriber.by-msisdn-103.ps-enabled OK
+GET 46 subscriber.by-msisdn-103.ps-enabled
+GET_REPLY 46 subscriber.by-msisdn-103.ps-enabled 0
+
+SET 47 subscriber.by-msisdn-103.ps-enabled 1
+SET_REPLY 47 subscriber.by-msisdn-103.ps-enabled OK
+GET 48 subscriber.by-msisdn-103.ps-enabled
+GET_REPLY 48 subscriber.by-msisdn-103.ps-enabled 1
+
+GET 49 subscriber.by-msisdn-103.info
+GET_REPLY 49 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 50 subscriber.by-msisdn-103.ps-enabled 1
+SET_REPLY 50 subscriber.by-msisdn-103.ps-enabled OK
+GET 51 subscriber.by-msisdn-103.ps-enabled
+GET_REPLY 51 subscriber.by-msisdn-103.ps-enabled 1
+
+GET 52 subscriber.by-msisdn-103.cs-enabled
+GET_REPLY 52 subscriber.by-msisdn-103.cs-enabled 1
+
+SET 53 subscriber.by-msisdn-103.cs-enabled 0
+SET_REPLY 53 subscriber.by-msisdn-103.cs-enabled OK
+GET 54 subscriber.by-msisdn-103.cs-enabled
+GET_REPLY 54 subscriber.by-msisdn-103.cs-enabled 0
+
+GET 55 subscriber.by-msisdn-103.info
+GET_REPLY 55 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 56 subscriber.by-msisdn-103.cs-enabled 0
+SET_REPLY 56 subscriber.by-msisdn-103.cs-enabled OK
+GET 57 subscriber.by-msisdn-103.cs-enabled
+GET_REPLY 57 subscriber.by-msisdn-103.cs-enabled 0
+
+SET 58 subscriber.by-msisdn-103.cs-enabled 1
+SET_REPLY 58 subscriber.by-msisdn-103.cs-enabled OK
+GET 59 subscriber.by-msisdn-103.cs-enabled
+GET_REPLY 59 subscriber.by-msisdn-103.cs-enabled 1
+
+GET 60 subscriber.by-msisdn-103.info
+GET_REPLY 60 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 61 subscriber.by-msisdn-103.cs-enabled 1
+SET_REPLY 61 subscriber.by-msisdn-103.cs-enabled OK
+GET 62 subscriber.by-msisdn-103.cs-enabled
+GET_REPLY 62 subscriber.by-msisdn-103.cs-enabled 1
+
+SET 63 subscriber.by-msisdn-103.ps-enabled 0
+SET_REPLY 63 subscriber.by-msisdn-103.ps-enabled OK
+SET 64 subscriber.by-msisdn-103.cs-enabled 0
+SET_REPLY 64 subscriber.by-msisdn-103.cs-enabled OK
+GET 65 subscriber.by-msisdn-103.info
+GET_REPLY 65 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 66 subscriber.by-msisdn-103.ps-enabled 1
+SET_REPLY 66 subscriber.by-msisdn-103.ps-enabled OK
+SET 67 subscriber.by-msisdn-103.cs-enabled 1
+SET_REPLY 67 subscriber.by-msisdn-103.cs-enabled OK
+GET 68 subscriber.by-msisdn-103.info
+GET_REPLY 68 subscriber.by-msisdn-103.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+
+
+GET 69 subscriber.by-id-3.info
+GET_REPLY 69 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 70 subscriber.by-id-3.info-aud
+GET_REPLY 70 subscriber.by-id-3.info-aud 
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 71 subscriber.by-id-3.info-all
+GET_REPLY 71 subscriber.by-id-3.info-all 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	2342
+
+GET 72 subscriber.by-id-3.ps-enabled
+GET_REPLY 72 subscriber.by-id-3.ps-enabled 1
+
+SET 73 subscriber.by-id-3.ps-enabled 0
+SET_REPLY 73 subscriber.by-id-3.ps-enabled OK
+GET 74 subscriber.by-id-3.ps-enabled
+GET_REPLY 74 subscriber.by-id-3.ps-enabled 0
+
+GET 75 subscriber.by-id-3.info
+GET_REPLY 75 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 76 subscriber.by-id-3.ps-enabled 0
+SET_REPLY 76 subscriber.by-id-3.ps-enabled OK
+GET 77 subscriber.by-id-3.ps-enabled
+GET_REPLY 77 subscriber.by-id-3.ps-enabled 0
+
+SET 78 subscriber.by-id-3.ps-enabled 1
+SET_REPLY 78 subscriber.by-id-3.ps-enabled OK
+GET 79 subscriber.by-id-3.ps-enabled
+GET_REPLY 79 subscriber.by-id-3.ps-enabled 1
+
+GET 80 subscriber.by-id-3.info
+GET_REPLY 80 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 81 subscriber.by-id-3.ps-enabled 1
+SET_REPLY 81 subscriber.by-id-3.ps-enabled OK
+GET 82 subscriber.by-id-3.ps-enabled
+GET_REPLY 82 subscriber.by-id-3.ps-enabled 1
+
+GET 83 subscriber.by-id-3.cs-enabled
+GET_REPLY 83 subscriber.by-id-3.cs-enabled 1
+
+SET 84 subscriber.by-id-3.cs-enabled 0
+SET_REPLY 84 subscriber.by-id-3.cs-enabled OK
+GET 85 subscriber.by-id-3.cs-enabled
+GET_REPLY 85 subscriber.by-id-3.cs-enabled 0
+
+GET 86 subscriber.by-id-3.info
+GET_REPLY 86 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 87 subscriber.by-id-3.cs-enabled 0
+SET_REPLY 87 subscriber.by-id-3.cs-enabled OK
+GET 88 subscriber.by-id-3.cs-enabled
+GET_REPLY 88 subscriber.by-id-3.cs-enabled 0
+
+SET 89 subscriber.by-id-3.cs-enabled 1
+SET_REPLY 89 subscriber.by-id-3.cs-enabled OK
+GET 90 subscriber.by-id-3.cs-enabled
+GET_REPLY 90 subscriber.by-id-3.cs-enabled 1
+
+GET 91 subscriber.by-id-3.info
+GET_REPLY 91 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 92 subscriber.by-id-3.cs-enabled 1
+SET_REPLY 92 subscriber.by-id-3.cs-enabled OK
+GET 93 subscriber.by-id-3.cs-enabled
+GET_REPLY 93 subscriber.by-id-3.cs-enabled 1
+
+SET 94 subscriber.by-id-3.ps-enabled 0
+SET_REPLY 94 subscriber.by-id-3.ps-enabled OK
+SET 95 subscriber.by-id-3.cs-enabled 0
+SET_REPLY 95 subscriber.by-id-3.cs-enabled OK
+GET 96 subscriber.by-id-3.info
+GET_REPLY 96 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	0
+nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 97 subscriber.by-id-3.ps-enabled 1
+SET_REPLY 97 subscriber.by-id-3.ps-enabled OK
+SET 98 subscriber.by-id-3.cs-enabled 1
+SET_REPLY 98 subscriber.by-id-3.cs-enabled OK
+GET 99 subscriber.by-id-3.info
+GET_REPLY 99 subscriber.by-id-3.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000

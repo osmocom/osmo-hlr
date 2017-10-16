@@ -1,0 +1,107 @@
+GET 1 invalid
+ERROR 1 Command not found
+SET 2 invalid nonsense
+ERROR 2 Command not found
+
+GET 3 subscriber.by-imsi-nonsense.info
+ERROR 3 Invalid value part of 'by-xxx-value' selector.
+GET 4 subscriber.by-msisdn-nonsense.info
+ERROR 4 Invalid value part of 'by-xxx-value' selector.
+GET 5 subscriber.by-id-nonsense.info
+ERROR 5 Invalid value part of 'by-xxx-value' selector.
+
+GET 6 subscriber
+ERROR 6 Command not present.
+GET 7 subscriber.
+ERROR 7 Command not present.
+GET 8 subscriber.by-nonsense
+ERROR 8 Command not present.
+GET 9 subscriber.by-nonsense-
+ERROR 9 Command not present.
+GET 10 subscriber.by-nonsense-123456
+ERROR 10 Command not present.
+GET 11 subscriber.by-nonsense-123456.
+ERROR 11 Command not present.
+GET 12 subscriber.by-imsi-
+ERROR 12 Command not present.
+GET 13 subscriber.by-imsi-.
+ERROR 13 Command not present.
+GET 14 subscriber.by-imsi-901990000000003
+ERROR 14 Command not present.
+GET 15 subscriber.by-imsi-901990000000003.
+ERROR 15 Command not present.
+
+GET 16 subscriber.by-nonsense-123456.info
+ERROR 16 Not a known subscriber 'by-xxx-' selector.
+GET 17 subscriber.by-123456.info
+ERROR 17 Not a known subscriber 'by-xxx-' selector.
+
+GET 18 subscriber.by-imsi-.info
+ERROR 18 Invalid value part of 'by-xxx-value' selector.
+GET 19 subscriber.by-imsi--.info
+ERROR 19 Invalid value part of 'by-xxx-value' selector.
+
+GET 20 subscriber.by-imsi-12345678901234567.info
+ERROR 20 Invalid value part of 'by-xxx-value' selector.
+GET 21 subscriber.by-imsi-12345.info
+ERROR 21 Invalid value part of 'by-xxx-value' selector.
+GET 22 subscriber.by-imsi-1234567890123456.info
+ERROR 22 Invalid value part of 'by-xxx-value' selector.
+
+GET 23 subscriber.by-id-99999999999999999999999999.info
+ERROR 23 Invalid value part of 'by-xxx-value' selector.
+GET 24 subscriber.by-id-9223372036854775807.info
+ERROR 24 No such subscriber.
+GET 25 subscriber.by-id-9223372036854775808.info
+ERROR 25 Invalid value part of 'by-xxx-value' selector.
+GET 26 subscriber.by-id--1.info
+ERROR 26 No such subscriber.
+GET 27 subscriber.by-id--9223372036854775808.info
+ERROR 27 No such subscriber.
+GET 28 subscriber.by-id--9223372036854775809.info
+ERROR 28 Invalid value part of 'by-xxx-value' selector.
+
+GET 29 subscriber.by-id-1+1.info
+ERROR 29 Invalid value part of 'by-xxx-value' selector.
+GET 30 subscriber.by-id--.info
+ERROR 30 Invalid value part of 'by-xxx-value' selector.
+GET 31 subscriber.by-id-+1.info
+ERROR 31 Invalid value part of 'by-xxx-value' selector.
+GET 32 subscriber.by-id-+-1.info
+ERROR 32 Invalid value part of 'by-xxx-value' selector.
+GET 33 subscriber.by-id--+1.info
+ERROR 33 Invalid value part of 'by-xxx-value' selector.
+GET 34 subscriber.by-id-++1.info
+ERROR 34 Invalid value part of 'by-xxx-value' selector.
+GET 35 subscriber.by-id---1.info
+ERROR 35 Invalid value part of 'by-xxx-value' selector.
+
+GET 36 subscriber.by-id- 1.info
+ERROR 36 Command not present.
+GET 37 subscriber.by-id-+ 1.info
+ERROR 37 Command not present.
+GET 38 subscriber.by-id-- 1.info
+ERROR 38 Command not present.
+
+
+SET 39 subscriber.by-imsi-901990000000001.info foo
+ERROR 39 Read Only attribute
+SET 40 subscriber.by-imsi-901990000000001.info-aud foo
+ERROR 40 Read Only attribute
+SET 41 subscriber.by-imsi-901990000000001.info-all foo
+ERROR 41 Read Only attribute
+
+SET 42 subscriber.by-imsi-901990000000001.ps-enabled nonsense
+ERROR 42 Value failed verification.
+SET 43 subscriber.by-imsi-901990000000001.cs-enabled nonsense
+ERROR 43 Value failed verification.
+
+SET 44 subscriber.by-imsi-901990000000001.ps-enabled
+ERROR err Command parser error.
+SET 45 subscriber.by-imsi-901990000000001.cs-enabled
+ERROR err Command parser error.
+
+GET 46 subscriber.by-imsi-1234567890123456.ps-enabled
+ERROR 46 Invalid value part of 'by-xxx-value' selector.
+GET 47 subscriber.by-imsi-1234567890123456.cs-enabled
+ERROR 47 Invalid value part of 'by-xxx-value' selector.

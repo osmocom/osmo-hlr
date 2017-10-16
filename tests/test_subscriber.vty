@@ -305,6 +305,7 @@ OsmoHLR# subscriber imsi 123456789023000 show
              OPC=cededeffacedacefacedbadfadedbeef
              IND-bitlen=23
 
+OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d op C01ffedC1cadaeAc1d1f1edAcac1aB0a
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d op CoiffedCicadaeAcidifiedAcaciaBoa
 % Invalid value for OP: 'CoiffedCicadaeAcidifiedAcaciaBoa'
 OsmoHLR# subscriber imsi 123456789023000 show
@@ -313,8 +314,8 @@ OsmoHLR# subscriber imsi 123456789023000 show
     MSISDN: 423
     3G auth: MILENAGE
              K=deaf0ff1ced0d0dabbedd1ced1cef00d
-             OPC=cededeffacedacefacedbadfadedbeef
-             IND-bitlen=23
+             OP=c01ffedc1cadaeac1d1f1edacac1ab0a
+             IND-bitlen=5
 
 OsmoHLR# subscriber id 1 update aud2g comp128v2 ki CededEffacedAceFacedBadFadedBeef
 OsmoHLR# subscriber id 1 show
@@ -325,8 +326,8 @@ OsmoHLR# subscriber id 1 show
              KI=cededeffacedacefacedbadfadedbeef
     3G auth: MILENAGE
              K=deaf0ff1ced0d0dabbedd1ced1cef00d
-             OPC=cededeffacedacefacedbadfadedbeef
-             IND-bitlen=23
+             OP=c01ffedc1cadaeac1d1f1edacac1ab0a
+             IND-bitlen=5
 
 OsmoHLR# subscriber imsi 123456789023000 delete
 % Deleted subscriber for IMSI '123456789023000'
