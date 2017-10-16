@@ -275,7 +275,8 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	osmo_timer_schedule(&luop->timer, ISD_TIMEOUT_SECS, 0);
 }
 
-/*! Transmit Delete Subscriber Data to new VLR/SGSN */
+/*! Transmit Delete Subscriber Data to new VLR/SGSN.
+ * The luop is not freed. */
 void lu_op_tx_del_subscr_data(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;
