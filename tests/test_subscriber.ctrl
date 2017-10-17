@@ -596,3 +596,19 @@ ms_purged_ps	0
 periodic_lu_timer	0
 periodic_rau_tau_timer	0
 lmsi	00000000
+
+GET 100 subscriber.by-id-00123.info
+GET_REPLY 100 subscriber.by-id-00123.info 
+id	123
+imsi	123123
+msisdn	123
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 101 subscriber.by-id-0x0123.info
+ERROR 101 Invalid value part of 'by-xxx-value' selector.
