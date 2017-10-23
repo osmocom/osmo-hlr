@@ -43,7 +43,7 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
-	vty_out(vty, "    IMSI: %s%s", subscr->imsi ? subscr->imsi : "none", VTY_NEWLINE);
+	vty_out(vty, "    IMSI: %s%s", *subscr->imsi ? subscr->imsi : "none", VTY_NEWLINE);
 	vty_out(vty, "    MSISDN: %s%s", *subscr->msisdn ? subscr->msisdn : "none", VTY_NEWLINE);
 	if (*subscr->vlr_number)
 		vty_out(vty, "    VLR number: %s%s", subscr->vlr_number, VTY_NEWLINE);
