@@ -1,17 +1,11 @@
-AM_CPPFLAGS = \
+AM_CFLAGS = \
 	$(all_includes) \
 	-I$(top_srcdir)/src \
-	$(NULL)
-
-AM_CFLAGS = \
 	-Wall \
 	-ggdb3 \
 	$(LIBOSMOCORE_CFLAGS) \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
-	$(NULL)
-
-AM_LDFLAGS = \
 	$(NULL)
 
 EXTRA_DIST = \
