@@ -94,14 +94,14 @@ int hlr_ctrl_cmds_install()
 	return rc;
 }
 
-struct ctrl_handle *hlr_controlif_setup(struct hlr *ctx,
-					struct osmo_gsup_server *gs)
+struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr)
 {
 	int rc;
-	struct ctrl_handle *hdl = ctrl_interface_setup_dynip(ctx,
-							     ctx->ctrl_bind_addr,
-							     OSMO_CTRL_PORT_HLR,
-							     NULL);
+	struct ctrl_handle *hdl = ctrl_interface_setup_dynip2(hlr,
+							      hlr->ctrl_bind_addr,
+							      OSMO_CTRL_PORT_HLR,
+							      NULL,
+							      0);
 	if (!hdl)
 		return NULL;
 
