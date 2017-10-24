@@ -38,9 +38,7 @@
 #define SL3_TXT(x, stmt, idx) 					\
 	do {							\
 		const char *_txt = (const char *) sqlite3_column_text(stmt, idx);\
-		if (_txt)					\
-			strncpy(x, _txt, sizeof(x));		\
-		x[sizeof(x)-1] = '\0';				\
+		osmo_strlcpy(x, _txt, sizeof(x));		\
 	} while (0)
 
 int db_subscr_create(struct db_context *dbc, const char *imsi)

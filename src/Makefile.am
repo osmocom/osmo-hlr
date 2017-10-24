@@ -35,6 +35,7 @@ noinst_HEADERS = \
 
 bin_PROGRAMS = \
 	osmo-hlr \
+	osmo-hlr-db-tool \
 	$(NULL)
 
 noinst_PROGRAMS = \
@@ -63,6 +64,20 @@ osmo_hlr_LDADD = \
 	$(LIBOSMOVTY_LIBS) \
 	$(LIBOSMOCTRL_LIBS) \
 	$(LIBOSMOABIS_LIBS) \
+	$(SQLITE3_LIBS) \
+	$(NULL)
+
+osmo_hlr_db_tool_SOURCES = \
+	hlr_db_tool.c \
+	db.c \
+	db_hlr.c \
+	logging.c \
+	rand_urandom.c \
+	$(NULL)
+
+osmo_hlr_db_tool_LDADD = \
+	$(LIBOSMOCORE_LIBS) \
+	$(LIBOSMOGSM_LIBS) \
 	$(SQLITE3_LIBS) \
 	$(NULL)
 
