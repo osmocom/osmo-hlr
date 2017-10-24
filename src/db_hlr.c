@@ -35,17 +35,6 @@
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
-/*! Call sqlite3_column_text() and copy result to a char[].
- * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.
- * \param[in] stmt  An sqlite3_stmt*.
- * \param[in] idx   Index in stmt's returned columns.
- */
-#define copy_sqlite3_text_to_buf(buf, stmt, idx) \
-	do { \
-		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
-		osmo_strlcpy(buf, _txt, sizeof(buf)); \
-	} while (0)
-
 /*! Add new subscriber record to the HLR database.
  * \param[in,out] dbc  database context.
  * \param[in] imsi  ASCII string of IMSI digits, is validated.

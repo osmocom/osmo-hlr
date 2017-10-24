@@ -129,3 +129,14 @@ int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
 
 int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
+
+/*! Call sqlite3_column_text() and copy result to a char[].
+ * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.
+ * \param[in] stmt  An sqlite3_stmt*.
+ * \param[in] idx   Index in stmt's returned columns.
+ */
+#define copy_sqlite3_text_to_buf(buf, stmt, idx) \
+	do { \
+		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
+		osmo_strlcpy(buf, _txt, sizeof(buf)); \
+	} while (0)
