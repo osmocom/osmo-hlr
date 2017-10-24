@@ -1,6 +1,6 @@
 --modelled roughly after TS 23.008 version 13.3.0
 
-CREATE TABLE subscriber (
+CREATE TABLE IF NOT EXISTS subscriber (
 	id		INTEGER PRIMARY KEY,
 	-- Chapter 2.1.1.1
 	imsi		VARCHAR(15) UNIQUE NOT NULL,
@@ -40,24 +40,24 @@ CREATE TABLE subscriber (
 	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0
 );
 
-CREATE TABLE subscriber_apn (
+CREATE TABLE IF NOT EXISTS subscriber_apn (
 	subscriber_id	INTEGER,		-- subscriber.id
 	apn		VARCHAR(256) NOT NULL
 );
 
 -- Chapter 2.1.3
-CREATE TABLE subscriber_multi_msisdn (
+CREATE TABLE IF NOT EXISTS subscriber_multi_msisdn (
 	subscriber_id	INTEGER,		-- subscriber.id
 	msisdn		VARCHAR(15) NOT NULL
 );
 
-CREATE TABLE auc_2g (
+CREATE TABLE IF NOT EXISTS auc_2g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_2g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
 	ki		VARCHAR(32) NOT NULL	-- hex string: subscriber's secret key (128bit)
 );
 
-CREATE TABLE auc_3g (
+CREATE TABLE IF NOT EXISTS auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_3g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
 	k		VARCHAR(32) NOT NULL,	-- hex string: subscriber's secret key (128bit)
@@ -68,4 +68,3 @@ CREATE TABLE auc_3g (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_subscr_imsi ON subscriber (imsi);
--- SELECT algo_id_2g, ki, algo_id_3g, k, op, opc, sqn FROM subscriber LEFT JOIN auc_2g ON auc_2g.subscriber_id = subscriber.id LEFT JOIN auc_3g ON auc_3g.subscriber_id = subscriber.id WHERE imsi = ?
