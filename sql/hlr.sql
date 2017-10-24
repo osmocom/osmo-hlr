@@ -1,6 +1,5 @@
---modelled roughly after TS 23.008 version 13.3.0
-
 CREATE TABLE IF NOT EXISTS subscriber (
+-- OsmoHLR's DB scheme is modelled roughly after TS 23.008 version 13.3.0
 	id		INTEGER PRIMARY KEY,
 	-- Chapter 2.1.1.1
 	imsi		VARCHAR(15) UNIQUE NOT NULL,
@@ -45,8 +44,8 @@ CREATE TABLE IF NOT EXISTS subscriber_apn (
 	apn		VARCHAR(256) NOT NULL
 );
 
--- Chapter 2.1.3
 CREATE TABLE IF NOT EXISTS subscriber_multi_msisdn (
+-- Chapter 2.1.3
 	subscriber_id	INTEGER,		-- subscriber.id
 	msisdn		VARCHAR(15) NOT NULL
 );
