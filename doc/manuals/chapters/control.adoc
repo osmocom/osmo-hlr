@@ -39,8 +39,8 @@ of the format
 name<tab>value
 ----
 
-To keep the reply as short as possible, most values are omitted if they are
-empty or reflect the default. These are the returned values and their presence
+To keep the reply as short as possible, some values are omitted if they are
+empty. These are the returned values and their presence
 modalities; for their meaning, see <<subscriber-params>>:
 
 .Returned values by OsmoHLR's 'info', 'info-all' and 'info-aud' commands
@@ -50,11 +50,16 @@ modalities; for their meaning, see <<subscriber-params>>:
 |'info'|id|-9223372036854775808 .. 9223372036854775807 (usually not negative)|always
 |'info'|imsi|6 to 15 decimal digits|always
 |'info'|msisdn|1 to 15 decimal digits|when non-empty
-|'info'|nam_cs|'1' or '0'|when '0'
-|'info'|nam_ps|'1' or '0'|when '0'
+|'info'|nam_cs|'1' if CS is enabled, or '0'|always
+|'info'|nam_ps|'1' if PS is enabled, or '0'|always
 |'info'|vlr_number|up to 15 decimal digits|when non-empty
 |'info'|sgsn_number|up to 15 decimal digits|when non-empty
 |'info'|sgsn_address||when non-empty
+|'info'|ms_purged_cs|'1' if CS is purged, or '0'|always
+|'info'|ms_purged_ps|'1' if PS is purged, or '0'|always
+|'info'|periodic_lu_timer|0..4294967295|always
+|'info'|periodic_rau_tau_timer|0..4294967295|always
+|'info'|lmsi|8 hex digits|always
 |'info-aud'|aud2g.algo|one of 'comp128v1', 'comp128v2', 'comp128v3' or 'xor'|when valid 2G auth data is set
 |'info-aud'|aud2g.ki|32 hexadecimal digits|when valid 2G auth data is set
 |'info-aud'|aud3g.algo|so far always 'milenage'|when valid 3G auth data is set

@@ -3,6 +3,13 @@ GET_REPLY 1 subscriber.by-msisdn-103.info
 id	3
 imsi	901990000000003
 msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
 
 GET 2 subscriber.by-msisdn-103.ps-enabled
 GET_REPLY 2 subscriber.by-msisdn-103.ps-enabled 1
@@ -18,7 +25,13 @@ GET_REPLY 5 subscriber.by-msisdn-103.info
 id	3
 imsi	901990000000003
 msisdn	103
+nam_cs	1
 nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
 
 SET 6 subscriber.by-msisdn-103.cs-enabled 0
 SET_REPLY 6 subscriber.by-msisdn-103.cs-enabled OK
@@ -33,6 +46,11 @@ imsi	901990000000003
 msisdn	103
 nam_cs	0
 nam_ps	0
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
 
 SET 9 subscriber.by-msisdn-103.cs-enabled 1
 SET_REPLY 9 subscriber.by-msisdn-103.cs-enabled OK
@@ -44,3 +62,10 @@ GET_REPLY 11 subscriber.by-msisdn-103.info
 id	3
 imsi	901990000000003
 msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
