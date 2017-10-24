@@ -1,6 +1,7 @@
 AM_CFLAGS = \
 	$(all_includes) \
 	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src \
 	-Wall \
 	-ggdb3 \
 	$(LIBOSMOCORE_CFLAGS) \

@@ -25,6 +25,7 @@
 
 #include "logging.h"
 #include "db.h"
+#include "db_bootstrap.h"
 
 #define SEL_COLUMNS \
 	"id," \
@@ -179,6 +180,35 @@ void db_close(struct db_context *dbc)
 	talloc_free(dbc);
 }
 
+static int db_bootstrap(struct db_context *dbc)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(stmt_bootstrap_sql); i++) {
+		int rc;
+		sqlite3_stmt *stmt;
+
+		rc = sqlite3_prepare_v2(dbc->db, stmt_bootstrap_sql[i], -1,
+					&stmt, NULL);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n",
+			     stmt_bootstrap_sql[i]);
+			return -1;
+		}
+
+		/* execute the statement */
+		rc = sqlite3_step(stmt);
+		db_remove_reset(stmt);
+		if (rc != SQLITE_DONE) {
+			LOGP(DDB, LOGL_ERROR, "Cannot bootstrap database: SQL error: (%d) %s,"
+			     " during stmt '%s'",
+			     rc, sqlite3_errmsg(dbc->db),
+			     stmt_bootstrap_sql[i]);
+			return -1;
+		}
+	}
+	return 0;
+}
+
 struct db_context *db_open(void *ctx, const char *fname)
 {
 	struct db_context *dbc = talloc_zero(ctx, struct db_context);
@@ -230,6 +260,8 @@ struct db_context *db_open(void *ctx, const char *fname)
 	if (rc != SQLITE_OK)
 		LOGP(DDB, LOGL_ERROR, "Unable to set Write-Ahead Logging: %s\n",
 			err_msg);
+
+	db_bootstrap(dbc);
 
 	/* prepare all SQL statements */
 	for (i = 0; i < ARRAY_SIZE(dbc->stmt); i++) {
