@@ -27,5 +27,4 @@
 #include "gsup_server.h"
 
 int hlr_ctrl_cmds_install();
-struct ctrl_handle *hlr_controlif_setup(struct hlr *ctx,
-					struct osmo_gsup_server *gs);
+struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr);
