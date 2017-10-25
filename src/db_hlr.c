@@ -43,6 +43,11 @@
 		x[sizeof(x)-1] = '\0';				\
 	} while (0)
 
+/*! Add new subscriber record to the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits, is validated.
+ * \returns 0 on success, -EINVAL on invalid IMSI, -EIO on database error.
+ */
 int db_subscr_create(struct db_context *dbc, const char *imsi)
 {
 	sqlite3_stmt *stmt;
@@ -71,6 +76,15 @@ int db_subscr_create(struct db_context *dbc, const char *imsi)
 	return 0;
 }
 
+/*! Completely delete a subscriber record from the HLR database.
+ * Also remove authentication data.
+ * Future todo: also drop from all other database tables, which aren't used yet
+ * at the time of writing this.
+ * \param[in,out] dbc  database context.
+ * \param[in] subscr_id  ID of the subscriber in the HLR db.
+ * \returns if the subscriber was found and removed, -EIO on database error,
+ *          -ENOENT if no such subscriber data exists.
+ */
 int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 {
 	int rc;
@@ -127,6 +141,13 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 	return ret;
 }
 
+/*! Set a subscriber's MSISDN in the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits.
+ * \param[in] msisdn  ASCII string of MSISDN digits.
+ * \returns 0 on success, -EINVAL in case of invalid MSISDN string, -EIO on
+ *          database failure, -ENOENT if no such subscriber exists.
+ */
 int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 				    const char *msisdn)
 {
@@ -175,14 +196,17 @@ out:
 
 }
 
-/* Insert or update 2G or 3G authentication tokens in the database.
+/*! Insert or update 2G or 3G authentication tokens in the database.
  * If aud->type is OSMO_AUTH_TYPE_GSM, the auc_2g table entry for the
  * subscriber will be added or modified; if aud->algo is OSMO_AUTH_ALG_NONE,
  * however, the auc_2g entry for the subscriber is deleted. If aud->type is
  * OSMO_AUTH_TYPE_UMTS, the auc_3g table is updated; again, if aud->algo is
  * OSMO_AUTH_ALG_NONE, the auc_3g entry is deleted.
- * Returns 0 if successful, -EINVAL for unknown aud->type, -ENOENT for unknown
- * subscr_id, -EIO for SQL errors.
+ * \param[in,out] dbc  database context.
+ * \param[in] subscr_id  DB ID of the subscriber.
+ * \param[in] aud  Pointer to new auth data (in ASCII string form).
+ * \returns 0 on success, -EINVAL for invalid aud, -ENOENT for unknown
+ *          subscr_id, -EIO for database errors.
  */
 int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 			       const struct sub_auth_data_str *aud)
@@ -417,6 +441,13 @@ out:
 	return ret;
 }
 
+/*! Retrieve subscriber data from the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits.
+ * \param[out] subscr  place retrieved data in this struct.
+ * \returns 0 on success, -ENOENT if no such subscriber was found, -EIO on
+ *          database error.
+ */
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr)
 {
@@ -434,6 +465,13 @@ int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 	return rc;
 }
 
+/*! Retrieve subscriber data from the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] msisdn  ASCII string of MSISDN digits.
+ * \param[out] subscr  place retrieved data in this struct.
+ * \returns 0 on success, -ENOENT if no such subscriber was found, -EIO on
+ *          database error.
+ */
 int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 			    struct hlr_subscriber *subscr)
 {
@@ -451,6 +489,13 @@ int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 	return rc;
 }
 
+/*! Retrieve subscriber data from the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] id  ID of the subscriber in the HLR db.
+ * \param[out] subscr  place retrieved data in this struct.
+ * \returns 0 on success, -ENOENT if no such subscriber was found, -EIO on
+ *          database error.
+ */
 int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 			struct hlr_subscriber *subscr)
 {
@@ -468,12 +513,14 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 	return rc;
 }
 
-/* Enable or disable PS or CS for a subscriber.
- * For the subscriber with the given imsi, set nam_ps (when is_ps == true) or
- * nam_cs (when is_ps == false) to nam_val in the database.
- * Returns 0 on success, -ENOENT when the given IMSI does not exist, -EINVAL if
- * the SQL statement could not be composed, -ENOEXEC if running the SQL
- * statement failed, -EIO if the amount of rows modified is unexpected.
+/*! You should use hlr_subscr_nam() instead; enable or disable PS or CS for a
+ * subscriber without notifying GSUP clients.
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits.
+ * \param[in] nam_val True to enable CS/PS, false to disable.
+ * \param[in] is_ps  when true, set nam_ps, else set nam_cs.
+ * \returns 0 on success, -ENOENT when the given IMSI does not exist, -EIO on
+ *          database errors.
  */
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps)
 {
@@ -522,6 +569,14 @@ out:
 	return ret;
 }
 
+/*! Record a Location Updating in the database.
+ * \param[in,out] dbc  database context.
+ * \param[in] subscr_id  ID of the subscriber in the HLR db.
+ * \param[in] vlr_or_sgsn_number  ASCII string of identifier digits.
+ * \param[in] is_ps  when true, set sgsn_number, else set vlr_number.
+ * \returns 0 on success, -ENOENT when the given subscriber does not exist,
+ *         -EIO on database errors.
+ */
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		 const char *vlr_or_sgsn_number, bool is_ps)
 {
@@ -565,6 +620,14 @@ out:
 	return ret;
 }
 
+/*! Set the ms_purged_cs or ms_purged_ps values in the database.
+ * \param[in,out] dbc  database context.
+ * \param[in] by_imsi  ASCII string of IMSI digits.
+ * \param[in] purge_val  true to purge, false to un-purge.
+ * \param[in] is_ps  when true, set ms_purged_ps, else set ms_purged_cs.
+ * \returns 0 on success, -ENOENT when the given IMSI does not exist, -EIO on
+ *          database errors.
+ */
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps)
 {
@@ -614,10 +677,10 @@ out:
 }
 
 /*! Update nam_cs/nam_ps in the db and trigger notifications to GSUP clients.
- * \param hlr     Global hlr context.
- * \param subscr  Subscriber from a fresh db_subscr_get_by_*() call.
- * \param nam_val True to enable CS/PS, false to disable.
- * \param is_ps   True to enable/disable PS, false for CS.
+ * \param[in,out] hlr  Global hlr context.
+ * \param[in] subscr   Subscriber from a fresh db_subscr_get_by_*() call.
+ * \param[in] nam_val  True to enable CS/PS, false to disable.
+ * \param[in] is_ps    True to enable/disable PS, false for CS.
  * \returns 0 on success, ENOEXEC if there is no need to change, a negative
  *          value on error.
  */
