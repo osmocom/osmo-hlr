@@ -54,7 +54,7 @@ vty-test:
 	sqlite3 $(VTY_TEST_DB) < $(top_srcdir)/sql/hlr.sql
 	osmo_verify_transcript_vty.py -v \
 		-n OsmoHLR -p 4258 \
-		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l hlr_vty_test.db" \
+		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
 		$(U) $(srcdir)/*.vty
 	-rm -f $(VTY_TEST_DB)
 
@@ -69,7 +69,7 @@ ctrl-test:
 	sqlite3 $(CTRL_TEST_DB) < $(srcdir)/test_subscriber.sql
 	osmo_verify_transcript_ctrl.py -v \
 		-p 4259 \
-		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l hlr_ctrl_test.db" \
+		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(CTRL_TEST_DB)" \
 		$(U) $(srcdir)/*.ctrl
 	-rm -f $(CTRL_TEST_DB)
 
