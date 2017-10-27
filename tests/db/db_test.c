@@ -816,6 +816,7 @@ int main(int argc, char **argv)
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);
 	log_set_print_category(osmo_stderr_target, 1);
+	log_parse_category_mask(osmo_stderr_target, "DMAIN,1:DDB,1:DAUC,1");
 
 	/* omit the SQLite version and compilation flags from test output */
 	log_set_log_level(osmo_stderr_target, LOGL_ERROR);
