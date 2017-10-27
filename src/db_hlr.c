@@ -35,12 +35,15 @@
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
-#define SL3_TXT(x, stmt, idx) 					\
-	do {							\
-		const char *_txt = (const char *) sqlite3_column_text(stmt, idx);\
-		if (_txt)					\
-			strncpy(x, _txt, sizeof(x));		\
-		x[sizeof(x)-1] = '\0';				\
+/*! Call sqlite3_column_text() and copy result to a char[].
+ * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.
+ * \param[in] stmt  An sqlite3_stmt*.
+ * \param[in] idx   Index in stmt's returned columns.
+ */
+#define copy_sqlite3_text_to_buf(buf, stmt, idx) \
+	do { \
+		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
+		osmo_strlcpy(buf, _txt, sizeof(buf)); \
 	} while (0)
 
 /*! Add new subscriber record to the HLR database.
@@ -410,12 +413,12 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 
 	/* obtain the various columns */
 	subscr->id = sqlite3_column_int64(stmt, 0);
-	SL3_TXT(subscr->imsi, stmt, 1);
-	SL3_TXT(subscr->msisdn, stmt, 2);
+	copy_sqlite3_text_to_buf(subscr->imsi, stmt, 1);
+	copy_sqlite3_text_to_buf(subscr->msisdn, stmt, 2);
 	/* FIXME: These should all be BLOBs as they might contain NUL */
-	SL3_TXT(subscr->vlr_number, stmt, 3);
-	SL3_TXT(subscr->sgsn_number, stmt, 4);
-	SL3_TXT(subscr->sgsn_address, stmt, 5);
+	copy_sqlite3_text_to_buf(subscr->vlr_number, stmt, 3);
+	copy_sqlite3_text_to_buf(subscr->sgsn_number, stmt, 4);
+	copy_sqlite3_text_to_buf(subscr->sgsn_address, stmt, 5);
 	subscr->periodic_lu_timer = sqlite3_column_int(stmt, 6);
 	subscr->periodic_rau_tau_timer = sqlite3_column_int(stmt, 7);
 	subscr->nam_cs = sqlite3_column_int(stmt, 8);
