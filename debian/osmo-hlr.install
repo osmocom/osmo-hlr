@@ -1,2 +1,3 @@
 /usr/bin/osmo-hlr
+/usr/bin/osmo-hlr-db-tool
 /usr/share/doc/osmo-hlr/hlr.sql
