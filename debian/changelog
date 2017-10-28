@@ -1,3 +1,139 @@
+osmo-hlr (0.1.0) unstable; urgency=medium
+
+  [ Neels Hofmeyr ]
+  * build with autoconf/automake, add jenkins.sh script
+  * fix build on FreeBSD: eliminate implicitly declared functions
+  * fix various compiler warnings
+  * fix DLGSUP logging cat after change in libosmocore
+  * build: recoin db_test as non-installable program
+  * build: actually make sqlite mandatory
+  * bump required libosmocore version to 0.9.5
+  * gsup: send subscriber MSISDN
+  * debug log: log computed vector kinds
+  * log: move a log from info to debug level
+  * hlr.sql: typo in comment
+  * auc.c: typo in comment
+  * main: add and use root talloc ctx
+  * main: add option parsing with db file and default options
+  * main: add VTY and '-c config-file' option
+  * sql: fix 3g_auc's column K data type
+  * cosmetic: sql: indicate VARCHAR size of key columns as 32
+  * sql: auc_3g: set sqn NOT NULL DEFAULT 0
+  * comment: sql: describe auc_2g and auc_3g columns
+  * Add test suite skeleton with empty test (auc_3g_test)
+  * tests: auc_3g_test: implement vector generation test
+  * auth: verify test sets from 3GPP TS 55.205
+  * sql: add unique constraints to IMSI and MSISDN
+  * UMTS AKA resync: fix argument ordering
+  * auc_3g_test: add AUTS resync test
+  * auc_gen_vectors(): ensure sane arguments, test
+  * auc_3g_test: allow to inc fake rand bytes upon rand request
+  * auc_3g_test: add AUTS test with N vectors, to show bug
+  * cosmetic: refactor auc_compute_vectors(), add debug log
+  * auc_compute_vectors(): fix AUTS resync for multiple vectors
+  * cosmetic: auc_3g_test: improve test debugging tools
+  * cosmetic: rename auc_3g_test.c to auc_test.c
+  * fix: properly handle error rc by osmo_gsup_conn_ccm_get()
+  * auc tests: adjust cosmetically to prepare for SQN changes
+  * auc tests: fix after SQN scheme changes from libosmocore
+  * fix debug log: adjust to new SQN increment scheme
+  * UMTS AKA: implement SQN increment according to SEQ and IND
+  * debug log: output ind slot, previous sqn, and sqn db update
+  * jenkins: add value_string termination check
+  * fix db_subscr_ps error handling
+  * add config example (mostly empty)
+  * install hlr.sql in prefix/doc/osmo-hlr/
+  * use OSMO_GSUP_PORT == 4222 instead of hardcoded 2222
+  * add basic CTRL interface tests
+  * add CTRL tests for enable-/disable-/status-ps
+  * cosmetic: prepend DB_STMT_ to enum stmt_idx entries
+  * cosmetic: rename db_subscr_get() to db_subscr_get_by_imsi()
+  * cosmetic: refactor db_bind_imsi() as db_bind_text()
+  * cosmetic: multi-line DB_STMT_AUC_BY_IMSI
+  * cosmetic: log IMSI='<imsi>', log "no such subscriber"
+  * cosmetic: log: "SQLite" with capital L
+  * cosmetic: db_hlr: SL3_TXT: clarify indenting
+  * ctrl_test_runner.py: use proper constant as test db path
+  * gitignore: tests/package.m4
+  * cosmetic: don't log about missing SQLite log cb
+  * add db_bind_int() and db_bind_int64()
+  * add db_subscr_create(), db_subscr_delete(), db_subscr_update_msisdn_by_imsi()
+  * add initial db_test: creating and deleting subscribers
+  * less noise: simplify db_remove_reset()
+  * db: use int64_t as subscriber id
+  * add db_subscr_get_by_msisdn() and db_subscr_get_by_id()
+  * refactor db_subscr_ps() to db_subscr_nam()
+  * refactor db_subscr_lu()
+  * refactor db_subscr_purge
+  * add db_subscr_update_aud_by_id(), complete db_subscr_delete_by_id()
+  * refactor db_get_auth_data return val
+  * code undup: use db_remove_reset() in db_auc.c
+  * fix db_update_sqn(): reset stmt in all error cases
+  * code undup: use db_bind_text() in db_get_auth_data()
+  * debian: 'make check' needs sqlite3, add to Build-Depends
+  * fix db_subscr_get_by_*(): clear output data; test in db_test.c
+  * implement subscriber vty interface, tests
+  * add test_nodes.vty
+  * replace ctrl_test_runner.py with transcript test_subscriber.ctrl
+  * add lu_op_free(), use in luop.c
+  * luop: fix mem leak upon error in lu_op_alloc_conn()
+  * fix mem leak in handle_cmd_ps(): free luop
+  * api doc: say that lu_op_tx_del_subscr_data() doesn't free
+  * add hlr_subsrc_nam to put GSUP client notification in proper API
+  * vty: fix output of empty IMSI
+  * db api: fix/add API docs
+  * cosmetic: tweak params of hlr_controlif_setup()
+  * ctrl: completely replace all CTRL commands
+  * test_subscriber.ctrl: test against octal/hex interpretation of id
+  * jenkins: use osmo-clean-workspace.sh before and after build
+  * tests/Makefile: use test db var instead of repeating the path
+  * db_test: fix *FLAGS
+  * automatically create db tables on osmo-hlr invocation
+  * cosmetic: sql/hlr.sql: move comments
+  * cosmetic: rename SL3_TXT macro, use osmo_strlcpy()
+  * fix default logging levels to NOTICE, not DEBUG
+  * add osmo-hlr-db-tool, program to migrate from osmo-nitb db
+
+  [ Max ]
+  * Add gerrit settings
+  * Add hardcoded APN
+  * Log error cause as a string
+  * Move GSUP msg init into separate function
+  * Use strings for GSUP message type
+  * Move lu_operation into separate file
+  * db: move duplicated code into helper functions
+  * Fix compiler's warning about printf security
+  * Add routines to update nam_ps
+  * Add global HLR struct
+  * Make subscr parameter to db_subscr_get() optional
+  * Add CTRL interface
+  * CTRL: add enable/disable packet service cmds
+  * Add .deb packaging
+  * deb: fix OBS build
+  * debian: remove obsolete dependency
+  * Attempt to fix .deb package
+  * deb: use python in shebang
+  * Another attempt at fixing .deb
+  * Use release helper from libosmocore
+  * Use value string check from osmo-ci
+
+  [ Daniel Willmann ]
+  * Add systemd service file
+  * hlr_data.sql: Insert ki and opc instead of op to example data
+  * tests/auc: Don't require python3
+
+  [ Pau Espin Pedrol ]
+  * VTY: Add hlr node and bind ip field
+  * debian: remove unneeded dependency libdbd-sqlite3
+
+  [ Harald Welte ]
+  * jenkins.sh: Proper error message if local environment isn't set up
+
+  [ Alexander Couzens ]
+  * debian/rules: show testsuite.log when tests are failing
+
+ -- Harald Welte <laforge@gnumonks.org>  Sat, 28 Oct 2017 20:37:33 +0200
+
 osmo-hlr (0.0.1) UNRELEASED; urgency=low
 
      * Initial release (Closes: OS#1948)
