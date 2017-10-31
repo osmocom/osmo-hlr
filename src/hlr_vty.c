@@ -129,11 +129,9 @@ void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 
 	install_element(CONFIG_NODE, &cfg_hlr_cmd);
 	install_node(&hlr_node, config_write_hlr);
-	install_default(HLR_NODE);
 
 	install_element(HLR_NODE, &cfg_gsup_cmd);
 	install_node(&gsup_node, config_write_hlr_gsup);
-	install_default(GSUP_NODE);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
 
