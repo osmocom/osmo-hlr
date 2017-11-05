@@ -164,7 +164,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* check if subscriber is known at all */
 	if (!lu_op_fill_subscr(luop, g_hlr->dbc, gsup->imsi)) {
 		/* Send Error back: Subscriber Unknown in HLR */
-		strcpy(luop->subscr.imsi, gsup->imsi);
+		osmo_strlcpy(luop->subscr.imsi, gsup->imsi, sizeof(luop->subscr.imsi));
 		lu_op_tx_error(luop, GMM_CAUSE_IMSI_UNKNOWN);
 		return 0;
 	}
