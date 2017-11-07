@@ -99,6 +99,8 @@ static void sql3_sql_log_cb(void *arg, sqlite3 *s3, const char *stmt, int type)
 void db_remove_reset(sqlite3_stmt *stmt)
 {
 	sqlite3_clear_bindings(stmt);
+	/* sqlite3_reset() just repeats an error code already evaluated during sqlite3_step(). */
+	/* coverity[CHECKED_RETURN] */
 	sqlite3_reset(stmt);
 }
 
