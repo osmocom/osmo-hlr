@@ -284,12 +284,12 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 	snprintf(imsi_str, sizeof(imsi_str), "%"PRId64, imsi);
 
 	rc = db_subscr_create(dbc, imsi_str);
-	if (rc) {
+	if (rc < 0) {
 		LOGP(DDB, LOGL_ERROR, "OsmoNITB DB import to %s: failed to create IMSI %s: %d: %s\n",
 		     dbc->fname,
 		     imsi_str,
 		     rc,
-		     strerror(rc));
+		     strerror(-rc));
 		/* on error, still attempt to continue */
 	}
 
@@ -303,13 +303,13 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 
 	/* find the just created id */
 	rc = db_subscr_get_by_imsi(dbc, imsi_str, &subscr);
-	if (rc) {
+	if (rc < 0) {
 		LOGP(DDB, LOGL_ERROR, "OsmoNITB DB import to %s: created IMSI %s,"
 		     " but failed to get new subscriber id: %d: %s\n",
 		     dbc->fname,
 		     imsi_str,
 		     rc,
-		     strerror(rc));
+		     strerror(-rc));
 		return;
 	}
 
