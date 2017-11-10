@@ -66,7 +66,7 @@ static void print_help()
 	printf("  create                     Create an empty OsmoHLR database.\n");
 	printf("                             (All commands imply this if none exists yet.)\n");
 	printf("\n");
-	printf("  import-nitb-db db          Add OsmoNITB db's subscribers to OsmoHLR db.\n");
+	printf("  import-nitb-db <nitb.db>   Add OsmoNITB db's subscribers to OsmoHLR db.\n");
 	printf("                             Be aware that the import is lossy, only the\n");
 	printf("                             IMSI, MSISDN, nam_cs/ps and 2G auth data are set.\n");
 }
@@ -143,7 +143,6 @@ static void handle_options(int argc, char **argv)
 	}
 
 	cmd = argv[optind++];
-	printf("command '%s', %d extra arguments\n", cmd, argc - optind);
 
 	if (!strcmp(cmd, "create")) {
 		/* Nothing to do, just run the main program to open the database without running any
