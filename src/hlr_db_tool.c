@@ -51,8 +51,7 @@ static struct {
 static void print_help()
 {
 	printf("\n");
-	printf("Usage: osmo-hlr-db-tool [-l <hlr.db>] import-nitb-db <nitb.db>]\n");
-	printf("Call without arguments to create a new empty ./hlr.db.\n");
+	printf("Usage: osmo-hlr-db-tool [-l <hlr.db>] [create|import-nitb-db <nitb.db>]\n");
 	printf("  -l --database db-name      The OsmoHLR database to use, default '%s'.\n",
 	       cmdline_opts.db_file);
 	printf("  -h --help                  This text.\n");
@@ -61,6 +60,11 @@ static void print_help()
 	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
 	printf("  -e --log-level number      Set a global loglevel.\n");
 	printf("  -V --version               Print the version of OsmoHLR-db-tool.\n");
+	printf("\n");
+	printf("Commands:\n");
+	printf("\n");
+	printf("  create                     Create an empty OsmoHLR database.\n");
+	printf("                             (All commands imply this if none exists yet.)\n");
 	printf("\n");
 	printf("  import-nitb-db db          Add OsmoNITB db's subscribers to OsmoHLR db.\n");
 	printf("                             Be aware that the import is lossy, only the\n");
@@ -141,7 +145,10 @@ static void handle_options(int argc, char **argv)
 	cmd = argv[optind++];
 	printf("command '%s', %d extra arguments\n", cmd, argc - optind);
 
-	if (!strcmp(cmd, "import-nitb-db")) {
+	if (!strcmp(cmd, "create")) {
+		/* Nothing to do, just run the main program to open the database without running any
+		 * action, which will bootstrap all tables. */
+	} else if (!strcmp(cmd, "import-nitb-db")) {
 		if (argc - optind < 1) {
 			fprintf(stderr, "You must specify an input db file\n");
 			print_help();
@@ -387,7 +394,8 @@ int main(int argc, char **argv)
 			goto too_many_actions;
 		main_action = import_nitb_db;
 	}
-	/* Future: add more main_actions, besides --import-nitb-db, here. */
+	/* Future: add more main_actions, besides import-nitb-db, here.
+	 * For command 'create', no action is required. */
 
 	/* Just in case any db actions need randomness */
 	rc = rand_init();
