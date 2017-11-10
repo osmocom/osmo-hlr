@@ -159,6 +159,12 @@ static void handle_options(int argc, char **argv)
 		print_help();
 		exit(EXIT_FAILURE);
 	}
+
+	if (argc - optind > 0) {
+		fprintf(stderr, "Too many arguments: '%s'\n", argv[optind]);
+		print_help();
+		exit(EXIT_FAILURE);
+	}
 }
 
 static void signal_hdlr(int signal)
