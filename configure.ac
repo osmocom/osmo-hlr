@@ -64,6 +64,7 @@ AM_CONDITIONAL(ENABLE_EXT_TESTS, test "x$enable_ext_tests" = "xyes")
 
 AC_OUTPUT(
 	Makefile
+	doc/Makefile
 	src/Makefile
 	sql/Makefile
 	tests/Makefile
