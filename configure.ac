@@ -47,6 +47,18 @@ AC_CONFIG_MACRO_DIR([m4])
 dnl checks for header files
 AC_HEADER_STDC
 
+AC_ARG_ENABLE(sanitize,
+	[AS_HELP_STRING(
+		[--enable-sanitize],
+		[Compile with address sanitizer enabled],
+	)],
+	[sanitize=$enableval], [sanitize="no"])
+if test x"$sanitize" = x"yes"
+then
+	CFLAGS="$CFLAGS -fsanitize=address -fsanitize=undefined"
+	CPPFLAGS="$CPPFLAGS -fsanitize=address -fsanitize=undefined"
+fi
+
 AC_ARG_ENABLE([external_tests],
 		AC_HELP_STRING([--enable-external-tests],
 				[Include the VTY/CTRL tests in make check [default=no]]),
