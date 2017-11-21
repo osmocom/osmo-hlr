@@ -409,7 +409,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	g_hlr_db_tool_ctx->dbc = db_open(g_hlr_db_tool_ctx, cmdline_opts.db_file);
+	g_hlr_db_tool_ctx->dbc = db_open(g_hlr_db_tool_ctx, cmdline_opts.db_file, true);
 	if (!g_hlr_db_tool_ctx->dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(EXIT_FAILURE);

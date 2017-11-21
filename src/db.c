@@ -211,7 +211,7 @@ static int db_bootstrap(struct db_context *dbc)
 	return 0;
 }
 
-struct db_context *db_open(void *ctx, const char *fname)
+struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logging)
 {
 	struct db_context *dbc = talloc_zero(ctx, struct db_context);
 	unsigned int i;
@@ -233,9 +233,11 @@ struct db_context *db_open(void *ctx, const char *fname)
 			has_sqlite_config_sqllog = true;
 	}
 
-	rc = sqlite3_config(SQLITE_CONFIG_LOG, sql3_error_log_cb, NULL);
-	if (rc != SQLITE_OK)
-		LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 error log callback\n");
+	if (enable_sqlite_logging) {
+		rc = sqlite3_config(SQLITE_CONFIG_LOG, sql3_error_log_cb, NULL);
+		if (rc != SQLITE_OK)
+			LOGP(DDB, LOGL_NOTICE, "Unable to set SQLite3 error log callback\n");
+	}
 
 	if (has_sqlite_config_sqllog) {
 		rc = sqlite3_config(SQLITE_CONFIG_SQLLOG, sql3_sql_log_cb, NULL);

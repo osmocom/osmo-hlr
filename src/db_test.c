@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->dbc = db_open(NULL, "hlr.db");
+	g_hlr->dbc = db_open(NULL, "hlr.db", true);
 	if (!g_hlr->dbc) {
 		LOGP(DMAIN, LOGL_ERROR, "Error opening database\n");
 		exit(1);

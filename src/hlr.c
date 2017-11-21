@@ -460,7 +460,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file);
+	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file, true);
 	if (!g_hlr->dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(1);

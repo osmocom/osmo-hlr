@@ -38,7 +38,7 @@ bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text);
 bool db_bind_int(sqlite3_stmt *stmt, const char *param_name, int nr);
 bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr);
 void db_close(struct db_context *dbc);
-struct db_context *db_open(void *ctx, const char *fname);
+struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite3_logging);
 
 #include <osmocom/crypt/auth.h>
 
