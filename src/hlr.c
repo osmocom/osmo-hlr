@@ -71,6 +71,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
 		switch (rc) {
 		case 0:
+		case -ENOENT:
 			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
 			break;
 		default:
