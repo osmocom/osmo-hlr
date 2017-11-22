@@ -67,12 +67,16 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 			gsup_out.auth_vectors,
 			ARRAY_SIZE(gsup_out.auth_vectors),
 			gsup->rand, gsup->auts);
-	if (rc < 0) {
+	if (rc <= 0) {
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
-		gsup_out.cause = GMM_CAUSE_NET_FAIL;
-	} else if (rc == 0) {
-		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
-		gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
+		switch (rc) {
+		case 0:
+			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
+			break;
+		default:
+			gsup_out.cause = GMM_CAUSE_NET_FAIL;
+			break;
+		}
 	} else {
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT;
 		gsup_out.num_auth_vectors = rc;
