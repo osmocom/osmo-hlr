@@ -715,6 +715,9 @@ db_get_auth_data(dbc, unknown_imsi, &g_aud2g, &g_aud3g, &g_id) --> -2
 DAUC IMSI='999999999': No such subscriber
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -2
+DAUC IMSI='123456789000000': No such subscriber
+
 
 --- Create subscriber
 
@@ -731,6 +734,10 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
 
 --- Set auth data, 2G only
 
@@ -745,6 +752,11 @@ DAUC IMSI='123456789000000': No 3G Auth Data
   .u.gsm.ki = '0123456789abcdef0123456789abcdef',
 }
 3G: none
+
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> 3
+DAUC IMSI='123456789000000': No 3G Auth Data
+DAUC IMSI='123456789000000': Calling to generate 3 vectors
+DAUC IMSI='123456789000000': Generated 3 vectors
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
 
@@ -804,6 +816,10 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> -ENOENT
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
@@ -825,6 +841,10 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
 
 --- Set auth data, 3G only
 
@@ -843,6 +863,12 @@ DAUC IMSI='123456789000000': No 2G Auth Data
   .u.umts.amf = '0000',
   .u.umts.ind_bitlen = 5,
 }
+
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> 3
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': Calling to generate 3 vectors
+DAUC IMSI='123456789000000': Generated 3 vectors
+DAUC IMSI='123456789000000': Updating SQN=0 in DB
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
 
@@ -917,6 +943,10 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)) --> -ENOENT
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "CededEffacedAceFacedBadFadedBeef", false, "BeefedCafeFaceAcedAddedDecadeFee", 5)) --> 0
@@ -935,12 +965,22 @@ DAUC IMSI='123456789000000': No 2G Auth Data
   .u.umts.ind_bitlen = 5,
 }
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> 3
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': Calling to generate 3 vectors
+DAUC IMSI='123456789000000': Generated 3 vectors
+DAUC IMSI='123456789000000': Updating SQN=0 in DB
+
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, "asdfasdfasd", false, "asdfasdfasdf", 99999)) --> 0
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
+
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
 
 
 --- Set auth data, 2G and 3G
@@ -965,6 +1005,11 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
   .u.umts.amf = '0000',
   .u.umts.ind_bitlen = 5,
 }
+
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> 3
+DAUC IMSI='123456789000000': Calling to generate 3 vectors
+DAUC IMSI='123456789000000': Generated 3 vectors
+DAUC IMSI='123456789000000': Updating SQN=0 in DB
 
 
 --- Set invalid auth data
@@ -1179,10 +1224,17 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': No 3G Auth Data
+
 db_subscr_delete_by_id(dbc, id) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='123456789000000': No such subscriber
+
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -2
+DAUC IMSI='123456789000000': No such subscriber
 
 ===== test_subscr_aud: SUCCESS
 

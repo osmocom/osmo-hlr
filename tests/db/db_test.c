@@ -100,6 +100,22 @@ static void _fill_invalid(void *dest, size_t size)
 		fprintf(stderr, "\n"); \
 	} while (0)
 
+#define N_VECTORS 3
+
+#define ASSERT_DB_GET_AUC(imsi, expect_rc) \
+	do { \
+		struct osmo_auth_vector vec[N_VECTORS]; \
+		ASSERT_RC(db_get_auc(dbc, imsi, 3, vec, N_VECTORS, NULL, NULL), expect_rc); \
+	} while (0)
+
+/* Not linking the real auc_compute_vectors(), just returning num_vec.
+ * This gets called by db_get_auc(), but we're only interested in its rc. */
+int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
+			struct osmo_sub_auth_data *aud2g,
+			struct osmo_sub_auth_data *aud3g,
+			const uint8_t *rand_auts, const uint8_t *auts)
+{ return num_vec; }
+
 static struct db_context *dbc = NULL;
 static void *ctx = NULL;
 static struct hlr_subscriber g_subscr;
@@ -457,6 +473,7 @@ static void test_subscr_aud()
 
 	comment("Get auth data for non-existent subscriber");
 	ASSERT_SEL_AUD(unknown_imsi, -ENOENT, 0);
+	ASSERT_DB_GET_AUC(imsi0, -ENOENT);
 
 	comment("Create subscriber");
 
@@ -465,6 +482,7 @@ static void test_subscr_aud()
 
 	id = g_subscr.id;
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 
 	comment("Set auth data, 2G only");
@@ -473,6 +491,7 @@ static void test_subscr_aud()
 		mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
+	ASSERT_DB_GET_AUC(imsi0, N_VECTORS);
 
 	/* same again */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -501,6 +520,7 @@ static void test_subscr_aud()
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)),
 		0);
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -516,6 +536,7 @@ static void test_subscr_aud()
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")),
 		0);
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 
 	comment("Set auth data, 3G only");
@@ -526,6 +547,7 @@ static void test_subscr_aud()
 			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
+	ASSERT_DB_GET_AUC(imsi0, N_VECTORS);
 
 	/* same again */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -563,6 +585,7 @@ static void test_subscr_aud()
 		mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)),
 		0);
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -575,6 +598,7 @@ static void test_subscr_aud()
 			  "BeefedCafeFaceAcedAddedDecadeFee", 5)),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
+	ASSERT_DB_GET_AUC(imsi0, N_VECTORS);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_NONE,
@@ -582,6 +606,7 @@ static void test_subscr_aud()
 			  "asdfasdfasdf", 99999)),
 		0);
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 
 	comment("Set auth data, 2G and 3G");
@@ -595,6 +620,7 @@ static void test_subscr_aud()
 			  "DeafBeddedBabeAcceededFadedDecaf", 5)),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
+	ASSERT_DB_GET_AUC(imsi0, N_VECTORS);
 
 
 	comment("Set invalid auth data");
@@ -670,9 +696,11 @@ static void test_subscr_aud()
 	 * and make sure there are no auth data leftovers for this ID. */
 	OSMO_ASSERT(id == g_subscr.id);
 	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+	ASSERT_DB_GET_AUC(imsi0, -ENOKEY);
 
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id), 0);
 	ASSERT_SEL(imsi, imsi0, -ENOENT);
+	ASSERT_DB_GET_AUC(imsi0, -ENOENT);
 
 	comment_end();
 }
@@ -835,11 +863,6 @@ int main(int argc, char **argv)
 }
 
 /* stubs */
-int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
-			struct osmo_sub_auth_data *aud2g,
-			struct osmo_sub_auth_data *aud3g,
-			const uint8_t *rand_auts, const uint8_t *auts)
-{ OSMO_ASSERT(false); return -1; }
 void *lu_op_alloc_conn(void *conn)
 { OSMO_ASSERT(false); return NULL; }
 void lu_op_tx_del_subscr_data(void *luop)
