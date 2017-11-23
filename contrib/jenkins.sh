@@ -38,9 +38,7 @@ cd "$base"
 autoreconf --install --force
 ./configure --enable-external-tests
 $MAKE $PARALLEL_MAKE
-if [ "x$label" != "xFreeBSD_amd64" ]; then
-    $MAKE check || cat-testlogs.sh
-    $MAKE distcheck || cat-testlogs.sh
-fi
+$MAKE check || cat-testlogs.sh
+$MAKE distcheck || cat-testlogs.sh
 
 osmo-clean-workspace.sh
