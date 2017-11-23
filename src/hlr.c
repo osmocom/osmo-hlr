@@ -74,10 +74,17 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 			/* 0 means "0 tuples generated", which shouldn't happen.
 			 * Treat the same as "no auth data". */
 		case -ENOKEY:
+			LOGP(DAUC, LOGL_NOTICE, "%s: IMSI known, but has no auth data;"
+			     " Returning slightly inaccurate cause 'IMSI Unknown' via GSUP\n",
+			     gsup->imsi);
+			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
+			break;
 		case -ENOENT:
+			LOGP(DAUC, LOGL_NOTICE, "%s: IMSI not known\n", gsup->imsi);
 			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
 			break;
 		default:
+			LOGP(DAUC, LOGL_ERROR, "%s: failure to look up IMSI in db\n", gsup->imsi);
 			gsup_out.cause = GMM_CAUSE_NET_FAIL;
 			break;
 		}
