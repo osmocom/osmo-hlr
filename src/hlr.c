@@ -71,6 +71,9 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
 		switch (rc) {
 		case 0:
+			/* 0 means "0 tuples generated", which shouldn't happen.
+			 * Treat the same as "no auth data". */
+		case -ENOKEY:
 		case -ENOENT:
 			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
 			break;

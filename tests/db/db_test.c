@@ -464,7 +464,7 @@ static void test_subscr_aud()
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	id = g_subscr.id;
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 
 	comment("Set auth data, 2G only");
@@ -500,7 +500,7 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -515,7 +515,7 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")),
 		0);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 
 	comment("Set auth data, 3G only");
@@ -562,7 +562,7 @@ static void test_subscr_aud()
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
 		mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	/* Removing nothing results in -ENOENT */
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
@@ -581,7 +581,7 @@ static void test_subscr_aud()
 			  "asdfasdfasd", false,
 			  "asdfasdfasdf", 99999)),
 		0);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 
 	comment("Set auth data, 2G and 3G");
@@ -669,7 +669,7 @@ static void test_subscr_aud()
 	/* For this test to work, we want to get the same subscriber ID back,
 	 * and make sure there are no auth data leftovers for this ID. */
 	OSMO_ASSERT(id == g_subscr.id);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id), 0);
 	ASSERT_SEL(imsi, imsi0, -ENOENT);
@@ -697,15 +697,15 @@ static void test_subscr_sqn()
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	id = g_subscr.id;
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	comment("Set SQN, but no 3G auth data present");
 
 	ASSERT_RC(db_update_sqn(dbc, id, 123), -ENOENT);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	ASSERT_RC(db_update_sqn(dbc, id, 543), -ENOENT);
-	ASSERT_SEL_AUD(imsi0, -ENOENT, id);
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
 
 	comment("Set auth 3G data");
 

@@ -74,7 +74,9 @@ out:
 }
 
 /* obtain the authentication data for a given imsi
- * returns -1 in case of error, 0 for unknown IMSI, 1 for success */
+ * returns 0 for success, negative value on error:
+ * -ENOENT if the IMSI is not known, -ENOKEY if the IMSI is known but has no auth data,
+ * -EIO on db failure */
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		     struct osmo_sub_auth_data *aud2g,
 		     struct osmo_sub_auth_data *aud3g,
@@ -163,15 +165,16 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 		LOGAUC(imsi, LOGL_DEBUG, "No 3G Auth Data\n");
 
 	if (aud2g->type == 0 && aud3g->type == 0)
-		ret = -ENOENT;
+		ret = -ENOKEY;
 
 out:
 	db_remove_reset(stmt);
 	return ret;
 }
 
-/* return -1 in case of error, 0 for unknown imsi, positive for number
- * of vectors generated */
+/* return number of vectors generated, negative value on error:
+ * -ENOENT if the IMSI is not known, -ENOKEY if the IMSI is known but has no auth data,
+ * -EIO on db failure */
 int db_get_auc(struct db_context *dbc, const char *imsi,
 	       unsigned int auc_3g_ind, struct osmo_auth_vector *vec,
 	       unsigned int num_vec, const uint8_t *rand_auts,

@@ -72,14 +72,17 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 	OSMO_ASSERT(g_hlr);
 	rc = db_get_auth_data(g_hlr->dbc, subscr->imsi, &aud2g, &aud3g, NULL);
 
-	if (rc) {
-		if (rc == -ENOENT) {
-			aud2g.algo = OSMO_AUTH_ALG_NONE;
-			aud3g.algo = OSMO_AUTH_ALG_NONE;
-		} else {
-			vty_out(vty, "%% Error retrieving data from database (%d)%s", rc, VTY_NEWLINE);
-			return;
-		}
+	switch (rc) {
+	case 0:
+		break;
+	case -ENOENT:
+	case -ENOKEY:
+		aud2g.algo = OSMO_AUTH_ALG_NONE;
+		aud3g.algo = OSMO_AUTH_ALG_NONE;
+		break;
+	default:
+		vty_out(vty, "%% Error retrieving data from database (%d)%s", rc, VTY_NEWLINE);
+		return;
 	}
 
 	if (aud2g.type != OSMO_AUTH_TYPE_NONE && aud2g.type != OSMO_AUTH_TYPE_GSM) {

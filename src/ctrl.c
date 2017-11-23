@@ -228,11 +228,16 @@ static int get_subscr_info_aud(struct ctrl_cmd *cmd, void *data)
 
 	rc = db_get_auth_data(hlr->dbc, imsi, &aud2g, &aud3g, NULL);
 
-	if (rc == -ENOENT) {
+	switch (rc) {
+	case 0:
+		break;
+	case -ENOENT:
+	case -ENOKEY:
 		/* No auth data found, tell the print*() functions about it. */
 		aud2g.algo = OSMO_AUTH_ALG_NONE;
 		aud3g.algo = OSMO_AUTH_ALG_NONE;
-	} else if (rc) {
+		break;
+	default:
 		cmd->reply = "Error retrieving authentication data.";
 		return CTRL_CMD_ERROR;
 	}
@@ -258,11 +263,16 @@ static int get_subscr_info_all(struct ctrl_cmd *cmd, void *data)
 
 	rc = db_get_auth_data(hlr->dbc, subscr.imsi, &aud2g, &aud3g, NULL);
 
-	if (rc == -ENOENT) {
+	switch (rc) {
+	case 0:
+		break;
+	case -ENOENT:
+	case -ENOKEY:
 		/* No auth data found, tell the print*() functions about it. */
 		aud2g.algo = OSMO_AUTH_ALG_NONE;
 		aud3g.algo = OSMO_AUTH_ALG_NONE;
-	} else if (rc) {
+		break;
+	default:
 		cmd->reply = "Error retrieving authentication data.";
 		return CTRL_CMD_ERROR;
 	}
