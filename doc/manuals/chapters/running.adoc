@@ -41,23 +41,13 @@ arguments:
 
 === Bootstrap the Database
 
-Before first launching OsmoHLR, you need to create a database, which can be
-done with these commands:
+If no database exists yet, OsmoHLR will automatically create and bootstrap a
+database file with empty tables. If no `-l` command-line option is provided,
+this database file will be created in the current working directory.
 
-----
-mkdir -p /var/lib/osmocom
-sqlite3 /var/lib/osmocom/hlr.db < /usr/share/doc/osmo-hlr/hlr.sql
-----
-
-Depending on your installation choices, you will probably find `hlr.sql` in one
-of these locations:
-
-- `/usr/share/doc/osmo-hlr/hlr.sql`
-- `/usr/local/share/doc/osmo-hlr/hlr.sql`
-- in `osmo-hlr.git`'s source tree at `sql/hlr.sql`
-
-NOTE: At the time of writing, OsmoHLR does not create an initial empty database
-automatically, like OsmoNITB did. This behavior may be added in the future.
+Alternatively, you may use the `osmo-hlr-db-tool`, which is installed along
+with `osmo-hlr`, to bootstrap an empty database, or to migrate subscriber data
+from an old 'OsmoNITB' database. See `osmo-hlr-db-tool --help`.
 
 === Multiple instances
 
