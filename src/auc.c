@@ -144,6 +144,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 
 			if (!aud2g) {
 				/* use the 2G tokens from 3G keys */
+				DBGP("vector [%u]: deriving 2G from 3G\n", i);
 				DBGVB(kc);
 				DBGVB(sres);
 				DBGVV("0x%x", auth_types);
@@ -151,7 +152,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			}
 			/* calculate 2G separately */
 
-			DBGP("vector [%u]: deriving 2G from 3G\n", i);
+			DBGP("vector [%u]: calculating 2G separately\n", i);
 
 			rc = osmo_auth_gen_vec(&vtmp, aud2g, rand);
 			if (rc < 0) {

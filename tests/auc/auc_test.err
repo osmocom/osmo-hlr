@@ -35,7 +35,7 @@ DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
 DAUC vector [0]: res_len = 8
-DAUC vector [0]: deriving 2G from 3G
+DAUC vector [0]: calculating 2G separately
 DAUC vector [0]: kc = 241a5b16aeb8e400
 DAUC vector [0]: sres = 429d5b27
 DAUC vector [0]: auth_types = 0x3
@@ -55,7 +55,7 @@ DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
 DAUC vector [0]: res_len = 8
-DAUC vector [0]: deriving 2G from 3G
+DAUC vector [0]: calculating 2G separately
 DAUC vector [0]: kc = 241a5b16aeb8e400
 DAUC vector [0]: sres = 429d5b27
 DAUC vector [0]: auth_types = 0x3
@@ -78,6 +78,7 @@ DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
 DAUC vector [0]: res_len = 8
+DAUC vector [0]: deriving 2G from 3G
 DAUC vector [0]: kc = 059a4f668f6fbe39
 DAUC vector [0]: sres = 9b36efdf
 DAUC vector [0]: auth_types = 0x3
@@ -96,6 +97,7 @@ DAUC vector [0]: ck = f64735036e5871319c679f4742a75ea1
 DAUC vector [0]: ik = 27497388b6cb044648f396aa155b95ef
 DAUC vector [0]: res = e229c19e791f2e410000000000000000
 DAUC vector [0]: res_len = 8
+DAUC vector [0]: deriving 2G from 3G
 DAUC vector [0]: kc = 059a4f668f6fbe39
 DAUC vector [0]: sres = 9b36efdf
 DAUC vector [0]: auth_types = 0x3
@@ -117,6 +119,7 @@ DAUC vector [0]: ck = e9922bd036718ed9e40bd1d02c3b81a5
 DAUC vector [0]: ik = f19c20ca863137f8892326d959ec5e01
 DAUC vector [0]: res = 9af5a557902d2db80000000000000000
 DAUC vector [0]: res_len = 8
+DAUC vector [0]: deriving 2G from 3G
 DAUC vector [0]: kc = 7526fc13c5976685
 DAUC vector [0]: sres = 0ad888ef
 DAUC vector [0]: auth_types = 0x3
@@ -137,6 +140,7 @@ DAUC vector [0]: ck = e9922bd036718ed9e40bd1d02c3b81a5
 DAUC vector [0]: ik = f19c20ca863137f8892326d959ec5e01
 DAUC vector [0]: res = 9af5a557902d2db80000000000000000
 DAUC vector [0]: res_len = 8
+DAUC vector [0]: deriving 2G from 3G
 DAUC vector [0]: kc = 7526fc13c5976685
 DAUC vector [0]: sres = 0ad888ef
 DAUC vector [0]: auth_types = 0x3
@@ -147,6 +151,7 @@ DAUC vector [1]: ck = 3686f05df057d1899c66ae4eb18cf941
 DAUC vector [1]: ik = 79f21ed53bcb47787de57d136ff803a5
 DAUC vector [1]: res = 43023475cb29292c0000000000000000
 DAUC vector [1]: res_len = 8
+DAUC vector [1]: deriving 2G from 3G
 DAUC vector [1]: kc = aef73dd515e86c15
 DAUC vector [1]: sres = 882b1d59
 DAUC vector [1]: auth_types = 0x3
@@ -157,6 +162,7 @@ DAUC vector [2]: ck = d86c3191a36fc0602e48202ef2080964
 DAUC vector [2]: ik = 648dab72016181406243420649e63dc9
 DAUC vector [2]: res = 010cab11cc63a6e40000000000000000
 DAUC vector [2]: res_len = 8
+DAUC vector [2]: deriving 2G from 3G
 DAUC vector [2]: kc = f0eaf8cb19e0758d
 DAUC vector [2]: sres = cd6f0df5
 DAUC vector [2]: auth_types = 0x3
@@ -179,6 +185,7 @@ DAUC vector [0]: ck = e9922bd036718ed9e40bd1d02c3b81a5
 DAUC vector [0]: ik = f19c20ca863137f8892326d959ec5e01
 DAUC vector [0]: res = 9af5a557902d2db80000000000000000
 DAUC vector [0]: res_len = 8
+DAUC vector [0]: deriving 2G from 3G
 DAUC vector [0]: kc = 7526fc13c5976685
 DAUC vector [0]: sres = 0ad888ef
 DAUC vector [0]: auth_types = 0x3
@@ -189,6 +196,7 @@ DAUC vector [1]: ck = 3686f05df057d1899c66ae4eb18cf941
 DAUC vector [1]: ik = 79f21ed53bcb47787de57d136ff803a5
 DAUC vector [1]: res = 43023475cb29292c0000000000000000
 DAUC vector [1]: res_len = 8
+DAUC vector [1]: deriving 2G from 3G
 DAUC vector [1]: kc = aef73dd515e86c15
 DAUC vector [1]: sres = 882b1d59
 DAUC vector [1]: auth_types = 0x3
@@ -199,6 +207,7 @@ DAUC vector [2]: ck = d86c3191a36fc0602e48202ef2080964
 DAUC vector [2]: ik = 648dab72016181406243420649e63dc9
 DAUC vector [2]: res = 010cab11cc63a6e40000000000000000
 DAUC vector [2]: res_len = 8
+DAUC vector [2]: deriving 2G from 3G
 DAUC vector [2]: kc = f0eaf8cb19e0758d
 DAUC vector [2]: sres = cd6f0df5
 DAUC vector [2]: auth_types = 0x3
