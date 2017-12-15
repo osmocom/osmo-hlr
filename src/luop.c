@@ -251,8 +251,7 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	gsup.msisdn_enc = msisdn_enc;
 	gsup.msisdn_enc_len = l;
 
-	/* FIXME: deal with encoding the following data */
-	gsup.hlr_enc;
+	#pragma message "FIXME: deal with encoding the following data: gsup.hlr_enc"
 
 	if (luop->is_ps) {
 		/* FIXME: PDP infos - use more fine-grained access control
