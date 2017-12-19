@@ -97,9 +97,9 @@ SET 43 subscriber.by-imsi-901990000000001.cs-enabled nonsense
 ERROR 43 Value failed verification.
 
 SET 44 subscriber.by-imsi-901990000000001.ps-enabled
-ERROR err Command parser error.
+ERROR 44 SET incomplete
 SET 45 subscriber.by-imsi-901990000000001.cs-enabled
-ERROR err Command parser error.
+ERROR 45 SET incomplete
 
 GET 46 subscriber.by-imsi-1234567890123456.ps-enabled
 ERROR 46 Invalid value part of 'by-xxx-value' selector.
