@@ -62,26 +62,26 @@ GET 28 subscriber.by-id--9223372036854775809.info
 ERROR 28 Invalid value part of 'by-xxx-value' selector.
 
 GET 29 subscriber.by-id-1+1.info
-ERROR 29 Invalid value part of 'by-xxx-value' selector.
+ERROR 29 GET variable contains invalid characters
 GET 30 subscriber.by-id--.info
 ERROR 30 Invalid value part of 'by-xxx-value' selector.
 GET 31 subscriber.by-id-+1.info
-ERROR 31 Invalid value part of 'by-xxx-value' selector.
+ERROR 31 GET variable contains invalid characters
 GET 32 subscriber.by-id-+-1.info
-ERROR 32 Invalid value part of 'by-xxx-value' selector.
+ERROR 32 GET variable contains invalid characters
 GET 33 subscriber.by-id--+1.info
-ERROR 33 Invalid value part of 'by-xxx-value' selector.
+ERROR 33 GET variable contains invalid characters
 GET 34 subscriber.by-id-++1.info
-ERROR 34 Invalid value part of 'by-xxx-value' selector.
+ERROR 34 GET variable contains invalid characters
 GET 35 subscriber.by-id---1.info
 ERROR 35 Invalid value part of 'by-xxx-value' selector.
 
 GET 36 subscriber.by-id- 1.info
-ERROR 36 Command not present.
+ERROR 36 GET with trailing characters
 GET 37 subscriber.by-id-+ 1.info
-ERROR 37 Command not present.
+ERROR 37 GET variable contains invalid characters
 GET 38 subscriber.by-id-- 1.info
-ERROR 38 Command not present.
+ERROR 38 GET with trailing characters
 
 
 SET 39 subscriber.by-imsi-901990000000001.info foo
