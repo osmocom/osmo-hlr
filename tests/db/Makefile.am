@@ -6,6 +6,7 @@ AM_CFLAGS = \
 	-ggdb3 \
 	$(LIBOSMOCORE_CFLAGS) \
 	$(LIBOSMOGSM_CFLAGS) \
+	$(LIBOSMOABIS_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(NULL)
 
@@ -27,6 +28,7 @@ db_test_LDADD = \
 	$(top_srcdir)/src/logging.c \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
+	$(LIBOSMOABIS_LIBS) \
 	$(SQLITE3_LIBS) \
 	$(NULL)
 
