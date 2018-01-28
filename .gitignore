@@ -22,10 +22,15 @@ m4
 missing
 .deps
 
-src/osmo-hlr
 src/db_test
+src/db_bootstrap.h
+src/osmo-hlr
+src/osmo-hlr-db-tool
 
+tests/atconfig
 tests/testsuite
 tests/auc/auc_3g_test
 tests/auc/auc_ts_55_205_test_sets.c
 tests/auc/auc_ts_55_205_test_sets
+tests/auc/auc_test
+tests/gsup_server/gsup_server_test
