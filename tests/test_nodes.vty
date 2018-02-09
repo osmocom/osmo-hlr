@@ -100,6 +100,7 @@ log stderr
   logging color 1
   logging print category 1
   logging print extended-timestamp 1
+  logging print file 1
   logging level all debug
   logging level main notice
   logging level db notice
