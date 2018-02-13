@@ -439,6 +439,7 @@ int main(int argc, char **argv)
 
 	hlr_ctx = talloc_named_const(NULL, 1, "OsmoHLR");
 	msgb_talloc_ctx_init(hlr_ctx, 0);
+	vty_info.tall_ctx = hlr_ctx;
 
 	g_hlr = talloc_zero(hlr_ctx, struct hlr);
 

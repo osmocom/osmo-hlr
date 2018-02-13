@@ -24,6 +24,7 @@
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
 #include <osmocom/vty/logging.h>
+#include <osmocom/vty/misc.h>
 
 #include "hlr_vty.h"
 #include "hlr_vty_subscr.h"
@@ -126,6 +127,7 @@ void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 	g_hlr = hlr;
 
 	logging_vty_add_cmds(cat);
+	osmo_talloc_vty_add_cmds();
 
 	install_element(CONFIG_NODE, &cfg_hlr_cmd);
 	install_node(&hlr_node, config_write_hlr);
