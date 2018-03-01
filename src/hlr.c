@@ -238,9 +238,9 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	/* Perform the actual update of the DB */
 	rc = db_subscr_purge(g_hlr->dbc, gsup->imsi, true, is_ps);
 
-	if (rc == 1)
+	if (rc == 0)
 		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_RESULT;
-	else if (rc == 0) {
+	else if (rc == -ENOENT) {
 		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_ERROR;
 		gsup_reply.cause = GMM_CAUSE_IMSI_UNKNOWN;
 	} else {
