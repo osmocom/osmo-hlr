@@ -334,7 +334,7 @@ DEFUN(subscriber_no_aud2g,
 
 	rc = db_subscr_update_aud_by_id(g_hlr->dbc, subscr.id, &aud);
 
-	if (rc) {
+	if (rc && rc != -ENOENT) {
 		vty_out(vty, "%% Error: cannot disable 2G auth data for IMSI='%s'%s",
 			subscr.imsi, VTY_NEWLINE);
 		return CMD_WARNING;
@@ -405,7 +405,7 @@ DEFUN(subscriber_no_aud3g,
 
 	rc = db_subscr_update_aud_by_id(g_hlr->dbc, subscr.id, &aud);
 
-	if (rc) {
+	if (rc && rc != -ENOENT) {
 		vty_out(vty, "%% Error: cannot disable 3G auth data for IMSI='%s'%s",
 			subscr.imsi, VTY_NEWLINE);
 		return CMD_WARNING;
