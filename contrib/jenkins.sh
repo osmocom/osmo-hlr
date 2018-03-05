@@ -36,7 +36,7 @@ set -x
 
 cd "$base"
 autoreconf --install --force
-./configure --enable-sanitize --enable-external-tests CFLAGS="-Werror" CPPFLAGS="-Werror"
+./configure --enable-sanitize --enable-external-tests --enable-werror
 $MAKE $PARALLEL_MAKE
 $MAKE check || cat-testlogs.sh
 $MAKE distcheck || cat-testlogs.sh
