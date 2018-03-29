@@ -108,8 +108,7 @@ struct lu_operation *lu_op_alloc(struct osmo_gsup_server *srv)
 	luop = talloc_zero(srv, struct lu_operation);
 	OSMO_ASSERT(luop);
 	luop->gsup_server = srv;
-	luop->timer.cb = lu_op_timer_cb;
-	luop->timer.data = luop;
+	osmo_timer_setup(&luop->timer, lu_op_timer_cb, luop);
 
 	return luop;
 }
@@ -119,6 +118,10 @@ void lu_op_free(struct lu_operation *luop)
 	/* Only attempt to remove when it was ever added to a list. */
 	if (luop->list.next)
 		llist_del(&luop->list);
+
+	/* Delete timer just in case it is still pending. */
+	osmo_timer_del(&luop->timer);
+
 	talloc_free(luop);
 }
 
