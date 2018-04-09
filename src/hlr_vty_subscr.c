@@ -257,6 +257,10 @@ DEFUN(subscriber_msisdn,
 
 	vty_out(vty, "%% Updated subscriber IMSI='%s' to MSISDN='%s'%s",
 		subscr.imsi, msisdn, VTY_NEWLINE);
+
+	if (db_subscr_get_by_msisdn(g_hlr->dbc, msisdn, &subscr) == 0)
+		osmo_hlr_subscriber_update_notify(&subscr);
+
 	return CMD_SUCCESS;
 }
 

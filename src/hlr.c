@@ -46,6 +46,38 @@
 
 static struct hlr *g_hlr;
 
+/* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
+ *
+ * FIXME: In order to support large-scale networks this function should skip
+ * VLRs/SGSNs which do not currently serve the subscriber.
+ *
+ * \param[in] subscr  A subscriber we have new data to send for.
+ */
+void
+osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
+{
+        struct osmo_gsup_conn *co;
+
+	if (g_hlr->gs == NULL)
+		return;
+
+	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
+		struct lu_operation *luop = lu_op_alloc_conn(co);
+		if (!luop) {
+			LOGP(DMAIN, LOGL_ERROR,
+			       "IMSI='%s': Cannot notify GSUP client, cannot allocate lu_operation,"
+			       " for %s:%u\n", subscr->imsi,
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
+		luop->subscr = *subscr;
+		luop->state = LU_S_LU_RECEIVED; /* Pretend we received a location update. */
+		lu_op_tx_insert_subscr_data(luop);
+		lu_op_free(luop);
+	}
+}
+
 /***********************************************************************
  * Send Auth Info handling
  ***********************************************************************/

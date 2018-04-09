@@ -38,3 +38,7 @@ struct hlr {
 	/* Local bind addr */
 	char *gsup_bind_addr;
 };
+
+struct hlr_subscriber;
+
+void osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr);
