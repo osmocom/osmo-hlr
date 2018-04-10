@@ -4,6 +4,7 @@
 #include <osmocom/core/msgb.h>
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
+#include <osmocom/gsm/gsup.h>
 
 struct osmo_gsup_conn;
 
@@ -33,6 +34,10 @@ struct osmo_gsup_conn {
 	struct tlv_parsed ccm;
 
 	unsigned int auc_3g_ind; /*!< IND index used for UMTS AKA SQN */
+
+	/* Set when Location Update is received: */
+	bool supports_cs; /* client supports OSMO_GSUP_CN_DOMAIN_CS */
+	bool supports_ps; /* client supports OSMO_GSUP_CN_DOMAIN_PS */
 };
 
 
@@ -48,3 +53,4 @@ struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);
 
+void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup);

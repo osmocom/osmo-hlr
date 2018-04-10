@@ -24,6 +24,7 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
+#include <osmocom/gsm/apn.h>
 
 #include "gsup_server.h"
 #include "gsup_router.h"
@@ -332,4 +333,21 @@ void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups)
 		gsups->link = NULL;
 	}
 	talloc_free(gsups);
+}
+
+void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup)
+{
+	int l;
+	uint8_t apn[APN_MAXLEN];
+
+	l = osmo_apn_from_str(apn, sizeof(apn), "*");
+	if (l <= 0)
+		return;
+
+	gsup->pdp_infos[0].apn_enc = apn;
+	gsup->pdp_infos[0].apn_enc_len = l;
+	gsup->pdp_infos[0].have_info = 1;
+	gsup->num_pdp_infos = 1;
+	/* FIXME: use real value: */
+	gsup->pdp_infos[0].context_id = 1;
 }

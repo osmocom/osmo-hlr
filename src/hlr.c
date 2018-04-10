@@ -26,7 +26,6 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
-#include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
@@ -62,19 +61,69 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		return;
 
 	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
-		struct lu_operation *luop = lu_op_alloc_conn(co);
-		if (!luop) {
+		struct osmo_gsup_message gsup = {
+			.message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST
+		};
+		uint8_t *peer;
+		int peer_len;
+		uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
+		int len;
+		struct msgb *msg_out;
+
+		peer_len = osmo_gsup_conn_ccm_get(co, &peer, IPAC_IDTAG_SERNR);
+		if (peer_len < 0) {
 			LOGP(DMAIN, LOGL_ERROR,
-			       "IMSI='%s': Cannot notify GSUP client, cannot allocate lu_operation,"
-			       " for %s:%u\n", subscr->imsi,
+			       "IMSI='%s': Cannot notify GSUP client, cannot get peer name "
+			       "for %s:%u\n", subscr->imsi,
 			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
 			       co && co->conn && co->conn->server? co->conn->server->port : 0);
 			continue;
 		}
-		luop->subscr = *subscr;
-		luop->state = LU_S_LU_RECEIVED; /* Pretend we received a location update. */
-		lu_op_tx_insert_subscr_data(luop);
-		lu_op_free(luop);
+
+		osmo_strlcpy(gsup.imsi, subscr->imsi, GSM23003_IMSI_MAX_DIGITS + 1);
+
+		len = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0, subscr->msisdn);
+		if (len < 1) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode MSISDN '%s'\n",
+			     subscr->imsi, subscr->msisdn);
+			continue;
+		}
+		gsup.msisdn_enc = msisdn_enc;
+		gsup.msisdn_enc_len = len;
+
+		if (co->supports_ps) {
+			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
+
+			/* FIXME: PDP infos - use more fine-grained access control
+			   instead of wildcard APN */
+			osmo_gsup_configure_wildcard_apn(&gsup);
+		} else if (co->supports_cs) {
+			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
+		} else {
+			/* We have not yet received a location update from this subscriber .*/
+			continue;
+		}
+
+		/* Send ISD to MSC/SGSN */
+		msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP ISD UPDATE");
+		if (msg_out == NULL) {
+			LOGP(DMAIN, LOGL_ERROR,
+			       "IMSI='%s': Cannot notify GSUP client; could not allocate msg buffer "
+			       "for %s:%u\n", subscr->imsi,
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
+
+		osmo_gsup_encode(msg_out, &gsup);
+		if (osmo_gsup_addr_send(g_hlr->gs, peer, peer_len, msg_out) < 0) {
+			LOGP(DMAIN, LOGL_ERROR,
+			       "IMSI='%s': Cannot notify GSUP client; send operation failed "
+			       "for %s:%u\n", subscr->imsi,
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
 	}
 }
 
@@ -202,8 +251,18 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 
 	lu_op_statechg(luop, LU_S_LU_RECEIVED);
 
-	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
+	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_CS)
+		conn->supports_cs = true;
+	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
+		conn->supports_ps = true;
 		luop->is_ps = true;
+	} else {
+		/* The client didn't send a CN_DOMAIN IE; assume packet-switched in
+		 * accordance with the GSUP spec in osmo-hlr's user manual (section
+		 * 11.6.15 "CN Domain" says "if no CN Domain IE is present within
+		 * a request, the PS Domain is assumed." */
+		conn->supports_ps = true;
+	}
 	llist_add(&luop->list, &g_lu_ops);
 
 	/* Roughly follwing "Process Update_Location_HLR" of TS 09.02 */

@@ -27,7 +27,6 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/gsup.h>
-#include <osmocom/gsm/apn.h>
 
 #include "gsup_server.h"
 #include "gsup_router.h"
@@ -233,7 +232,6 @@ void lu_op_tx_cancel_old(struct lu_operation *luop)
 void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;
-	uint8_t apn[APN_MAXLEN];
 	uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
 	int l;
 
@@ -259,15 +257,7 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	if (luop->is_ps) {
 		/* FIXME: PDP infos - use more fine-grained access control
 		   instead of wildcard APN */
-		l = osmo_apn_from_str(apn, sizeof(apn), "*");
-		if (l > 0) {
-			gsup.pdp_infos[0].apn_enc = apn;
-			gsup.pdp_infos[0].apn_enc_len = l;
-			gsup.pdp_infos[0].have_info = 1;
-			gsup.num_pdp_infos = 1;
-			/* FIXME: use real value: */
-			gsup.pdp_infos[0].context_id = 1;
-		}
+		osmo_gsup_configure_wildcard_apn(&gsup);
 	}
 
 	/* Send ISD to new VLR/SGSN */
