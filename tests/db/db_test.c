@@ -839,7 +839,7 @@ int main(int argc, char **argv)
 
 	handle_options(argc, argv);
 
-	osmo_init_logging(&hlr_log_info);
+	osmo_init_logging2(ctx, &hlr_log_info);
 	log_set_print_filename(osmo_stderr_target, cmdline_opts.verbose);
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);

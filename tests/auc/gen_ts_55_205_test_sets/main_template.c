@@ -29,6 +29,7 @@
 #include <osmocom/core/application.h>
 #include <osmocom/core/utils.h>
 #include <osmocom/core/logging.h>
+#include <osmocom/core/msgb.h>
 
 #include <osmocom/crypt/auth.h>
 
@@ -102,7 +103,9 @@ FUNCTIONS
 int main()
 {
 	printf("3GPP TS 55.205 Test Sets\n");
-	osmo_init_logging(&hlr_log_info);
+	void *tall_ctx = talloc_named_const(NULL, 1, "test");
+	msgb_talloc_ctx_init(tall_ctx, 0);
+	osmo_init_logging2(tall_ctx, &hlr_log_info);
 	log_set_print_filename(osmo_stderr_target, 0);
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);

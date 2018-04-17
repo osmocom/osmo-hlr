@@ -386,7 +386,7 @@ int main(int argc, char **argv)
 	OSMO_ASSERT(g_hlr_db_tool_ctx);
 	talloc_set_name_const(g_hlr_db_tool_ctx, "OsmoHLR-db-tool");
 
-	rc = osmo_init_logging(&hlr_log_info);
+	rc = osmo_init_logging2(g_hlr_db_tool_ctx, &hlr_log_info);
 	if (rc < 0) {
 		fprintf(stderr, "Error initializing logging\n");
 		exit(EXIT_FAILURE);

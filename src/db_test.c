@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
 	g_hlr = talloc_zero(NULL, struct hlr);
 
-	rc = osmo_init_logging(&hlr_log_info);
+	rc = osmo_init_logging2(g_hlr, &hlr_log_info);
 	if (rc < 0) {
 		fprintf(stderr, "Error initializing logging\n");
 		exit(1);
