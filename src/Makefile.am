@@ -38,10 +38,6 @@ bin_PROGRAMS = \
 	osmo-hlr-db-tool \
 	$(NULL)
 
-noinst_PROGRAMS = \
-	db_test \
-	$(NULL)
-
 osmo_hlr_SOURCES = \
 	auc.c \
 	ctrl.c \
