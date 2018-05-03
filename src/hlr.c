@@ -262,6 +262,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		 * 11.6.15 "CN Domain" says "if no CN Domain IE is present within
 		 * a request, the PS Domain is assumed." */
 		conn->supports_ps = true;
+		luop->is_ps = true;
 	}
 	llist_add(&luop->list, &g_lu_ops);
 
