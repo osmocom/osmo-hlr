@@ -26,7 +26,6 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
-#include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
 #include <osmocom/vty/telnet_interface.h>
@@ -62,51 +61,30 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		return;
 
 	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
-		struct osmo_gsup_message gsup = {
-			.message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST
-		};
+		struct osmo_gsup_message gsup = { };
+		uint8_t msisdn_enc[OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN];
+		uint8_t apn[APN_MAXLEN];
+		struct msgb *msg_out;
 		uint8_t *peer;
 		int peer_len;
-		uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
-		uint8_t apn[APN_MAXLEN];
-		int len;
-		struct msgb *msg_out;
+		enum osmo_gsup_cn_domain cn_domain;
 
-		peer_len = osmo_gsup_conn_ccm_get(co, &peer, IPAC_IDTAG_SERNR);
-		if (peer_len < 0) {
+		if (co->supports_ps)
+			cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
+		else if (co->supports_cs)
+			cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
+		else {
+			/* We have not yet received a location update from this subscriber .*/
+			continue;
+		}
+
+		if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, msisdn_enc,
+								sizeof(msisdn_enc), apn, sizeof(apn), cn_domain) != 0) {
 			LOGP(DMAIN, LOGL_ERROR,
-			       "IMSI='%s': Cannot notify GSUP client, cannot get peer name "
+			       "IMSI='%s': Cannot notify GSUP client; could not create gsup message "
 			       "for %s:%u\n", subscr->imsi,
 			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
 			       co && co->conn && co->conn->server? co->conn->server->port : 0);
-			continue;
-		}
-
-		osmo_strlcpy(gsup.imsi, subscr->imsi, GSM23003_IMSI_MAX_DIGITS + 1);
-
-		len = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0, subscr->msisdn);
-		if (len < 1) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode MSISDN '%s'\n",
-			     subscr->imsi, subscr->msisdn);
-			continue;
-		}
-		gsup.msisdn_enc = msisdn_enc;
-		gsup.msisdn_enc_len = len;
-
-		if (co->supports_ps) {
-			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
-
-			/* FIXME: PDP infos - use more fine-grained access control
-			   instead of wildcard APN */
-			if (osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn))) {
-				LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode wildcard APN\n",
-				     subscr->imsi);
-				continue;
-			}
-		} else if (co->supports_cs) {
-			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
-		} else {
-			/* We have not yet received a location update from this subscriber .*/
 			continue;
 		}
 
@@ -120,8 +98,17 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 			       co && co->conn && co->conn->server? co->conn->server->port : 0);
 			continue;
 		}
-
 		osmo_gsup_encode(msg_out, &gsup);
+
+		peer_len = osmo_gsup_conn_ccm_get(co, &peer, IPAC_IDTAG_SERNR);
+		if (peer_len < 0) {
+			LOGP(DMAIN, LOGL_ERROR,
+			       "IMSI='%s': cannot get peer name for connection %s:%u\n", subscr->imsi,
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
+
 		if (osmo_gsup_addr_send(g_hlr->gs, peer, peer_len, msg_out) < 0) {
 			LOGP(DMAIN, LOGL_ERROR,
 			       "IMSI='%s': Cannot notify GSUP client; send operation failed "

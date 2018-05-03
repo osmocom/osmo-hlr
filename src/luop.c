@@ -25,7 +25,6 @@
 #include <errno.h>
 
 #include <osmocom/core/logging.h>
-#include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/gsup.h>
 #include <osmocom/gsm/apn.h>
 
@@ -52,6 +51,7 @@ static void _luop_tx_gsup(struct lu_operation *luop,
 	struct msgb *msg_out;
 
 	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP LUOP");
+	OSMO_ASSERT(msg_out);
 	osmo_gsup_encode(msg_out, gsup);
 
 	osmo_gsup_addr_send(luop->gsup_server, luop->peer,
@@ -215,39 +215,26 @@ void lu_op_tx_cancel_old(struct lu_operation *luop)
 /*! Transmit Insert Subscriber Data to new VLR/SGSN */
 void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 {
-	struct osmo_gsup_message gsup;
-	uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
+	struct hlr_subscriber *subscr = &luop->subscr;
+	struct osmo_gsup_message gsup = { };
+	uint8_t msisdn_enc[OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN];
 	uint8_t apn[APN_MAXLEN];
-	int l;
+	enum osmo_gsup_cn_domain cn_domain;
 
 	OSMO_ASSERT(luop->state == LU_S_LU_RECEIVED ||
 		    luop->state == LU_S_CANCEL_ACK_RECEIVED);
 
-	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_INSERT_DATA_REQUEST);
+	if (luop->is_ps)
+		cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
+	else
+		cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
 
-	l = gsm48_encode_bcd_number(msisdn_enc, sizeof(msisdn_enc), 0,
-				    luop->subscr.msisdn);
-	if (l < 1) {
+	if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, msisdn_enc,
+							sizeof(msisdn_enc), apn, sizeof(apn), cn_domain) != 0) {
 		LOGP(DMAIN, LOGL_ERROR,
-		     "%s: Error: cannot encode MSISDN '%s'\n",
-		     luop->subscr.imsi, luop->subscr.msisdn);
-		lu_op_tx_error(luop, GMM_CAUSE_PROTO_ERR_UNSPEC);
+		       "IMSI='%s': Cannot notify GSUP client; could not create gsup message "
+		       "for %s\n", subscr->imsi, luop->peer);
 		return;
-	}
-	gsup.msisdn_enc = msisdn_enc;
-	gsup.msisdn_enc_len = l;
-
-	#pragma message "FIXME: deal with encoding the following data: gsup.hlr_enc"
-
-	if (luop->is_ps) {
-		/* FIXME: PDP infos - use more fine-grained access control
-		   instead of wildcard APN */
-		if (osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn))) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode wildcard APN\n",
-			     luop->subscr.imsi);
-			lu_op_tx_error(luop, GMM_CAUSE_PROTO_ERR_UNSPEC);
-			return;
-		}
 	}
 
 	/* Send ISD to new VLR/SGSN */
