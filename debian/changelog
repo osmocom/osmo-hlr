@@ -1,3 +1,60 @@
+osmo-hlr (0.2.0) unstable; urgency=medium
+
+  [ Neels Hofmeyr ]
+  * vty: skip installing cmds now always installed by default
+  * hlr_db_tool: fix error log strerror invocation
+  * cosmetic: add comment on ignored return value
+  * db-tool: add command 'create'
+  * db-tool: cosmetic: tweak printf output
+  * db-tool: error-exit on too many arguments
+  * add --enable-sanitize config option
+  * db_test: don't verify SQLite issued error messages, they might change
+  * cosmetic: rx_send_auth_info(): decide error cause with switch()
+  * return GMM_CAUSE_IMSI_UNKNOWN if there is no auth data
+  * db_get_auth_data / db_get_auc: clarify return values
+  * osmo-hlr: log details for unknown IMSI / no auth data / db error
+  * db_test: also test db_get_auc() return values
+  * fix test_subscriber_errors.ctrl after libosmocore change
+  * fix debug log: put 'deriving 2G from 3G' in proper place
+  * ctrl test: fix: adjust expectations after stricter ctrl parsing
+  * fix build: db_test: missing LIBOSMOABIS_CFLAGS and _LIBS
+  * configure: add --enable-werror
+  * jenkins.sh: use --enable-werror configure flag, not CFLAGS
+
+  [ Harald Welte ]
+  * hlr.c: Avoid overflow of lu_operation.subscr.imsi
+  * Fix expected test output after new 'logging print file 1' vty command
+  * osmo-hlr: Add talloc context introspection via VTY
+  * vty: Don't print error if removing auth data while none present
+  * Fix responses to PURGE MS
+
+  [ Alexander Couzens ]
+  * debian: include systemd service osmo-hlr.service
+  * doc: install example .cfg files to $(docdir)/examples/
+  * debian: install osmo-hlr.cfg to /etc/osmocom
+
+  [ Max ]
+  * Remove unused check
+  * Remove unused ipa.py
+  * Enable sanitize for CI tests
+
+  [ Pau Espin Pedrol ]
+  * luop.c: Transform FIXME from warning to pragma message
+  * contrib:jenkins.sh: Enable Werror
+  * use osmo_init_logging2
+  * Remove unused src/db_test.c
+
+  [ Alexander Huemer ]
+  * Add missing build products in .gitignore
+
+  [ Stefan Sperling ]
+  * more robust usage of osmo_timer API for osmo-hlr luop timer
+  * notify GSUP clients when HLR subscriber information changes
+  * rewrite subscriber_update_notify() without calls into luop
+  * don't forget to mark luop as a packet switched connection
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Thu, 03 May 2018 16:27:13 +0200
+
 osmo-hlr (0.1.0) unstable; urgency=medium
 
   [ Neels Hofmeyr ]
