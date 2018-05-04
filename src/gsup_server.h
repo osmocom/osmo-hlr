@@ -53,4 +53,5 @@ struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);
 
-void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup);
+void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
+				      uint8_t *apn_buf, size_t apn_buf_size);

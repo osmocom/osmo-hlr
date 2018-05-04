@@ -335,16 +335,19 @@ void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups)
 	talloc_free(gsups);
 }
 
-void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup)
+/* Set GSUP message's pdp_infos[0] to a wildcard APN.
+ * Use the provided apn_buf to store the produced APN data. This must remain valid until
+ * osmo_gsup_encode() is done. */
+void osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
+				      uint8_t *apn_buf, size_t apn_buf_size)
 {
 	int l;
-	uint8_t apn[APN_MAXLEN];
 
-	l = osmo_apn_from_str(apn, sizeof(apn), "*");
+	l = osmo_apn_from_str(apn_buf, apn_buf_size, "*");
 	if (l <= 0)
 		return;
 
-	gsup->pdp_infos[0].apn_enc = apn;
+	gsup->pdp_infos[0].apn_enc = apn_buf;
 	gsup->pdp_infos[0].apn_enc_len = l;
 	gsup->pdp_infos[0].have_info = 1;
 	gsup->num_pdp_infos = 1;

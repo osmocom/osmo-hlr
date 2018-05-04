@@ -32,6 +32,7 @@
 #include <osmocom/vty/telnet_interface.h>
 #include <osmocom/vty/ports.h>
 #include <osmocom/ctrl/control_vty.h>
+#include <osmocom/gsm/apn.h>
 
 #include "db.h"
 #include "hlr.h"
@@ -67,6 +68,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		uint8_t *peer;
 		int peer_len;
 		uint8_t msisdn_enc[43]; /* TODO use constant; TS 24.008 10.5.4.7 */
+		uint8_t apn[APN_MAXLEN];
 		int len;
 		struct msgb *msg_out;
 
@@ -96,7 +98,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 
 			/* FIXME: PDP infos - use more fine-grained access control
 			   instead of wildcard APN */
-			osmo_gsup_configure_wildcard_apn(&gsup);
+			osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn));
 		} else if (co->supports_cs) {
 			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
 		} else {
