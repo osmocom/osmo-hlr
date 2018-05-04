@@ -1,3 +1,12 @@
+osmo-hlr (0.2.1) unstable; urgency=medium
+
+  [ Neels Hofmeyr ]
+  * fix luop crash: use buffer for APN that remains valid
+  * add gsup_test to catch OS#3231
+  * add error handling to osmo_gsup_configure_wildcard_apn()
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Fri, 04 May 2018 18:41:35 +0200
+
 osmo-hlr (0.2.0) unstable; urgency=medium
 
   [ Neels Hofmeyr ]
