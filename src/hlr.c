@@ -98,7 +98,11 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 
 			/* FIXME: PDP infos - use more fine-grained access control
 			   instead of wildcard APN */
-			osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn));
+			if (osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn))) {
+				LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode wildcard APN\n",
+				     subscr->imsi);
+				continue;
+			}
 		} else if (co->supports_cs) {
 			gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
 		} else {

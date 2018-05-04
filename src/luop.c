@@ -242,7 +242,12 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	if (luop->is_ps) {
 		/* FIXME: PDP infos - use more fine-grained access control
 		   instead of wildcard APN */
-		osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn));
+		if (osmo_gsup_configure_wildcard_apn(&gsup, apn, sizeof(apn))) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: Error: cannot encode wildcard APN\n",
+			     luop->subscr.imsi);
+			lu_op_tx_error(luop, GMM_CAUSE_PROTO_ERR_UNSPEC);
+			return;
+		}
 	}
 
 	/* Send ISD to new VLR/SGSN */
