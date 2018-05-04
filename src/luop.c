@@ -165,23 +165,6 @@ void lu_op_statechg(struct lu_operation *luop, enum lu_state new_state)
 	luop->state = new_state;
 }
 
-/* Send a msgb to a given address using routing */
-int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
-			const uint8_t *addr, size_t addrlen,
-			struct msgb *msg)
-{
-	struct osmo_gsup_conn *conn;
-
-	conn = gsup_route_find(gs, addr, addrlen);
-	if (!conn) {
-		DEBUGP(DMAIN, "Cannot find route for addr %s\n", addr);
-		msgb_free(msg);
-		return -ENODEV;
-	}
-
-	return osmo_gsup_conn_send(conn, msg);
-}
-
 /*! Transmit UPD_LOC_ERROR and destroy lu_operation */
 void lu_op_tx_error(struct lu_operation *luop, enum gsm48_gmm_cause cause)
 {

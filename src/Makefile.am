@@ -52,6 +52,7 @@ osmo_hlr_SOURCES = \
 	rand_urandom.c \
 	hlr_vty.c \
 	hlr_vty_subscr.c \
+	gsup_send.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
