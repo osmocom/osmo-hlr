@@ -338,6 +338,29 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	return osmo_gsup_conn_send(conn, msg_out);
 }
 
+static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
+				enum osmo_gsup_message_type type_in, uint8_t err_cause)
+{
+	int type_err = osmo_gsup_get_err_msg_type(type_in);
+	struct osmo_gsup_message gsup_reply = {0};
+	struct msgb *msg_out;
+
+	if (type_err < 0) {
+		LOGP(DMAIN, LOGL_ERROR, "unable to determine error response for %s\n",
+			osmo_gsup_message_type_name(type_in));
+		return type_err;
+	}
+
+	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, imsi);
+	gsup_reply.message_type = type_err;
+	gsup_reply.cause = err_cause;
+	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP ERR response");
+	OSMO_ASSERT(msg_out);
+	osmo_gsup_encode(msg_out, &gsup_reply);
+	LOGP(DMAIN, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(type_err));
+	return osmo_gsup_conn_send(conn, msg_out);
+}
+
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
 	static struct osmo_gsup_message gsup;
@@ -348,6 +371,11 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		LOGP(DMAIN, LOGL_ERROR, "error in GSUP decode: %d\n", rc);
 		return rc;
 	}
+
+	/* 3GPP TS 23.003 Section 2.2 clearly states that an IMSI with less than 5
+	 * digits is impossible.  Even 5 digits is a highly theoretical case */
+	if (strlen(gsup.imsi) < 5)
+		return gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
 
 	switch (gsup.message_type) {
 	/* requests sent to us */
