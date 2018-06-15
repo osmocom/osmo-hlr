@@ -47,14 +47,17 @@ static struct hlr *g_hlr;
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
  *
- * FIXME: In order to support large-scale networks this function should skip
- * VLRs/SGSNs which do not currently serve the subscriber.
- *
  * \param[in] subscr  A subscriber we have new data to send for.
  */
 void
 osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 {
+	/* FIXME: the below code can only be re-enabled after we make sure that an ISD
+	 * is only sent tot the currently serving VLR and/or SGSN (if there are any).
+	 * We cannot blindly flood the entire PLMN with this, as it would create subscriber
+	 * state in every VLR/SGSN out there, even those that have never seen the subscriber.
+	 * See https://osmocom.org/issues/3154 for details. */
+#if 0
         struct osmo_gsup_conn *co;
 
 	if (g_hlr->gs == NULL)
@@ -118,6 +121,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 			continue;
 		}
 	}
+#endif
 }
 
 /***********************************************************************
