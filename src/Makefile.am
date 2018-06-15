@@ -32,6 +32,7 @@ noinst_HEADERS = \
 	ctrl.h \
 	hlr_vty.h \
 	hlr_vty_subscr.h \
+	hlr_ussd.h \
 	db_bootstrap.h \
 	$(NULL)
 
@@ -55,6 +56,7 @@ osmo_hlr_SOURCES = \
 	hlr_vty.c \
 	hlr_vty_subscr.c \
 	gsup_send.c \
+	hlr_ussd.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \

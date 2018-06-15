@@ -70,6 +70,8 @@ OsmoHLR(config-hlr)# list
   exit
   end
   gsup
+  euse NAME
+  no euse NAME
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# list

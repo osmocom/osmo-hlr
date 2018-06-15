@@ -6,6 +6,10 @@
  *
  * All Rights Reserved
  *
+ * (C) 2018 Harald Welte <laforge@gnumonks.org>
+ *
+ * All Rights Reserved
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
@@ -117,12 +121,153 @@ DEFUN(cfg_hlr_gsup_bind_ip,
 	return CMD_SUCCESS;
 }
 
+/***********************************************************************
+ * External USSD Entity
+ ***********************************************************************/
+
+#include "hlr_ussd.h"
+
+DEFUN(cfg_euse_route_pfx, cfg_euse_route_pfx_cmd,
+	"route prefix PREFIX",
+	"")
+{
+	struct hlr_euse *euse = vty->index;
+	struct hlr_euse_route *rt = euse_route_find(euse, argv[0]);
+
+	if (rt) {
+		vty_out(vty, "%% Cannot add [another?] route for prefix %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	euse_route_prefix_alloc(euse, argv[0]);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_euse_no_route_pfx, cfg_euse_no_route_pfx_cmd,
+	"no route prefix PREFIX",
+	NO_STR "")
+{
+	struct hlr_euse *euse = vty->index;
+	struct hlr_euse_route *rt = euse_route_find(euse, argv[0]);
+	if (!rt) {
+		vty_out(vty, "%% Cannot find route for prefix %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	euse_route_del(rt);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_euse_defaultroute, cfg_euse_defaultroute_cmd,
+	"default-route",
+	"Set this EUSE as default-route for all USSD to unknown destinations\n")
+{
+	struct hlr_euse *euse = vty->index;
+
+	if (g_hlr->euse_default != euse) {
+		vty_out(vty, "Switching default route from %s to %s%s",
+			g_hlr->euse_default->name, euse->name, VTY_NEWLINE);
+		g_hlr->euse_default = euse;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_euse_no_defaultroute, cfg_euse_no_defaultroute_cmd,
+	"no default-route",
+	NO_STR "Remove this EUSE as default-route for all USSD to unknown destinations\n")
+{
+	struct hlr_euse *euse = vty->index;
+
+	if (g_hlr->euse_default != euse) {
+		vty_out(vty, "%% Current EUSE is no default route, cannot delete it%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	g_hlr->euse_default = NULL;
+
+	return CMD_SUCCESS;
+}
+
+struct cmd_node euse_node = {
+	EUSE_NODE,
+	"%s(config-hlr-euse)# ",
+	1,
+};
+
+DEFUN(cfg_euse, cfg_euse_cmd,
+	"euse NAME",
+	"Configure a particular External USSD Entity\n"
+	"Alphanumeric name of the External USSD Entity\n")
+{
+	struct hlr_euse *euse;
+	const char *id = argv[0];
+
+	euse = euse_find(g_hlr, id);
+	if (!euse) {
+		euse = euse_alloc(g_hlr, id);
+		if (!euse)
+			return CMD_WARNING;
+	}
+	vty->index = euse;
+	vty->index_sub = &euse->description;
+	vty->node = EUSE_NODE;
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_euse, cfg_no_euse_cmd,
+	"no euse NAME",
+	NO_STR "Remove a particular External USSD Entity\n"
+	"Alphanumeric name of the External USSD Entity\n")
+{
+	struct hlr_euse *euse = euse_find(g_hlr, argv[0]);
+	if (!euse) {
+		vty_out(vty, "%% Cannot remove non-existant EUSE %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	if (g_hlr->euse_default == euse) {
+		vty_out(vty, "%% Cannot remove EUSE %s, it is the default route%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	euse_del(euse);
+	return CMD_SUCCESS;
+}
+
+static void dump_one_euse(struct vty *vty, struct hlr_euse *euse)
+{
+	struct hlr_euse_route *er;
+
+	vty_out(vty, " euse %s%s", euse->name, VTY_NEWLINE);
+
+	llist_for_each_entry(er, &euse->routes, list)
+		vty_out(vty, "  route prefix %s%s", er->prefix, VTY_NEWLINE);
+
+	if (g_hlr->euse_default == euse)
+		vty_out(vty, "  default-route%s", VTY_NEWLINE);
+}
+
+static int config_write_euse(struct vty *vty)
+{
+	struct hlr_euse *euse;
+
+	llist_for_each_entry(euse, &g_hlr->euse_list, list)
+		dump_one_euse(vty, euse);
+
+	return 0;
+}
+
+/***********************************************************************
+ * Common Code
+ ***********************************************************************/
+
 int hlr_vty_go_parent(struct vty *vty)
 {
 	switch (vty->node) {
 	case GSUP_NODE:
+	case EUSE_NODE:
 		vty->node = HLR_NODE;
 		vty->index = NULL;
+		vty->index_sub = NULL;
 		break;
 	default:
 	case HLR_NODE:
@@ -164,6 +309,14 @@ void hlr_vty_init(const struct log_info *cat)
 	install_node(&gsup_node, config_write_hlr_gsup);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
+
+	install_element(HLR_NODE, &cfg_euse_cmd);
+	install_element(HLR_NODE, &cfg_no_euse_cmd);
+	install_node(&euse_node, config_write_euse);
+	install_element(EUSE_NODE, &cfg_euse_route_pfx_cmd);
+	install_element(EUSE_NODE, &cfg_euse_no_route_pfx_cmd);
+	install_element(EUSE_NODE, &cfg_euse_defaultroute_cmd);
+	install_element(EUSE_NODE, &cfg_euse_no_defaultroute_cmd);
 
 	hlr_vty_subscriber_init();
 }

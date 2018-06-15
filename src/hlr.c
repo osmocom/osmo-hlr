@@ -559,6 +559,7 @@ int main(int argc, char **argv)
 	vty_info.tall_ctx = hlr_ctx;
 
 	g_hlr = talloc_zero(hlr_ctx, struct hlr);
+	INIT_LLIST_HEAD(&g_hlr->euse_list);
 
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {
