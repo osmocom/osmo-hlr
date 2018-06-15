@@ -42,6 +42,7 @@
 #include "rand.h"
 #include "luop.h"
 #include "hlr_vty.h"
+#include "hlr_ss_ussd.h"
 
 static struct hlr *g_hlr;
 
@@ -533,6 +534,7 @@ static void signal_hdlr(int signal)
 	case SIGINT:
 		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to SIGINT\n");
 		osmo_gsup_server_destroy(g_hlr->gs);
+		hlr_usse_clean_up(g_hlr);
 		db_close(g_hlr->dbc);
 		log_fini();
 		talloc_report_full(hlr_ctx, stderr);
@@ -568,6 +570,9 @@ int main(int argc, char **argv)
 	vty_info.tall_ctx = hlr_ctx;
 
 	g_hlr = talloc_zero(hlr_ctx, struct hlr);
+
+	INIT_LLIST_HEAD(&g_hlr->usse_list);
+	g_hlr->usse_default = NULL;
 
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {

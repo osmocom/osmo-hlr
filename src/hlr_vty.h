@@ -30,6 +30,8 @@
 enum hlr_vty_node {
 	HLR_NODE = _LAST_OSMOVTY_NODE + 1,
 	GSUP_NODE,
+	IUSSE_NODE,
+	EUSSE_NODE,
 };
 
 int hlr_vty_is_config_node(struct vty *vty, int node);

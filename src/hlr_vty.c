@@ -3,6 +3,7 @@
 /* (C) 2016 sysmocom s.f.m.c. GmbH <info@sysmocom.de>
  * Author: Neels Hofmeyr <nhofmeyr@sysmocom.de>
  * (C) 2018 Harald Welte <laforge@gnumonks.org>
+ * (C) 2018 by Vadim Yanitskiy <axilirator@gmail.com>
  *
  * All Rights Reserved
  *
@@ -29,6 +30,7 @@
 #include <osmocom/abis/ipa.h>
 
 #include "hlr_vty.h"
+#include "hlr_ss_ussd.h"
 #include "hlr_vty_subscr.h"
 #include "gsup_server.h"
 
@@ -94,7 +96,7 @@ static void show_one_conn(struct vty *vty, const struct osmo_gsup_conn *conn)
 
 DEFUN(show_gsup_conn, show_gsup_conn_cmd,
 	"show gsup-connections",
-	SHOW_STR "GSUP Connections from VLRs, SGSNs, EUSEs\n")
+	SHOW_STR "GSUP Connections from VLRs, SGSNs, EUSSEs\n")
 {
 	struct osmo_gsup_server *gs = g_hlr->gs;
 	struct osmo_gsup_conn *conn;
@@ -119,12 +121,290 @@ DEFUN(cfg_hlr_gsup_bind_ip,
 	return CMD_SUCCESS;
 }
 
+/***********************************************************************
+ * Unstructured Supplementary Services processing Entity configuration
+ ***********************************************************************/
+
+static struct cmd_node iusse_node = {
+	IUSSE_NODE,
+	"%s(config-hlr-iusse)# ",
+	1,
+};
+
+static struct cmd_node eusse_node = {
+	EUSSE_NODE,
+	"%s(config-hlr-eusse)# ",
+	1,
+};
+
+#define VTY_USSE_NAME_DESC \
+	"Internal USSD processing Entity\n" \
+	"Alphanumeric name of an External USSE\n"
+
+DEFUN(cfg_usse, cfg_usse_cmd,
+	"usse (internal|NAME)",
+	"Configure a particular USSE (USSD processing Entity)\n"
+	VTY_USSE_NAME_DESC)
+{
+	const char *name = argv[0];
+	struct hlr_usse *usse;
+
+	usse = hlr_usse_find(g_hlr, name);
+	if (!usse) {
+		usse = hlr_usse_alloc(g_hlr, name);
+		if (!usse)
+			return CMD_WARNING;
+	}
+
+	vty->index_sub = &usse->description;
+	vty->index = usse;
+
+	/* IUSSE or EUSSE? */
+	if (!strcmp(usse->name, "internal"))
+		vty->node = IUSSE_NODE;
+	else
+		vty->node = EUSSE_NODE;
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_usse, cfg_no_usse_cmd,
+	"no usse (internal|NAME)",
+	NO_STR "Remove a particular USSE (USSD processing Entity)\n"
+	VTY_USSE_NAME_DESC)
+{
+	const char *name = argv[0];
+	struct hlr_usse *usse;
+
+	usse = hlr_usse_find(g_hlr, name);
+	if (!usse) {
+		vty_out(vty, "%% Cannot remove non-existent "
+			"USSE '%s'%s", name, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (g_hlr->usse_default == usse) {
+		vty_out(vty, "%% Cannot remove USSE '%s', "
+			"it is the default route%s", name, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	hlr_usse_del(usse);
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_usse_default, cfg_usse_default_cmd,
+	"usse-default (internal|NAME)",
+	"Default USSD processing Entity\n"
+	VTY_USSE_NAME_DESC)
+{
+	const char *name = argv[0];
+	struct hlr_usse *usse;
+
+	usse = hlr_usse_find(g_hlr, name);
+	if (!usse) {
+		vty_out(vty, "%% Cannot find USSE '%s'%s", name, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (g_hlr->usse_default == usse) {
+		vty_out(vty, "%% USSE '%s' is already "
+			"used by default%s", usse->name, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	g_hlr->usse_default = usse;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_usse_default, cfg_no_usse_default_cmd,
+	"no usse-default",
+	NO_STR "No default USSD processing Entity "
+	"(drop all unmatched requests)\n")
+{
+	g_hlr->usse_default = NULL;
+	return CMD_SUCCESS;
+}
+
+#define VTY_USSE_PATTERN_CMD \
+	"pattern (code|regexp|prefix) PATTERN"
+
+#define VTY_USSE_PATTERN_DESC \
+	"Match USSD-request codes by exact value (e.g. '*#100#')\n" \
+	"Match USSD-request codes by regular expression (e.g. '^\\*[5-7]+'\\*)\n" \
+	"Match USSD-request codes by prefix (e.g. '*#' or '*110*')\n" \
+	"Matching pattern\n"
+
+static int _cfg_usse_pattern(struct vty *vty, int argc, const char **argv)
+{
+	struct hlr_usse *usse = vty->index;
+	enum hlr_usse_pattern_type type;
+	struct hlr_usse_pattern *pt;
+	bool is_iusse;
+
+	/* Determine which kind of matching pattern required */
+	switch (argv[0][0]) {
+	case 'c':
+		type = HLR_USSE_PATTERN_CODE;
+		break;
+	case 'r':
+		type = HLR_USSE_PATTERN_REGEXP;
+		break;
+	case 'p':
+		type = HLR_USSE_PATTERN_PREFIX;
+		break;
+	default:
+		/* Shouldn't happen, but let's make sure */
+		return CMD_WARNING;
+	}
+
+	/* IUSSE or EUSSE? */
+	is_iusse = !strcmp(usse->name, "internal");
+
+	/* Attempt to find pattern */
+	pt = hlr_usse_pattern_find(usse, type, argv[1]);
+	if (pt && !is_iusse) {
+		/* Response modification is only actual for IUSSE */
+		vty_out(vty, "%% Pattern already exists!%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	/* Allocate if required */
+	if (!pt) {
+		pt = hlr_usse_pattern_add(usse, type, argv[1]);
+		if (!pt) {
+			vty_out(vty, "%% Cannot add pattern '%s' of type '%s'%s",
+				argv[1], argv[0], VTY_NEWLINE);
+			return CMD_WARNING;
+		}
+	}
+
+	/* Response string for IUSSE */
+	if (is_iusse) {
+		if (pt->rsp_fmt)
+			talloc_free(pt->rsp_fmt);
+		pt->rsp_fmt = talloc_strdup(pt, argv_concat(argv, argc, 2));
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_iusse_pattern, cfg_iusse_pattern_cmd,
+	VTY_USSE_PATTERN_CMD " response .RESPONSE",
+	"Add or modify a USSD-code matching pattern\n"
+	VTY_USSE_PATTERN_DESC
+	"Response format string (e.g. 'Your MSISDN is %m')\n")
+{
+	return _cfg_usse_pattern(vty, argc, argv);
+}
+
+DEFUN(cfg_eusse_pattern, cfg_eusse_pattern_cmd,
+	VTY_USSE_PATTERN_CMD,
+	"Add a new USSD-code matching pattern\n"
+	VTY_USSE_PATTERN_DESC)
+{
+	return _cfg_usse_pattern(vty, argc, argv);
+}
+
+DEFUN(cfg_usse_no_pattern, cfg_usse_no_pattern_cmd,
+	"no " VTY_USSE_PATTERN_CMD,
+	NO_STR "Remove an existing USSD-code matching pattern\n"
+	VTY_USSE_PATTERN_DESC)
+{
+	struct hlr_usse *usse = vty->index;
+	enum hlr_usse_pattern_type type;
+	struct hlr_usse_pattern *pt;
+
+	/* Determine which kind of matching pattern required */
+	switch (argv[0][0]) {
+	case 'c':
+		type = HLR_USSE_PATTERN_CODE;
+		break;
+	case 'r':
+		type = HLR_USSE_PATTERN_REGEXP;
+		break;
+	case 'p':
+		type = HLR_USSE_PATTERN_PREFIX;
+		break;
+	default:
+		/* Shouldn't happen, but let's make sure */
+		return CMD_WARNING;
+	}
+
+	pt = hlr_usse_pattern_find(usse, type, argv[1]);
+	if (!pt) {
+		vty_out(vty, "%% Cannot remove non-existent pattern '%s' "
+			"of type '%s'%s", argv[1], argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	hlr_usse_pattern_del(pt);
+	return CMD_SUCCESS;
+}
+
+static void dump_one_usse(struct vty *vty, struct hlr_usse *usse)
+{
+	struct hlr_usse_pattern *pt;
+	const char *pt_type;
+
+	vty_out(vty, " usse %s%s", usse->name, VTY_NEWLINE);
+	// FIXME: what about usse->description?
+
+	llist_for_each_entry(pt, &usse->patterns, list) {
+		/* Stringify pattern type */
+		switch (pt->type) {
+		case HLR_USSE_PATTERN_CODE:
+			pt_type = "code";
+			break;
+		case HLR_USSE_PATTERN_REGEXP:
+			pt_type = "regexp";
+			break;
+		case HLR_USSE_PATTERN_PREFIX:
+			pt_type = "prefix";
+			break;
+		default:
+			/* Should not happen */
+			OSMO_ASSERT(0);
+		}
+
+		if (pt->rsp_fmt != NULL)
+			vty_out(vty, "  pattern %s %s response %s%s", pt_type,
+				pt->pattern, pt->rsp_fmt, VTY_NEWLINE);
+		else
+			vty_out(vty, "  pattern %s %s%s", pt_type,
+				pt->pattern, VTY_NEWLINE);
+	}
+}
+
+static int config_write_usse(struct vty *vty)
+{
+	struct hlr_usse *usse;
+
+	if (g_hlr->usse_default == NULL)
+		vty_out(vty, " no usse-default%s", VTY_NEWLINE);
+	else
+		vty_out(vty, " usse-default %s%s",
+			g_hlr->usse_default->name, VTY_NEWLINE);
+
+	llist_for_each_entry(usse, &g_hlr->usse_list, list)
+		dump_one_usse(vty, usse);
+
+	return CMD_SUCCESS;
+}
+
+/***********************************************************************
+ * Common Code
+ ***********************************************************************/
+
 int hlr_vty_go_parent(struct vty *vty)
 {
 	switch (vty->node) {
 	case GSUP_NODE:
+	case IUSSE_NODE:
+	case EUSSE_NODE:
 		vty->node = HLR_NODE;
 		vty->index = NULL;
+		vty->index_sub = NULL;
 		break;
 	default:
 	case HLR_NODE:
@@ -168,6 +448,17 @@ void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 	install_node(&gsup_node, config_write_hlr_gsup);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
+
+	install_element(HLR_NODE, &cfg_usse_cmd);
+	install_element(HLR_NODE, &cfg_no_usse_cmd);
+	install_element(HLR_NODE, &cfg_usse_default_cmd);
+	install_element(HLR_NODE, &cfg_no_usse_default_cmd);
+	install_node(&eusse_node, config_write_usse);
+	install_element(EUSSE_NODE, &cfg_eusse_pattern_cmd);
+	install_element(EUSSE_NODE, &cfg_usse_no_pattern_cmd);
+	install_node(&iusse_node, NULL);
+	install_element(IUSSE_NODE, &cfg_iusse_pattern_cmd);
+	install_element(IUSSE_NODE, &cfg_usse_no_pattern_cmd);
 
 	hlr_vty_subscriber_init(hlr);
 }

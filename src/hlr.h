@@ -23,6 +23,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include <osmocom/core/linuxlist.h>
+
+struct hlr_usse;
 
 struct hlr {
 	/* GSUP server pointer */
@@ -37,6 +40,10 @@ struct hlr {
 
 	/* Local bind addr */
 	char *gsup_bind_addr;
+
+	/* SS/USSD processing entities */
+	struct llist_head usse_list;
+	struct hlr_usse *usse_default;
 };
 
 struct hlr_subscriber;

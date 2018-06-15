@@ -70,6 +70,10 @@ OsmoHLR(config-hlr)# list
   exit
   end
   gsup
+  usse (internal|NAME)
+  no usse (internal|NAME)
+  usse-default (internal|NAME)
+  no usse-default
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# list
@@ -85,6 +89,39 @@ OsmoHLR(config-hlr-gsup)# list
   bind ip A.B.C.D
 
 OsmoHLR(config-hlr-gsup)# exit
+OsmoHLR(config-hlr)# usse test
+OsmoHLR(config-hlr-eusse)# list
+  help
+  list
+  write terminal
+  write file
+  write memory
+  write
+  show running-config
+  exit
+  end
+  pattern (code|regexp|prefix) PATTERN
+  no pattern (code|regexp|prefix) PATTERN
+
+OsmoHLR(config-hlr-eusse)# exit
+OsmoHLR(config-hlr)# usse internal
+OsmoHLR(config-hlr-iusse)# list
+  help
+  list
+  write terminal
+  write file
+  write memory
+  write
+  show running-config
+  exit
+  end
+  pattern (code|regexp|prefix) PATTERN response .RESPONSE
+  no pattern (code|regexp|prefix) PATTERN
+
+OsmoHLR(config-hlr-iusse)# exit
+OsmoHLR(config-hlr)# no usse test
+OsmoHLR(config-hlr)# no usse internal
+
 OsmoHLR(config-hlr)# exit
 OsmoHLR(config)# exit
 OsmoHLR# configure terminal
@@ -119,4 +156,5 @@ ctrl
 hlr
  gsup
   bind ip 127.0.0.1
+ no usse-default
 end

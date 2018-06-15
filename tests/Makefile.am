@@ -31,6 +31,7 @@ EXTRA_DIST = \
 	test_subscriber.vty \
 	test_subscriber.sql \
 	test_subscriber.ctrl \
+	test_sse.vty \
 	$(NULL)
 
 TESTSUITE = $(srcdir)/testsuite

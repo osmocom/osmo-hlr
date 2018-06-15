@@ -1,0 +1,246 @@
+OsmoHLR> enable
+OsmoHLR# configure terminal
+OsmoHLR(config)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ no usse-default
+end
+
+OsmoHLR(config)# hlr
+OsmoHLR(config-hlr)# no usse test
+% Cannot remove non-existent USSE 'test'
+
+OsmoHLR(config-hlr)# usse gw1
+OsmoHLR(config-hlr-eusse)# no pattern prefix *111*
+% Cannot remove non-existent pattern '*111*' of type 'prefix'
+
+OsmoHLR(config-hlr-eusse)# pattern prefix *110*
+OsmoHLR(config-hlr-eusse)# pattern prefix *181*
+OsmoHLR(config-hlr-eusse)# pattern prefix *110*
+% Pattern already exists!
+
+OsmoHLR(config-hlr-eusse)# pattern code *110*
+OsmoHLR(config-hlr-eusse)# pattern code *888#
+OsmoHLR(config-hlr-eusse)# pattern code *110*
+% Pattern already exists!
+
+OsmoHLR(config-hlr-eusse)# pattern regexp ^*[1-3]{3}*[0-9]+#$
+OsmoHLR(config-hlr-eusse)# pattern regexp ^*[5-7]{3}*[0-9]+#$
+OsmoHLR(config-hlr-eusse)# pattern regexp ^*[1-3]{3}*[0-9]+#$
+% Pattern already exists!
+
+OsmoHLR(config-hlr-eusse)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ no usse-default
+ usse gw1
+  pattern prefix *110*
+  pattern prefix *181*
+  pattern code *110*
+  pattern code *888#
+  pattern regexp ^*[1-3]{3}*[0-9]+#$
+  pattern regexp ^*[5-7]{3}*[0-9]+#$
+end
+
+OsmoHLR(config-hlr-eusse)# no pattern prefix *181*
+OsmoHLR(config-hlr-eusse)# no pattern code *110*
+OsmoHLR(config-hlr-eusse)# no pattern regexp ^*[1-3]{3}*[0-9]+#$
+OsmoHLR(config-hlr-eusse)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ no usse-default
+ usse gw1
+  pattern prefix *110*
+  pattern code *888#
+  pattern regexp ^*[5-7]{3}*[0-9]+#$
+end
+
+OsmoHLR(config-hlr-eusse)# exit
+OsmoHLR(config-hlr)# usse internal
+
+OsmoHLR(config-hlr-iusse)# pattern code *#100#
+% Command incomplete.
+
+OsmoHLR(config-hlr-iusse)# pattern code *#100# response Your extension is %m
+OsmoHLR(config-hlr-iusse)# pattern regexp ^*999*[0-3]+#$ response Mahlzeit!
+
+OsmoHLR(config-hlr-iusse)# no pattern code *888#
+% Cannot remove non-existent pattern '*888#' of type 'code'
+
+OsmoHLR(config-hlr-iusse)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ no usse-default
+ usse gw1
+  pattern prefix *110*
+  pattern code *888#
+  pattern regexp ^*[5-7]{3}*[0-9]+#$
+ usse internal
+  pattern code *#100# response Your extension is %m
+  pattern regexp ^*999*[0-3]+#$ response Mahlzeit!
+end
+
+OsmoHLR(config-hlr-iusse)# exit
+OsmoHLR(config-hlr)# usse-default test
+% Cannot find USSE 'test'
+
+OsmoHLR(config-hlr)# usse-default internal
+OsmoHLR(config-hlr)# usse-default gw1
+OsmoHLR(config-hlr)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ usse-default gw1
+ usse gw1
+  pattern prefix *110*
+  pattern code *888#
+  pattern regexp ^*[5-7]{3}*[0-9]+#$
+ usse internal
+  pattern code *#100# response Your extension is %m
+  pattern regexp ^*999*[0-3]+#$ response Mahlzeit!
+end
+
+OsmoHLR(config-hlr)# no usse gw1
+% Cannot remove USSE 'gw1', it is the default route
+
+OsmoHLR(config-hlr)# no usse-default
+OsmoHLR(config-hlr)# no usse gw1
+OsmoHLR(config-hlr)# show running-config
+
+Current configuration:
+!
+!
+log stderr
+  logging filter all 1
+  logging color 1
+  logging print category 1
+  logging print extended-timestamp 1
+  logging print file 1
+  logging level all debug
+  logging level main notice
+  logging level db notice
+  logging level auc notice
+...
+!
+line vty
+ no login
+!
+ctrl
+ bind 127.0.0.1
+hlr
+ gsup
+  bind ip 127.0.0.1
+ no usse-default
+ usse internal
+  pattern code *#100# response Your extension is %m
+  pattern regexp ^*999*[0-3]+#$ response Mahlzeit!
+end
