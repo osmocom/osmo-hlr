@@ -1,5 +1,9 @@
 #include <stdint.h>
 #include <osmocom/core/linuxlist.h>
+#include <osmocom/gsm/gsup.h>
+#include "gsup_server.h"
+
+struct osmo_gsup_conn;
 
 struct hlr_euse_route {
 	/* hlr_euse.routes */
@@ -18,6 +22,9 @@ struct hlr_euse {
 	const char *description;
 	/* list of hlr_euse_route */
 	struct llist_head routes;
+
+	/* GSUP connection to the EUSE, if any */
+	struct osmo_gsup_conn *conn;
 };
 
 
@@ -28,3 +35,6 @@ void euse_del(struct hlr_euse *euse);
 struct hlr_euse_route *euse_route_find(struct hlr_euse *euse, const char *prefix);
 struct hlr_euse_route *euse_route_prefix_alloc(struct hlr_euse *euse, const char *prefix);
 void euse_route_del(struct hlr_euse_route *rt);
+
+int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
+int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
