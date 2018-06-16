@@ -16,6 +16,9 @@ struct osmo_gsup_conn;
 typedef int (*osmo_gsup_read_cb_t)(struct osmo_gsup_conn *conn, struct msgb *msg);
 
 struct osmo_gsup_server {
+	/* private data of the application/user */
+	void *priv;
+
 	/* list of osmo_gsup_conn */
 	struct llist_head clients;
 
@@ -53,7 +56,8 @@ struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 						 const char *ip_addr,
 						 uint16_t tcp_port,
 						 osmo_gsup_read_cb_t read_cb,
-						 struct llist_head *lu_op_lst);
+						 struct llist_head *lu_op_lst,
+						 void *priv);
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);
 

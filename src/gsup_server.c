@@ -292,7 +292,7 @@ failed:
 struct osmo_gsup_server *
 osmo_gsup_server_create(void *ctx, const char *ip_addr, uint16_t tcp_port,
 			osmo_gsup_read_cb_t read_cb,
-			struct llist_head *lu_op_lst)
+			struct llist_head *lu_op_lst, void *priv)
 {
 	struct osmo_gsup_server *gsups;
 	int rc;
@@ -312,6 +312,7 @@ osmo_gsup_server_create(void *ctx, const char *ip_addr, uint16_t tcp_port,
 		goto failed;
 
 	gsups->read_cb = read_cb;
+	gsups->priv = priv;
 
 	rc = ipa_server_link_open(gsups->link);
 	if (rc < 0)
