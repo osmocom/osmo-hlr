@@ -42,6 +42,7 @@
 #include "rand.h"
 #include "luop.h"
 #include "hlr_vty.h"
+#include "hlr_ussd.h"
 
 struct hlr *g_hlr;
 static int quit = 0;
@@ -402,6 +403,13 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		LOGP(DMAIN, LOGL_ERROR, "Deleting subscriber data for IMSI %s\n",
 		     gsup.imsi);
 		break;
+	case OSMO_GSUP_MSGT_PROC_SS_REQUEST:
+	case OSMO_GSUP_MSGT_PROC_SS_RESULT:
+		rx_proc_ss_req(conn, &gsup);
+		break;
+	case OSMO_GSUP_MSGT_PROC_SS_ERROR:
+		rx_proc_ss_error(conn, &gsup);
+		break;
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
 	case OSMO_GSUP_MSGT_INSERT_DATA_RESULT:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
@@ -560,6 +568,7 @@ int main(int argc, char **argv)
 
 	g_hlr = talloc_zero(hlr_ctx, struct hlr);
 	INIT_LLIST_HEAD(&g_hlr->euse_list);
+	INIT_LLIST_HEAD(&g_hlr->ss_sessions);
 
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {

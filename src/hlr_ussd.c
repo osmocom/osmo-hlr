@@ -1,4 +1,4 @@
-/* OsmoHLR VTY implementation */
+/* OsmoHLR SS/USSD implementation */
 
 /* (C) 2018 Harald Welte <laforge@gnumonks.org>
  *
@@ -21,11 +21,22 @@
 
 
 #include <osmocom/core/talloc.h>
+#include <osmocom/core/timer.h>
+#include <osmocom/gsm/gsup.h>
+#include <osmocom/gsm/gsm0480.h>
+#include <osmocom/gsm/protocol/gsm_04_80.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "hlr.h"
 #include "hlr_ussd.h"
+#include "gsup_server.h"
+#include "gsup_router.h"
+#include "logging.h"
+
+/***********************************************************************
+ * core data structures expressing config from VTY
+ ***********************************************************************/
 
 struct hlr_euse *euse_find(struct hlr *hlr, const char *name)
 {
@@ -90,4 +101,294 @@ void euse_route_del(struct hlr_euse_route *rt)
 {
 	llist_del(&rt->list);
 	talloc_free(rt);
+}
+
+struct hlr_euse *ussd_euse_find_7bit_gsm(struct hlr *hlr, const char *ussd_code)
+{
+	struct hlr_euse *euse;
+
+	llist_for_each_entry(euse, &hlr->euse_list, list) {
+		struct hlr_euse_route *rt;
+		llist_for_each_entry(rt, &euse->routes, list) {
+			if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
+				LOGP(DMAIN, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
+					rt->euse->name, rt->prefix, ussd_code);
+				return rt->euse;
+			}
+		}
+	}
+
+	LOGP(DMAIN, LOGL_DEBUG, "Could not find Route/EUSE for USSD Code '%s'\n", ussd_code);
+	return NULL;
+}
+
+/***********************************************************************
+ * handling functions for individual GSUP messages
+ ***********************************************************************/
+
+struct ss_session {
+	/* link us to hlr->ss_sessions */
+	struct llist_head list;
+	/* imsi of this session */
+	char imsi[GSM23003_IMSI_MAX_DIGITS+2];
+	/* ID of this session (unique per IMSI) */
+	uint32_t session_id;
+	/* state of the session */
+	enum osmo_gsup_session_state state;
+	/* time-out when we will delete the session */
+	struct osmo_timer_list timeout;
+
+	/* external USSD Entity responsible for this session */
+	struct hlr_euse *euse;
+	/* we don't keep a pointer to the osmo_gsup_{route,conn} towards the MSC/VLR here,
+	 * as this might change during inter-VLR hand-over, and we simply look-up the serving MSC/VLR
+	 * every time we receive an USSD component from the EUSE */
+};
+
+struct ss_session *ss_session_find(struct hlr *hlr, const char *imsi, uint32_t session_id)
+{
+	struct ss_session *ss;
+	llist_for_each_entry(ss, &hlr->ss_sessions, list) {
+		if (!strcmp(ss->imsi, imsi) && ss->session_id == session_id)
+			return ss;
+	}
+	return NULL;
+}
+
+void ss_session_free(struct ss_session *ss)
+{
+	osmo_timer_del(&ss->timeout);
+	llist_del(&ss->list);
+	talloc_free(ss);
+}
+
+static void ss_session_timeout(void *data)
+{
+	struct ss_session *ss = data;
+
+	LOGP(DMAIN, LOGL_NOTICE, "%s/0x%08x: SS Session Timeout, destroying\n", ss->imsi, ss->session_id);
+	/* FIXME: should we send a ReturnError component to the MS? */
+	ss_session_free(ss);
+}
+
+struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t session_id)
+{
+	struct ss_session *ss;
+
+	OSMO_ASSERT(!ss_session_find(hlr, imsi, session_id));
+
+	ss = talloc_zero(hlr, struct ss_session);
+	OSMO_ASSERT(ss);
+
+	OSMO_STRLCPY_ARRAY(ss->imsi, imsi);
+	ss->session_id = session_id;
+	osmo_timer_setup(&ss->timeout, ss_session_timeout, ss);
+	/* NOTE: The timeout is currently global and not refreshed with subsequent messages
+	 * within the SS/USSD session.  So 30s after the initial SS message, the session will
+	 * timeout! */
+	osmo_timer_schedule(&ss->timeout, 30, 0);
+
+	llist_add_tail(&ss->list, &hlr->ss_sessions);
+	return ss;
+}
+
+/***********************************************************************
+ * handling functions for individual GSUP messages
+ ***********************************************************************/
+
+static bool ss_op_is_ussd(uint8_t opcode)
+{
+	switch (opcode) {
+	case GSM0480_OP_CODE_PROCESS_USS_DATA:
+	case GSM0480_OP_CODE_PROCESS_USS_REQ:
+	case GSM0480_OP_CODE_USS_REQUEST:
+	case GSM0480_OP_CODE_USS_NOTIFY:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/* is this GSUP connection an EUSE (true) or not (false)? */
+static bool conn_is_euse(struct osmo_gsup_conn *conn)
+{
+	int rc;
+	uint8_t *addr;
+
+	rc = osmo_gsup_conn_ccm_get(conn, &addr, IPAC_IDTAG_SERNR);
+	if (rc <= 5)
+		return false;
+	if (!strncmp((char *)addr, "EUSE-", 5))
+		return true;
+	else
+		return false;
+}
+
+static struct hlr_euse *euse_by_conn(struct osmo_gsup_conn *conn)
+{
+	int rc;
+	char *addr;
+	struct hlr *hlr = conn->server->priv;
+
+	rc = osmo_gsup_conn_ccm_get(conn, (uint8_t **) &addr, IPAC_IDTAG_SERNR);
+	if (rc <= 5)
+		return NULL;
+	if (strncmp(addr, "EUSE-", 5))
+		return NULL;
+
+	return euse_find(hlr, addr+5);
+}
+
+static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup,
+			const struct ss_request *req)
+{
+	uint8_t comp_type = gsup->ss_info[0];
+
+	LOGP(DMAIN, LOGL_INFO, "%s: SS CompType=%s, OpCode=%s\n", gsup->imsi,
+		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode));
+	/* FIXME */
+	return 0;
+}
+
+static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
+			const struct osmo_gsup_message *gsup, const struct ss_request *req)
+{
+	uint8_t comp_type = gsup->ss_info[0];
+	struct msgb *msg_out;
+	bool is_euse_originated = conn_is_euse(conn);
+
+	LOGP(DMAIN, LOGL_INFO, "%s: USSD CompType=%s, OpCode=%s '%s'\n", gsup->imsi,
+		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode),
+		req->ussd_text);
+
+	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
+	OSMO_ASSERT(msg_out);
+
+	if (!ss->euse) {
+		LOGP(DMAIN, LOGL_NOTICE, "%s: USSD for unknown code '%s'\n", gsup->imsi, req->ussd_text);
+		/* FIXME: send proper error */
+		return 0;
+	}
+
+	if (is_euse_originated) {
+		/* Received from EUSE, Forward to VLR */
+		osmo_gsup_encode(msg_out, gsup);
+		/* FIXME: resolve this based on the database vlr_addr */
+		osmo_gsup_addr_send(conn->server, (uint8_t *)"MSC-00-00-00-00-00-00", 22, msg_out);
+	} else {
+		/* Received from VLR, Forward to EUSE */
+		char addr[128];
+		strcpy(addr, "EUSE-");
+		osmo_strlcpy(addr+5, ss->euse->name, sizeof(addr)-5);
+		conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
+		if (!conn) {
+			LOGP(DMAIN, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
+			/* FIXME: send proper error */
+			return -1;
+		}
+		osmo_gsup_encode(msg_out, gsup);
+		osmo_gsup_conn_send(conn, msg_out);
+	}
+
+	return 0;
+}
+
+
+/* this function is called for any SS_REQ/SS_RESP messages from both the MSC/VLR side as well
+ * as from the EUSE side */
+int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+{
+	struct hlr *hlr = conn->server->priv;
+	struct ss_session *ss;
+	struct ss_request req = {0};
+
+	LOGP(DMAIN, LOGL_INFO, "%s: Process SS (0x%08x, %s)\n", gsup->imsi, gsup->session_id,
+		osmo_gsup_session_state_name(gsup->session_state));
+
+	/* decode and find out what kind of SS message it is */
+	if (gsup->ss_info && gsup->ss_info_len) {
+		if (gsm0480_parse_facility_ie(gsup->ss_info, gsup->ss_info_len, &req)) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: Unable to parse SS request for 0x%08x: %s\n",
+				gsup->imsi, gsup->session_id,
+				osmo_hexdump(gsup->ss_info, gsup->ss_info_len));
+			goto out_err;
+		}
+	}
+
+	switch (gsup->session_state) {
+	case OSMO_GSUP_SESSION_STATE_BEGIN:
+		/* Check for overlapping Session ID usage */
+		if (ss_session_find(hlr, gsup->imsi, gsup->session_id)) {
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: BEGIN with non-uinque session ID!\n",
+				gsup->imsi, gsup->session_id);
+			goto out_err;
+		}
+		ss = ss_session_alloc(hlr, gsup->imsi, gsup->session_id);
+		if (!ss) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: Unable to allocate SS session for 0x%08x\n",
+				gsup->imsi, gsup->session_id);
+			goto out_err;
+		}
+		if (ss_op_is_ussd(req.opcode)) {
+			if (conn_is_euse(conn)) {
+				/* EUSE->VLR: MT USSD. EUSE is known ('conn'), VLR is to be resolved */
+				ss->euse = euse_by_conn(conn);
+			} else {
+				/* VLR->EUSE: MO USSD. VLR is known ('conn'), EUSE is to be resolved */
+				ss->euse = ussd_euse_find_7bit_gsm(hlr, (const char *) req.ussd_text);
+			}
+			/* dispatch unstructured SS to routing */
+			handle_ussd(conn, ss, gsup, &req);
+		} else {
+			/* dispatch non-call SS to internal code */
+			handle_ss(ss, gsup, &req);
+		}
+		break;
+	case OSMO_GSUP_SESSION_STATE_CONTINUE:
+		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
+		if (!ss) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: CONTINUE for unknwon SS session 0x%08x\n",
+				gsup->imsi, gsup->session_id);
+			goto out_err;
+		}
+		if (ss_op_is_ussd(req.opcode)) {
+			/* dispatch unstructured SS to routing */
+			handle_ussd(conn, ss, gsup, &req);
+		} else {
+			/* dispatch non-call SS to internal code */
+			handle_ss(ss, gsup, &req);
+		}
+		break;
+	case OSMO_GSUP_SESSION_STATE_END:
+		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
+		if (!ss) {
+			LOGP(DMAIN, LOGL_ERROR, "%s: END for unknwon SS session 0x%08x\n",
+				gsup->imsi, gsup->session_id);
+			goto out_err;
+		}
+		if (ss_op_is_ussd(req.opcode)) {
+			/* dispatch unstructured SS to routing */
+			handle_ussd(conn, ss, gsup, &req);
+		} else {
+			/* dispatch non-call SS to internal code */
+			handle_ss(ss, gsup, &req);
+		}
+		ss_session_free(ss);
+		break;
+	default:
+		LOGP(DMAIN, LOGL_ERROR, "%s: Unknown SS State %d\n", gsup->imsi, gsup->session_state);
+		goto out_err;
+	}
+
+	return 0;
+
+out_err:
+	return 0;
+}
+
+int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+{
+	LOGP(DMAIN, LOGL_NOTICE, "%s: Process SS ERROR (0x%08x, %s)\n", gsup->imsi, gsup->session_id,
+		osmo_gsup_session_state_name(gsup->session_state));
+	return 0;
 }

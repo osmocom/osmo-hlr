@@ -43,6 +43,8 @@ struct hlr {
 
 	struct llist_head euse_list;
 	struct hlr_euse *euse_default;
+
+	struct llist_head ss_sessions;
 };
 
 extern struct hlr *g_hlr;
