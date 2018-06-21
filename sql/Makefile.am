@@ -3,5 +3,5 @@ EXTRA_DIST = \
 	hlr.sql \
 	$(NULL)
 
-docsdir = $(datadir)/doc/osmo-hlr
+docsdir = $(docdir)
 docs_DATA = $(srcdir)/hlr.sql
