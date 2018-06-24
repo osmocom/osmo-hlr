@@ -1,3 +1,8 @@
+#pragma once
+
+#include <stdint.h>
+#include "gsup_server.h"
+
 struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 					const uint8_t *addr, size_t addrlen);
 
