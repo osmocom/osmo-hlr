@@ -63,9 +63,6 @@ struct lu_operation {
 	uint8_t *peer;
 };
 
-int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
-			const uint8_t *addr, size_t addrlen,
-			struct msgb *msg);
 
 struct lu_operation *lu_op_alloc(struct osmo_gsup_server *srv);
 struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn);
