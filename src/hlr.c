@@ -296,10 +296,19 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	} else
 #endif
 	{
+		int rc;
+		uint8_t *addr;
+		rc = osmo_gsup_conn_ccm_get(conn, &addr, IPAC_IDTAG_SERNR);
+		if (rc <= 0) {
+			osmo_strlcpy(luop->subscr.imsi, gsup->imsi, sizeof(luop->subscr.imsi));
+			lu_op_tx_error(luop, GMM_CAUSE_NET_FAIL);
+			return 0;
+		}
 		/* TODO: Subscriber allowed to roam in PLMN? */
 		/* TODO: Update RoutingInfo */
 		/* TODO: Reset Flag MS Purged (cs/ps) */
 		/* TODO: Control_Tracing_HLR / Control_Tracing_HLR_with_SGSN */
+		db_subscr_lu(g_hlr->dbc, luop->subscr.id, (char *)addr, luop->is_ps);
 		lu_op_tx_insert_subscr_data(luop);
 	}
 	return 0;
