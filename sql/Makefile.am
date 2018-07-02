@@ -4,4 +4,4 @@ EXTRA_DIST = \
 	$(NULL)
 
 docsdir = $(docdir)
-docs_DATA = $(srcdir)/hlr.sql
+docs_DATA = $(srcdir)/hlr.sql $(srcdir)/hlr_data.sql
