@@ -3,5 +3,5 @@ EXTRA_DIST = \
 	hlr.sql \
 	$(NULL)
 
-docsdir = $(docdir)
-docs_DATA = $(srcdir)/hlr.sql $(srcdir)/hlr_data.sql
+sqldir = $(docdir)/sql
+sql_DATA = $(srcdir)/hlr.sql $(srcdir)/hlr_data.sql
