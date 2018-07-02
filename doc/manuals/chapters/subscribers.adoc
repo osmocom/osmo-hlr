@@ -3,15 +3,16 @@
 Subscribers are kept in a local SQLite database file and can be managed via VTY
 and CTRL interfaces.
 
-See this section for some examples, and also refer to the OsmoHLR VTY reference
+This section provides some examples; also refer to the OsmoHLR VTY reference
 manual <<vty-ref-osmohlr>> as well as the Control interface described in
 <<hlr-ctrl>>.
 
 === Example: Add/Update/Delete Subscriber via VTY
 
-The following telnet VTY session adds a subscriber complete with 2G and 3G
-authentication tokens, and finally removes the subscriber again; it assumes
-that osmo-hlr is running and listening for telnet VTY connections on localhost:
+The following telnet VTY session adds a subscriber complete with GSM (2G) and
+UMTS (3G and 2G) authentication tokens, and finally removes the subscriber
+again; it assumes that osmo-hlr is running and listening for telnet VTY
+connections on localhost:
 
 ----
 $ telnet localhost 4258
@@ -23,7 +24,16 @@ include::../example_subscriber_add_update_delete.vty[]
 
 The following parameters are managed for each subscriber of the HLR, modelled
 roughly after 3GPP TS 23.008, version 13.3.0; note that not all of these
-parameters are necessarily in active use:
+parameters are necessarily in active use.
+
+The `aud3g` table also applies to 2G networks: it provides UMTS AKA tokens for
+Milenage authentication, which is available both on 3G and 2G networks. On 2G,
+when both MS and network are R99 capable (like OsmoMSC and OsmoSGSN are), the
+full UMTS AKA with Milenage keys from `aud_3g`, using AUTN and extended RES
+tokens, is available. With pre-R99 MS or network configurations, the GSM AKA
+compatible variant of Milenage, still using the Milenage keys from `aud_3g` but
+transceiving only RAND and SRES, may be applicable. (See 3GPP TS 33.102, chapter
+6.8.1, Authentication and key agreement of UMTS subscribers.)
 
 .OsmoHLR's subscriber parameters
 [options="header",width="100%",cols="20%,20%,60%"]
@@ -32,9 +42,9 @@ parameters are necessarily in active use:
 |imsi|901700000014701|identity of the SIM/USIM, 3GPP TS 23.008 chapter 2.1.1.1
 |msisdn|2342123|number to dial to reach this subscriber (multiple MSISDNs can be stored per subscriber), 3GPP TS 23.008 chapter 2.1.2
 |imeisv|4234234234234275|identity of the mobile device and software version, 3GPP TS 23.008 chapter 2.2.3
-|aud2g.algo|comp128v3|Authentication algorithm ID for 2G, corresponds to enum osmo_auth_algo
+|aud2g.algo|comp128v3|Authentication algorithm ID for GSM AKA, corresponds to enum osmo_auth_algo
 |aud2g.ki||Subscriber's secret key (128bit)
-|aud3g.algo|milenage|Authentication algorithm ID for 3G and UMTS AKA, corresponds to enum osmo_auth_algo
+|aud3g.algo|milenage|Authentication algorithm ID for UMTS AKA (applies to both 3G and 2G networks), corresponds to enum osmo_auth_algo
 |aud3g.k|(32 hexadecimal digits)|Subscriber's secret key (128bit)
 |aud3g.op|(32 hexadecimal digits)|Operator's secret key (128bit)
 |aud3g.opc|(32 hexadecimal digits)|Secret key derived from OP and K (128bit), alternative to using OP which does not disclose OP to subscribers
