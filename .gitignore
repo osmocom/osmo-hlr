@@ -22,6 +22,8 @@ m4
 missing
 .deps
 
+*.pc
+
 src/db_test
 src/db_bootstrap.h
 src/osmo-hlr

@@ -1,3 +1,5 @@
+SUBDIRS = gsupclient
+
 AM_CFLAGS = \
 	-Wall \
 	$(LIBOSMOCORE_CFLAGS) \

@@ -3,6 +3,7 @@ AUTOMAKE_OPTIONS = foreign dist-bzip2
 SUBDIRS = \
 	doc \
 	src \
+	include \
 	sql \
 	tests \
 	$(NULL)
@@ -10,6 +11,9 @@ SUBDIRS = \
 EXTRA_DIST = \
 	.version \
 	$(NULL)
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libosmo-gsup-client.pc
 
 @RELMAKE@
 

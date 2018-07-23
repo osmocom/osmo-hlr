@@ -99,6 +99,9 @@ AC_OUTPUT(
 	Makefile
 	doc/Makefile
 	src/Makefile
+	src/gsupclient/Makefile
+	include/Makefile
+	libosmo-gsup-client.pc
 	sql/Makefile
 	tests/Makefile
 	tests/auc/Makefile
