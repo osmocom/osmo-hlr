@@ -23,6 +23,7 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/core/talloc.h>
 
+#include "logging.h"
 #include "gsup_server.h"
 
 struct gsup_route {
@@ -60,6 +61,8 @@ int gsup_route_add(struct osmo_gsup_conn *conn, const uint8_t *addr, size_t addr
 	if (!gr)
 		return -ENOMEM;
 
+	LOGP(DMAIN, LOGL_INFO, "Adding GSUP route for %s\n", addr);
+
 	gr->addr = talloc_memdup(gr, addr, addrlen);
 	gr->conn = conn;
 	llist_add_tail(&gr->list, &conn->server->routes);
@@ -75,6 +78,8 @@ int gsup_route_del_conn(struct osmo_gsup_conn *conn)
 
 	llist_for_each_entry_safe(gr, gr2, &conn->server->routes, list) {
 		if (gr->conn == conn) {
+			LOGP(DMAIN, LOGL_INFO, "Removing GSUP route for %s (GSUP disconnect)\n",
+			     gr->addr);
 			llist_del(&gr->list);
 			talloc_free(gr);
 			num_deleted++;
