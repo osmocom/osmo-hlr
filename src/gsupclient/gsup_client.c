@@ -32,11 +32,11 @@
 #include <errno.h>
 #include <string.h>
 
-static void start_test_procedure(struct gsup_client *gsupc);
+static void start_test_procedure(struct osmo_gsup_client *gsupc);
 
-static void gsup_client_send_ping(struct gsup_client *gsupc)
+static void gsup_client_send_ping(struct osmo_gsup_client *gsupc)
 {
-	struct msgb *msg = gsup_client_msgb_alloc();
+	struct msgb *msg = osmo_gsup_client_msgb_alloc();
 
 	msg->l2h = msgb_put(msg, 1);
 	msg->l2h[0] = IPAC_MSGT_PING;
@@ -44,7 +44,7 @@ static void gsup_client_send_ping(struct gsup_client *gsupc)
 	ipa_client_conn_send(gsupc->link, msg);
 }
 
-static int gsup_client_connect(struct gsup_client *gsupc)
+static int gsup_client_connect(struct osmo_gsup_client *gsupc)
 {
 	int rc;
 
@@ -82,7 +82,7 @@ static int gsup_client_connect(struct gsup_client *gsupc)
 		return rc;
 
 	osmo_timer_schedule(&gsupc->connect_timer,
-			    GSUP_CLIENT_RECONNECT_INTERVAL, 0);
+			    OSMO_GSUP_CLIENT_RECONNECT_INTERVAL, 0);
 
 	LOGP(DLGSUP, LOGL_INFO, "Scheduled timer to retry GSUP connect to %s:%d\n",
 	     gsupc->link->addr, gsupc->link->port);
@@ -92,7 +92,7 @@ static int gsup_client_connect(struct gsup_client *gsupc)
 
 static void connect_timer_cb(void *gsupc_)
 {
-	struct gsup_client *gsupc = gsupc_;
+	struct osmo_gsup_client *gsupc = gsupc_;
 
 	if (gsupc->is_connected)
 		return;
@@ -100,7 +100,7 @@ static void connect_timer_cb(void *gsupc_)
 	gsup_client_connect(gsupc);
 }
 
-static void client_send(struct gsup_client *gsupc, int proto_ext,
+static void client_send(struct osmo_gsup_client *gsupc, int proto_ext,
 			struct msgb *msg_tx)
 {
 	ipa_prepend_header_ext(msg_tx, proto_ext);
@@ -109,7 +109,7 @@ static void client_send(struct gsup_client *gsupc, int proto_ext,
 	/* msg_tx is now queued and will be freed. */
 }
 
-static void gsup_client_oap_register(struct gsup_client *gsupc)
+static void gsup_client_oap_register(struct osmo_gsup_client *gsupc)
 {
 	struct msgb *msg_tx;
 	int rc;
@@ -125,7 +125,7 @@ static void gsup_client_oap_register(struct gsup_client *gsupc)
 
 static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 {
-	struct gsup_client *gsupc = link->data;
+	struct osmo_gsup_client *gsupc = link->data;
 
 	LOGP(DLGSUP, LOGL_INFO, "GSUP link to %s:%d %s\n",
 		     link->addr, link->port, up ? "UP" : "DOWN");
@@ -143,11 +143,11 @@ static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 		osmo_timer_del(&gsupc->ping_timer);
 
 		osmo_timer_schedule(&gsupc->connect_timer,
-				    GSUP_CLIENT_RECONNECT_INTERVAL, 0);
+				    OSMO_GSUP_CLIENT_RECONNECT_INTERVAL, 0);
 	}
 }
 
-static int gsup_client_oap_handle(struct gsup_client *gsupc, struct msgb *msg_rx)
+static int gsup_client_oap_handle(struct osmo_gsup_client *gsupc, struct msgb *msg_rx)
 {
 	int rc;
 	struct msgb *msg_tx;
@@ -168,7 +168,7 @@ static int gsup_client_read_cb(struct ipa_client_conn *link, struct msgb *msg)
 {
 	struct ipaccess_head *hh = (struct ipaccess_head *) msg->data;
 	struct ipaccess_head_ext *he = (struct ipaccess_head_ext *) msgb_l2(msg);
-	struct gsup_client *gsupc = (struct gsup_client *)link->data;
+	struct osmo_gsup_client *gsupc = (struct osmo_gsup_client *)link->data;
 	int rc;
 	struct ipaccess_unit ipa_dev = {
 		/* see gsup_client_create() on const vs non-const */
@@ -234,7 +234,7 @@ invalid:
 
 static void ping_timer_cb(void *gsupc_)
 {
-	struct gsup_client *gsupc = gsupc_;
+	struct osmo_gsup_client *gsupc = gsupc_;
 
 	LOGP(DLGSUP, LOGL_INFO, "GSUP ping callback (%s, %s PONG)\n",
 	     gsupc->is_connected ? "connected" : "not connected",
@@ -252,27 +252,27 @@ static void ping_timer_cb(void *gsupc_)
 	gsup_client_connect(gsupc);
 }
 
-static void start_test_procedure(struct gsup_client *gsupc)
+static void start_test_procedure(struct osmo_gsup_client *gsupc)
 {
 	osmo_timer_setup(&gsupc->ping_timer, ping_timer_cb, gsupc);
 
 	gsupc->got_ipa_pong = 0;
-	osmo_timer_schedule(&gsupc->ping_timer, GSUP_CLIENT_PING_INTERVAL, 0);
+	osmo_timer_schedule(&gsupc->ping_timer, OSMO_GSUP_CLIENT_PING_INTERVAL, 0);
 	LOGP(DLGSUP, LOGL_DEBUG, "GSUP sending PING\n");
 	gsup_client_send_ping(gsupc);
 }
 
-struct gsup_client *gsup_client_create(void *talloc_ctx,
-				       const char *unit_name,
-				       const char *ip_addr,
-				       unsigned int tcp_port,
-				       gsup_client_read_cb_t read_cb,
-				       struct osmo_oap_client_config *oapc_config)
+struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
+						 const char *unit_name,
+						 const char *ip_addr,
+						 unsigned int tcp_port,
+						 osmo_gsup_client_read_cb_t read_cb,
+						 struct osmo_oap_client_config *oapc_config)
 {
-	struct gsup_client *gsupc;
+	struct osmo_gsup_client *gsupc;
 	int rc;
 
-	gsupc = talloc_zero(talloc_ctx, struct gsup_client);
+	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
 	OSMO_ASSERT(gsupc);
 
 	/* struct ipaccess_unit has a non-const unit_name, so let's copy to be
@@ -309,11 +309,11 @@ struct gsup_client *gsup_client_create(void *talloc_ctx,
 	return gsupc;
 
 failed:
-	gsup_client_destroy(gsupc);
+	osmo_gsup_client_destroy(gsupc);
 	return NULL;
 }
 
-void gsup_client_destroy(struct gsup_client *gsupc)
+void osmo_gsup_client_destroy(struct osmo_gsup_client *gsupc)
 {
 	osmo_timer_del(&gsupc->connect_timer);
 	osmo_timer_del(&gsupc->ping_timer);
@@ -326,7 +326,7 @@ void gsup_client_destroy(struct gsup_client *gsupc)
 	talloc_free(gsupc);
 }
 
-int gsup_client_send(struct gsup_client *gsupc, struct msgb *msg)
+int osmo_gsup_client_send(struct osmo_gsup_client *gsupc, struct msgb *msg)
 {
 	if (!gsupc || !gsupc->is_connected) {
 		LOGP(DLGSUP, LOGL_ERROR, "GSUP not connected, unable to send %s\n", msgb_hexdump(msg));
@@ -339,7 +339,7 @@ int gsup_client_send(struct gsup_client *gsupc, struct msgb *msg)
 	return 0;
 }
 
-struct msgb *gsup_client_msgb_alloc(void)
+struct msgb *osmo_gsup_client_msgb_alloc(void)
 {
 	return msgb_alloc_headroom(4000, 64, __func__);
 }

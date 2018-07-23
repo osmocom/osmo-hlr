@@ -13,7 +13,7 @@
 
 #include <osmocom/gsupclient/gsup_client.h>
 
-static struct gsup_client *g_gc;
+static struct osmo_gsup_client *g_gc;
 
 
 /***********************************************************************
@@ -117,7 +117,7 @@ static int req_auth_info(const char *imsi)
 		return rc;
 	}
 
-	return gsup_client_send(g_gc, msg);
+	return osmo_gsup_client_send(g_gc, msg);
 }
 
 /* allocate + generate + send Send-Auth-Info */
@@ -137,7 +137,7 @@ static int req_loc_upd(const char *imsi)
 		return rc;
 	}
 
-	return gsup_client_send(g_gc, msg);
+	return osmo_gsup_client_send(g_gc, msg);
 }
 
 static int resp_isd(struct imsi_op *io)
@@ -157,7 +157,7 @@ static int resp_isd(struct imsi_op *io)
 
 	imsi_op_release(io);
 
-	return gsup_client_send(g_gc, msg);
+	return osmo_gsup_client_send(g_gc, msg);
 }
 
 /* receive an incoming GSUP message */
@@ -214,7 +214,7 @@ static int op_type_by_gsup_msgt(enum osmo_gsup_message_type msg_type)
 	}
 }
 
-static int gsupc_read_cb(struct gsup_client *gsupc, struct msgb *msg)
+static int gsupc_read_cb(struct osmo_gsup_client *gsupc, struct msgb *msg)
 {
 	struct osmo_gsup_message gsup_msg = {0};
 	struct imsi_op *io = NULL;
@@ -293,8 +293,8 @@ int main(int argc, char **argv)
 
 	osmo_init_logging2(ctx, &gsup_test_client_log_info);
 
-	g_gc = gsup_client_create(ctx, "GSUPTEST", server_host, server_port,
-				  gsupc_read_cb, NULL);
+	g_gc = osmo_gsup_client_create(ctx, "GSUPTEST", server_host, server_port,
+					gsupc_read_cb, NULL);
 
 
 	signal(SIGINT, sig_cb);

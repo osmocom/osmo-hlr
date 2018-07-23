@@ -27,22 +27,21 @@
 /* a loss of GSUP between MSC and HLR is considered quite serious, let's try to recover as quickly as
  * possible.  Even one new connection attempt per second should be quite acceptable until the link is
  * re-established */
-#define GSUP_CLIENT_RECONNECT_INTERVAL 1
-#define GSUP_CLIENT_PING_INTERVAL 20
+#define OSMO_GSUP_CLIENT_RECONNECT_INTERVAL 1
+#define OSMO_GSUP_CLIENT_PING_INTERVAL 20
 
 struct msgb;
 struct ipa_client_conn;
-struct gsup_client;
+struct osmo_gsup_client;
 
 /* Expects message in msg->l2h */
-typedef int (*gsup_client_read_cb_t)(struct gsup_client *gsupc,
-				     struct msgb *msg);
+typedef int (*osmo_gsup_client_read_cb_t)(struct osmo_gsup_client *gsupc, struct msgb *msg);
 
-struct gsup_client {
+struct osmo_gsup_client {
 	const char *unit_name;
 
 	struct ipa_client_conn *link;
-	gsup_client_read_cb_t read_cb;
+	osmo_gsup_client_read_cb_t read_cb;
 	void *data;
 
 	struct osmo_oap_client_state oap_state;
@@ -53,14 +52,14 @@ struct gsup_client {
 	int got_ipa_pong;
 };
 
-struct gsup_client *gsup_client_create(void *talloc_ctx,
-				       const char *unit_name,
-				       const char *ip_addr,
-				       unsigned int tcp_port,
-				       gsup_client_read_cb_t read_cb,
-				       struct osmo_oap_client_config *oapc_config);
+struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
+						 const char *unit_name,
+						 const char *ip_addr,
+						 unsigned int tcp_port,
+						 osmo_gsup_client_read_cb_t read_cb,
+						 struct osmo_oap_client_config *oapc_config);
 
-void gsup_client_destroy(struct gsup_client *gsupc);
-int gsup_client_send(struct gsup_client *gsupc, struct msgb *msg);
-struct msgb *gsup_client_msgb_alloc(void);
+void osmo_gsup_client_destroy(struct osmo_gsup_client *gsupc);
+int osmo_gsup_client_send(struct osmo_gsup_client *gsupc, struct msgb *msg);
+struct msgb *osmo_gsup_client_msgb_alloc(void);
 
