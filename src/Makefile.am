@@ -39,6 +39,7 @@ noinst_HEADERS = \
 bin_PROGRAMS = \
 	osmo-hlr \
 	osmo-hlr-db-tool \
+	osmo-euse-demo \
 	$(NULL)
 
 osmo_hlr_SOURCES = \
@@ -96,6 +97,16 @@ db_test_LDADD = \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(SQLITE3_LIBS) \
+	$(NULL)
+
+osmo_euse_demo_SOURCES = \
+	osmo-euse-demo.c \
+	$(NULL)
+
+osmo_euse_demo_LDADD = \
+	$(top_builddir)/src/gsupclient/libosmo-gsup-client.la \
+	$(LIBOSMOCORE_LIBS) \
+	$(LIBOSMOGSM_LIBS) \
 	$(NULL)
 
 BOOTSTRAP_SQL = $(top_srcdir)/sql/hlr.sql
