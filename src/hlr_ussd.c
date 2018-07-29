@@ -301,7 +301,7 @@ static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup
 {
 	uint8_t comp_type = gsup->ss_info[0];
 
-	LOGP(DMAIN, LOGL_INFO, "%s: SS CompType=%s, OpCode=%s\n", gsup->imsi,
+	LOGPSS(ss, LOGL_INFO, "SS CompType=%s, OpCode=%s\n",
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode));
 	/* FIXME */
 	return 0;
@@ -314,13 +314,13 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 	struct msgb *msg_out;
 	bool is_euse_originated = conn_is_euse(conn);
 
-	LOGP(DMAIN, LOGL_INFO, "%s: USSD CompType=%s, OpCode=%s '%s'\n", gsup->imsi,
+	LOGPSS(ss, LOGL_INFO, "USSD CompType=%s, OpCode=%s '%s'\n",
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode),
 		req->ussd_text);
 
 
 	if (!ss->euse) {
-		LOGP(DMAIN, LOGL_NOTICE, "%s: USSD for unknown code '%s'\n", gsup->imsi, req->ussd_text);
+		LOGPSS(ss, LOGL_NOTICE, "USSD for unknown code '%s'\n", req->ussd_text);
 		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SS_NOT_AVAILABLE);
 		return 0;
 	}
@@ -339,7 +339,7 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		osmo_strlcpy(addr+5, ss->euse->name, sizeof(addr)-5);
 		conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
 		if (!conn) {
-			LOGP(DMAIN, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
+			LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
 			ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
 		} else {
 			msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
@@ -361,13 +361,13 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	struct ss_session *ss;
 	struct ss_request req = {0};
 
-	LOGP(DMAIN, LOGL_INFO, "%s: Process SS (0x%08x, %s)\n", gsup->imsi, gsup->session_id,
+	LOGP(DMAIN, LOGL_INFO, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
 
 	/* decode and find out what kind of SS message it is */
 	if (gsup->ss_info && gsup->ss_info_len) {
 		if (gsm0480_parse_facility_ie(gsup->ss_info, gsup->ss_info_len, &req)) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: Unable to parse SS request for 0x%08x: %s\n",
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%082x: Unable to parse SS request: %s\n",
 				gsup->imsi, gsup->session_id,
 				osmo_hexdump(gsup->ss_info, gsup->ss_info_len));
 			/* FIXME: Send a Reject component? */
@@ -379,13 +379,13 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_BEGIN:
 		/* Check for overlapping Session ID usage */
 		if (ss_session_find(hlr, gsup->imsi, gsup->session_id)) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: BEGIN with non-uinque session ID!\n",
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: BEGIN with non-unique session ID!\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
 		ss = ss_session_alloc(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: Unable to allocate SS session for 0x%08x\n",
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: Unable to allocate SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -407,7 +407,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_CONTINUE:
 		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: CONTINUE for unknwon SS session 0x%08x\n",
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: CONTINUE for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -422,7 +422,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_END:
 		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s: END for unknwon SS session 0x%08x\n",
+			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: END for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -436,7 +436,8 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		ss_session_free(ss);
 		break;
 	default:
-		LOGP(DMAIN, LOGL_ERROR, "%s: Unknown SS State %d\n", gsup->imsi, gsup->session_state);
+		LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: Unknown SS State %d\n", gsup->imsi,
+			gsup->session_id, gsup->session_state);
 		goto out_err;
 	}
 
@@ -448,7 +449,7 @@ out_err:
 
 int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
 {
-	LOGP(DMAIN, LOGL_NOTICE, "%s: Process SS ERROR (0x%08x, %s)\n", gsup->imsi, gsup->session_id,
+	LOGP(DMAIN, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
 	return 0;
 }
