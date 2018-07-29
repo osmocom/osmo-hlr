@@ -196,6 +196,60 @@ struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t 
 }
 
 /***********************************************************************
+ * handling functions for encoding SS messages + wrapping them in GSUP
+ ***********************************************************************/
+
+static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_msg_type,
+			bool final, struct msgb *ss_msg)
+
+{
+	struct osmo_gsup_message resp = {0};
+	struct msgb *resp_msg;
+
+	resp.message_type = gsup_msg_type;
+	OSMO_STRLCPY_ARRAY(resp.imsi, ss->imsi);
+	if (final)
+		resp.session_state = OSMO_GSUP_SESSION_STATE_END;
+	else
+		resp.session_state = OSMO_GSUP_SESSION_STATE_CONTINUE;
+	resp.session_id = ss->session_id;
+	if (ss_msg) {
+		resp.ss_info = msgb_data(ss_msg);
+		resp.ss_info_len = msgb_length(ss_msg);
+	}
+
+	resp_msg = gsm0480_msgb_alloc_name(__func__);
+	OSMO_ASSERT(resp_msg);
+	osmo_gsup_encode(resp_msg, &resp);
+	msgb_free(ss_msg);
+
+	/* FIXME: resolve this based on the database vlr_addr */
+	return osmo_gsup_addr_send(g_hlr->gs, (uint8_t *)"MSC-00-00-00-00-00-00", 22, resp_msg);
+}
+
+#if 0
+static int ss_tx_reject(struct ss_session *ss, int invoke_id, uint8_t problem_tag,
+			uint8_t problem_code)
+{
+	struct msgb *msg = gsm0480_gen_reject(invoke_id, problem_tag, problem_code);
+	LOGPSS(ss, LOGL_NOTICE, "Tx Reject(%u, 0x%02x, 0x%02x)\n", invoke_id,
+		problem_tag, problem_code);
+	OSMO_ASSERT(msg);
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
+}
+#endif
+
+static int ss_tx_error(struct ss_session *ss, uint8_t invoke_id, uint8_t error_code)
+{
+	struct msgb *msg = gsm0480_gen_return_error(invoke_id, error_code);
+	LOGPSS(ss, LOGL_NOTICE, "Tx ReturnError(%u, 0x%02x)\n", invoke_id, error_code);
+	OSMO_ASSERT(msg);
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
+}
+
+
+
+/***********************************************************************
  * handling functions for individual GSUP messages
  ***********************************************************************/
 
@@ -264,16 +318,16 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode),
 		req->ussd_text);
 
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
-	OSMO_ASSERT(msg_out);
 
 	if (!ss->euse) {
 		LOGP(DMAIN, LOGL_NOTICE, "%s: USSD for unknown code '%s'\n", gsup->imsi, req->ussd_text);
-		/* FIXME: send proper error */
+		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SS_NOT_AVAILABLE);
 		return 0;
 	}
 
 	if (is_euse_originated) {
+		msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
+		OSMO_ASSERT(msg_out);
 		/* Received from EUSE, Forward to VLR */
 		osmo_gsup_encode(msg_out, gsup);
 		/* FIXME: resolve this based on the database vlr_addr */
@@ -286,11 +340,13 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
 		if (!conn) {
 			LOGP(DMAIN, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
-			/* FIXME: send proper error */
-			return -1;
+			ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		} else {
+			msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
+			OSMO_ASSERT(msg_out);
+			osmo_gsup_encode(msg_out, gsup);
+			osmo_gsup_conn_send(conn, msg_out);
 		}
-		osmo_gsup_encode(msg_out, gsup);
-		osmo_gsup_conn_send(conn, msg_out);
 	}
 
 	return 0;
@@ -314,6 +370,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 			LOGP(DMAIN, LOGL_ERROR, "%s: Unable to parse SS request for 0x%08x: %s\n",
 				gsup->imsi, gsup->session_id,
 				osmo_hexdump(gsup->ss_info, gsup->ss_info_len));
+			/* FIXME: Send a Reject component? */
 			goto out_err;
 		}
 	}
