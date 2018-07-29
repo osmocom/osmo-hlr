@@ -19,6 +19,13 @@ const struct log_info_cat hlr_log_info_cat[] = {
 		.color = "\033[1;33m",
 		.enabled = 1, .loglevel = LOGL_NOTICE,
 	},
+	[DSS] = {
+		.name = "DSS",
+		.description = "Supplementary Services",
+		.color = "\033[1;34m",
+		.enabled = 1, .loglevel = LOGL_NOTICE,
+	},
+
 };
 
 const struct log_info hlr_log_info = {

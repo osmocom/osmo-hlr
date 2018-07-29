@@ -111,14 +111,14 @@ struct hlr_euse *ussd_euse_find_7bit_gsm(struct hlr *hlr, const char *ussd_code)
 		struct hlr_euse_route *rt;
 		llist_for_each_entry(rt, &euse->routes, list) {
 			if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
-				LOGP(DMAIN, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
+				LOGP(DSS, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
 					rt->euse->name, rt->prefix, ussd_code);
 				return rt->euse;
 			}
 		}
 	}
 
-	LOGP(DMAIN, LOGL_DEBUG, "Could not find Route/EUSE for USSD Code '%s'\n", ussd_code);
+	LOGP(DSS, LOGL_DEBUG, "Could not find Route/EUSE for USSD Code '%s'\n", ussd_code);
 	return NULL;
 }
 
@@ -127,7 +127,7 @@ struct hlr_euse *ussd_euse_find_7bit_gsm(struct hlr *hlr, const char *ussd_code)
  ***********************************************************************/
 
 #define LOGPSS(ss, lvl, fmt, args...) \
-	LOGP(DMAIN, lvl, "%s/0x%08x: " fmt, (ss)->imsi, (ss)->session_id, ## args)
+	LOGP(DSS, lvl, "%s/0x%08x: " fmt, (ss)->imsi, (ss)->session_id, ## args)
 
 struct ss_session {
 	/* link us to hlr->ss_sessions */
@@ -361,13 +361,13 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	struct ss_session *ss;
 	struct ss_request req = {0};
 
-	LOGP(DMAIN, LOGL_INFO, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
+	LOGP(DSS, LOGL_DEBUG, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
 
 	/* decode and find out what kind of SS message it is */
 	if (gsup->ss_info && gsup->ss_info_len) {
 		if (gsm0480_parse_facility_ie(gsup->ss_info, gsup->ss_info_len, &req)) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%082x: Unable to parse SS request: %s\n",
+			LOGP(DSS, LOGL_ERROR, "%s/0x%082x: Unable to parse SS request: %s\n",
 				gsup->imsi, gsup->session_id,
 				osmo_hexdump(gsup->ss_info, gsup->ss_info_len));
 			/* FIXME: Send a Reject component? */
@@ -379,13 +379,13 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_BEGIN:
 		/* Check for overlapping Session ID usage */
 		if (ss_session_find(hlr, gsup->imsi, gsup->session_id)) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: BEGIN with non-unique session ID!\n",
+			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: BEGIN with non-unique session ID!\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
 		ss = ss_session_alloc(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: Unable to allocate SS session\n",
+			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: Unable to allocate SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -407,7 +407,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_CONTINUE:
 		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: CONTINUE for unknown SS session\n",
+			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: CONTINUE for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -422,7 +422,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	case OSMO_GSUP_SESSION_STATE_END:
 		ss = ss_session_find(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
-			LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: END for unknown SS session\n",
+			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: END for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
@@ -436,7 +436,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		ss_session_free(ss);
 		break;
 	default:
-		LOGP(DMAIN, LOGL_ERROR, "%s/0x%08x: Unknown SS State %d\n", gsup->imsi,
+		LOGP(DSS, LOGL_ERROR, "%s/0x%08x: Unknown SS State %d\n", gsup->imsi,
 			gsup->session_id, gsup->session_state);
 		goto out_err;
 	}
@@ -449,7 +449,7 @@ out_err:
 
 int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
 {
-	LOGP(DMAIN, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", gsup->imsi, gsup->session_id,
+	LOGP(DSS, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
 	return 0;
 }
