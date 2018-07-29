@@ -32,6 +32,7 @@
 #include <osmocom/vty/misc.h>
 #include <osmocom/abis/ipa.h>
 
+#include "hlr.h"
 #include "hlr_vty.h"
 #include "hlr_vty_subscr.h"
 #include "gsup_server.h"
@@ -122,47 +123,77 @@ DEFUN(cfg_hlr_gsup_bind_ip,
 }
 
 /***********************************************************************
- * External USSD Entity
+ * USSD Entity
  ***********************************************************************/
 
 #include "hlr_ussd.h"
 
-DEFUN(cfg_euse_route_pfx, cfg_euse_route_pfx_cmd,
-	"route prefix PREFIX",
-	"")
-{
-	struct hlr_euse *euse = vty->index;
-	struct hlr_euse_route *rt = euse_route_find(euse, argv[0]);
+#define USSD_STR "USSD Configuration\n"
+#define UROUTE_STR "Routing Configuration\n"
+#define PREFIX_STR "Prefix-Matching Route\n" "USSD Prefix\n"
 
+#define INT_CHOICE "(own-msisdn|own-imsi)"
+#define INT_STR "Internal USSD Handler\n" \
+		"Respond with subscribers' own MSISDN\n" \
+		"Respond with subscribers' own IMSI\n"
+
+#define EXT_STR "External USSD Handler\n" \
+		"Name of External USSD Handler (IPA CCM ID)\n"
+
+DEFUN(cfg_ussd_route_pfx_int, cfg_ussd_route_pfx_int_cmd,
+	"ussd route prefix PREFIX internal " INT_CHOICE,
+	USSD_STR UROUTE_STR PREFIX_STR INT_STR)
+{
+	const struct hlr_iuse *iuse = iuse_find(argv[1]);
+	struct hlr_ussd_route *rt = ussd_route_find_prefix(g_hlr, argv[0]);
 	if (rt) {
 		vty_out(vty, "%% Cannot add [another?] route for prefix %s%s", argv[0], VTY_NEWLINE);
 		return CMD_WARNING;
 	}
-	euse_route_prefix_alloc(euse, argv[0]);
+	ussd_route_prefix_alloc_int(g_hlr, argv[0], iuse);
 
 	return CMD_SUCCESS;
 }
 
-DEFUN(cfg_euse_no_route_pfx, cfg_euse_no_route_pfx_cmd,
-	"no route prefix PREFIX",
-	NO_STR "")
+DEFUN(cfg_ussd_route_pfx_ext, cfg_ussd_route_pfx_ext_cmd,
+	"ussd route prefix PREFIX external EUSE",
+	USSD_STR UROUTE_STR PREFIX_STR EXT_STR)
 {
-	struct hlr_euse *euse = vty->index;
-	struct hlr_euse_route *rt = euse_route_find(euse, argv[0]);
+	struct hlr_euse *euse = euse_find(g_hlr, argv[1]);
+	struct hlr_ussd_route *rt = ussd_route_find_prefix(g_hlr, argv[0]);
+	if (rt) {
+		vty_out(vty, "%% Cannot add [another?] route for prefix %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	if (!euse) {
+		vty_out(vty, "%% Cannot find euse '%s'%s", argv[1], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	ussd_route_prefix_alloc_ext(g_hlr, argv[0], euse);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_ussd_no_route_pfx, cfg_ussd_no_route_pfx_cmd,
+	"no ussd route prefix PREFIX",
+	NO_STR USSD_STR UROUTE_STR PREFIX_STR)
+{
+	struct hlr_ussd_route *rt = ussd_route_find_prefix(g_hlr, argv[0]);
 	if (!rt) {
 		vty_out(vty, "%% Cannot find route for prefix %s%s", argv[0], VTY_NEWLINE);
 		return CMD_WARNING;
 	}
-	euse_route_del(rt);
+	ussd_route_del(rt);
 
 	return CMD_SUCCESS;
 }
 
-DEFUN(cfg_euse_defaultroute, cfg_euse_defaultroute_cmd,
-	"default-route",
-	"Set this EUSE as default-route for all USSD to unknown destinations\n")
+DEFUN(cfg_ussd_defaultroute, cfg_ussd_defaultroute_cmd,
+	"ussd default-route external EUSE",
+	USSD_STR "Configure default-route for all USSD to unknown destinations\n"
+	EXT_STR)
 {
-	struct hlr_euse *euse = vty->index;
+	struct hlr_euse *euse = euse_find(g_hlr, argv[0]);
 
 	if (g_hlr->euse_default != euse) {
 		vty_out(vty, "Switching default route from %s to %s%s",
@@ -173,16 +204,10 @@ DEFUN(cfg_euse_defaultroute, cfg_euse_defaultroute_cmd,
 	return CMD_SUCCESS;
 }
 
-DEFUN(cfg_euse_no_defaultroute, cfg_euse_no_defaultroute_cmd,
-	"no default-route",
-	NO_STR "Remove this EUSE as default-route for all USSD to unknown destinations\n")
+DEFUN(cfg_ussd_no_defaultroute, cfg_ussd_no_defaultroute_cmd,
+	"no ussd default-route",
+	NO_STR USSD_STR "Remove the default-route for all USSD to unknown destinations\n")
 {
-	struct hlr_euse *euse = vty->index;
-
-	if (g_hlr->euse_default != euse) {
-		vty_out(vty, "%% Current EUSE is no default route, cannot delete it%s", VTY_NEWLINE);
-		return CMD_WARNING;
-	}
 	g_hlr->euse_default = NULL;
 
 	return CMD_SUCCESS;
@@ -235,12 +260,7 @@ DEFUN(cfg_no_euse, cfg_no_euse_cmd,
 
 static void dump_one_euse(struct vty *vty, struct hlr_euse *euse)
 {
-	struct hlr_euse_route *er;
-
 	vty_out(vty, " euse %s%s", euse->name, VTY_NEWLINE);
-
-	llist_for_each_entry(er, &euse->routes, list)
-		vty_out(vty, "  route prefix %s%s", er->prefix, VTY_NEWLINE);
 
 	if (g_hlr->euse_default == euse)
 		vty_out(vty, "  default-route%s", VTY_NEWLINE);
@@ -249,9 +269,17 @@ static void dump_one_euse(struct vty *vty, struct hlr_euse *euse)
 static int config_write_euse(struct vty *vty)
 {
 	struct hlr_euse *euse;
+	struct hlr_ussd_route *rt;
 
 	llist_for_each_entry(euse, &g_hlr->euse_list, list)
 		dump_one_euse(vty, euse);
+
+	llist_for_each_entry(rt, &g_hlr->ussd_routes, list) {
+		vty_out(vty, " ussd route prefix %s %s %s%s", rt->prefix,
+			rt->is_external ? "external" : "internal",
+			rt->is_external ? rt->u.euse->name : rt->u.iuse->name,
+			VTY_NEWLINE);
+	}
 
 	return 0;
 }
@@ -313,10 +341,11 @@ void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 	install_element(HLR_NODE, &cfg_euse_cmd);
 	install_element(HLR_NODE, &cfg_no_euse_cmd);
 	install_node(&euse_node, config_write_euse);
-	install_element(EUSE_NODE, &cfg_euse_route_pfx_cmd);
-	install_element(EUSE_NODE, &cfg_euse_no_route_pfx_cmd);
-	install_element(EUSE_NODE, &cfg_euse_defaultroute_cmd);
-	install_element(EUSE_NODE, &cfg_euse_no_defaultroute_cmd);
+	install_element(HLR_NODE, &cfg_ussd_route_pfx_int_cmd);
+	install_element(HLR_NODE, &cfg_ussd_route_pfx_ext_cmd);
+	install_element(HLR_NODE, &cfg_ussd_no_route_pfx_cmd);
+	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
+	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
 
 	hlr_vty_subscriber_init(hlr);
 }
