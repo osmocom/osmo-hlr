@@ -27,6 +27,7 @@
 #include <osmocom/gsm/protocol/gsm_04_80.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 
 #include "hlr.h"
 #include "hlr_ussd.h"
@@ -58,7 +59,6 @@ struct hlr_euse *euse_alloc(struct hlr *hlr, const char *name)
 	euse = talloc_zero(hlr, struct hlr_euse);
 	euse->name = talloc_strdup(euse, name);
 	euse->hlr = hlr;
-	INIT_LLIST_HEAD(&euse->routes);
 	llist_add_tail(&euse->list, &hlr->euse_list);
 
 	return euse;
@@ -71,54 +71,68 @@ void euse_del(struct hlr_euse *euse)
 }
 
 
-struct hlr_euse_route *euse_route_find(struct hlr_euse *euse, const char *prefix)
+struct hlr_ussd_route *ussd_route_find_prefix(struct hlr *hlr, const char *prefix)
 {
-	struct hlr_euse_route *rt;
+	struct hlr_ussd_route *rt;
 
-	llist_for_each_entry(rt, &euse->routes, list) {
+	llist_for_each_entry(rt, &hlr->ussd_routes, list) {
 		if (!strcmp(rt->prefix, prefix))
 			return rt;
 	}
 	return NULL;
 }
 
-struct hlr_euse_route *euse_route_prefix_alloc(struct hlr_euse *euse, const char *prefix)
+struct hlr_ussd_route *ussd_route_prefix_alloc_int(struct hlr *hlr, const char *prefix,
+						   const struct hlr_iuse *iuse)
 {
-	struct hlr_euse_route *rt;
+	struct hlr_ussd_route *rt;
 
-	if (euse_route_find(euse, prefix))
+	if (ussd_route_find_prefix(hlr, prefix))
 		return NULL;
 
-	rt = talloc_zero(euse, struct hlr_euse_route);
+	rt = talloc_zero(hlr, struct hlr_ussd_route);
 	rt->prefix = talloc_strdup(rt, prefix);
-	rt->euse = euse;
-	llist_add_tail(&rt->list, &euse->routes);
+	rt->u.iuse = iuse;
+	llist_add_tail(&rt->list, &hlr->ussd_routes);
 
 	return rt;
 }
 
-void euse_route_del(struct hlr_euse_route *rt)
+struct hlr_ussd_route *ussd_route_prefix_alloc_ext(struct hlr *hlr, const char *prefix,
+						   struct hlr_euse *euse)
+{
+	struct hlr_ussd_route *rt;
+
+	if (ussd_route_find_prefix(hlr, prefix))
+		return NULL;
+
+	rt = talloc_zero(hlr, struct hlr_ussd_route);
+	rt->prefix = talloc_strdup(rt, prefix);
+	rt->is_external = true;
+	rt->u.euse = euse;
+	llist_add_tail(&rt->list, &hlr->ussd_routes);
+
+	return rt;
+}
+
+void ussd_route_del(struct hlr_ussd_route *rt)
 {
 	llist_del(&rt->list);
 	talloc_free(rt);
 }
 
-struct hlr_euse *ussd_euse_find_7bit_gsm(struct hlr *hlr, const char *ussd_code)
+static struct hlr_ussd_route *ussd_route_lookup_7bit(struct hlr *hlr, const char *ussd_code)
 {
-	struct hlr_euse *euse;
-
-	llist_for_each_entry(euse, &hlr->euse_list, list) {
-		struct hlr_euse_route *rt;
-		llist_for_each_entry(rt, &euse->routes, list) {
-			if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
-				LOGP(DSS, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
-					rt->euse->name, rt->prefix, ussd_code);
-				return rt->euse;
-			}
+	struct hlr_ussd_route *rt;
+	llist_for_each_entry(rt, &hlr->ussd_routes, list) {
+		if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
+			LOGP(DSS, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
+				rt->u.euse->name, rt->prefix, ussd_code);
+			return rt;
 		}
 	}
 
-	LOGP(DSS, LOGL_DEBUG, "Could not find Route/EUSE for USSD Code '%s'\n", ussd_code);
+	LOGP(DSS, LOGL_DEBUG, "Could not find Route for USSD Code '%s'\n", ussd_code);
 	return NULL;
 }
 
@@ -141,8 +155,15 @@ struct ss_session {
 	/* time-out when we will delete the session */
 	struct osmo_timer_list timeout;
 
-	/* external USSD Entity responsible for this session */
-	struct hlr_euse *euse;
+	/* is this USSD for an external handler (EUSE): true */
+	bool is_external;
+	union {
+		/* external USSD Entity responsible for this session */
+		struct hlr_euse *euse;
+		/* internal USSD Entity responsible for this session */
+		const struct hlr_iuse *iuse;
+	} u;
+
 	/* we don't keep a pointer to the osmo_gsup_{route,conn} towards the MSC/VLR here,
 	 * as this might change during inter-VLR hand-over, and we simply look-up the serving MSC/VLR
 	 * every time we receive an USSD component from the EUSE */
@@ -247,6 +268,79 @@ static int ss_tx_error(struct ss_session *ss, uint8_t invoke_id, uint8_t error_c
 	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
 }
 
+static int ss_tx_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id, const char *text)
+{
+	struct msgb *msg = gsm0480_gen_ussd_resp_7bit(invoke_id, text);
+	LOGPSS(ss, LOGL_INFO, "Tx USSD '%s'\n", text);
+	OSMO_ASSERT(msg);
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, final, msg);
+}
+
+/***********************************************************************
+ * Internal USSD Handlers
+ ***********************************************************************/
+
+#include "db.h"
+
+static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session *ss,
+				  const struct osmo_gsup_message *gsup, const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		if (strlen(subscr.msisdn) == 0)
+			snprintf(buf, sizeof(buf), "You have no MSISDN!");
+		else
+			snprintf(buf, sizeof(buf), "Your extension is %s\r", subscr.msisdn);
+		ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
+		break;
+	case -ENOENT:
+		ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+	return 0;
+}
+
+static int handle_ussd_own_imsi(struct osmo_gsup_conn *conn, struct ss_session *ss,
+				const struct osmo_gsup_message *gsup, const struct ss_request *req)
+{
+	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
+	snprintf(buf, sizeof(buf), "Your IMSI is %s!\n", ss->imsi);
+	ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
+	return 0;
+}
+
+
+static const struct hlr_iuse hlr_iuses[] = {
+	{
+		.name = "own-msisdn",
+		.handle_ussd = handle_ussd_own_msisdn,
+	},
+	{
+		.name = "own-imsi",
+		.handle_ussd = handle_ussd_own_imsi,
+	},
+};
+
+const struct hlr_iuse *iuse_find(const char *name)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(hlr_iuses); i++) {
+		const struct hlr_iuse *iuse = &hlr_iuses[i];
+		if (!strcmp(name, iuse->name))
+			return iuse;
+	}
+	return NULL;
+}
 
 
 /***********************************************************************
@@ -307,6 +401,7 @@ static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup
 	return 0;
 }
 
+/* Handle a USSD GSUP message for a given SS Session received from VLR or EUSE */
 static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 			const struct osmo_gsup_message *gsup, const struct ss_request *req)
 {
@@ -318,8 +413,7 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode),
 		req->ussd_text);
 
-
-	if (!ss->euse) {
+	if ((ss->is_external && !ss->u.euse) || !ss->u.iuse) {
 		LOGPSS(ss, LOGL_NOTICE, "USSD for unknown code '%s'\n", req->ussd_text);
 		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SS_NOT_AVAILABLE);
 		return 0;
@@ -333,19 +427,25 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		/* FIXME: resolve this based on the database vlr_addr */
 		osmo_gsup_addr_send(conn->server, (uint8_t *)"MSC-00-00-00-00-00-00", 22, msg_out);
 	} else {
-		/* Received from VLR, Forward to EUSE */
-		char addr[128];
-		strcpy(addr, "EUSE-");
-		osmo_strlcpy(addr+5, ss->euse->name, sizeof(addr)-5);
-		conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
-		if (!conn) {
-			LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
-			ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		/* Received from VLR (MS) */
+		if (ss->is_external) {
+			/* Forward to EUSE */
+			char addr[128];
+			strcpy(addr, "EUSE-");
+			osmo_strlcpy(addr+5, ss->u.euse->name, sizeof(addr)-5);
+			conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
+			if (!conn) {
+				LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
+				ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+			} else {
+				msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
+				OSMO_ASSERT(msg_out);
+				osmo_gsup_encode(msg_out, gsup);
+				osmo_gsup_conn_send(conn, msg_out);
+			}
 		} else {
-			msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
-			OSMO_ASSERT(msg_out);
-			osmo_gsup_encode(msg_out, gsup);
-			osmo_gsup_conn_send(conn, msg_out);
+			/* Handle internally */
+			ss->u.iuse->handle_ussd(conn, ss, gsup, req);
 		}
 	}
 
@@ -392,10 +492,20 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		if (ss_op_is_ussd(req.opcode)) {
 			if (conn_is_euse(conn)) {
 				/* EUSE->VLR: MT USSD. EUSE is known ('conn'), VLR is to be resolved */
-				ss->euse = euse_by_conn(conn);
+				ss->u.euse = euse_by_conn(conn);
 			} else {
 				/* VLR->EUSE: MO USSD. VLR is known ('conn'), EUSE is to be resolved */
-				ss->euse = ussd_euse_find_7bit_gsm(hlr, (const char *) req.ussd_text);
+				struct hlr_ussd_route *rt;
+				rt = ussd_route_lookup_7bit(hlr, (const char *) req.ussd_text);
+				if (rt) {
+					if (rt->is_external) {
+						ss->is_external = true;
+						ss->u.euse = rt->u.euse;
+					} else if (rt) {
+						ss->is_external = false;
+						ss->u.iuse = rt->u.iuse;
+					}
+				}
 			}
 			/* dispatch unstructured SS to routing */
 			handle_ussd(conn, ss, gsup, &req);

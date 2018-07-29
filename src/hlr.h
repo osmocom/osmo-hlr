@@ -43,6 +43,9 @@ struct hlr {
 
 	struct llist_head euse_list;
 	struct hlr_euse *euse_default;
+	struct llist_head iuse_list;
+
+	struct llist_head ussd_routes;
 
 	struct llist_head ss_sessions;
 };
