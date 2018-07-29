@@ -126,6 +126,9 @@ struct hlr_euse *ussd_euse_find_7bit_gsm(struct hlr *hlr, const char *ussd_code)
  * handling functions for individual GSUP messages
  ***********************************************************************/
 
+#define LOGPSS(ss, lvl, fmt, args...) \
+	LOGP(DMAIN, lvl, "%s/0x%08x: " fmt, (ss)->imsi, (ss)->session_id, ## args)
+
 struct ss_session {
 	/* link us to hlr->ss_sessions */
 	struct llist_head list;
@@ -166,7 +169,7 @@ static void ss_session_timeout(void *data)
 {
 	struct ss_session *ss = data;
 
-	LOGP(DMAIN, LOGL_NOTICE, "%s/0x%08x: SS Session Timeout, destroying\n", ss->imsi, ss->session_id);
+	LOGPSS(ss, LOGL_NOTICE, "SS Session Timeout, destroying\n");
 	/* FIXME: should we send a ReturnError component to the MS? */
 	ss_session_free(ss);
 }
