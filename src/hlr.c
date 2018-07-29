@@ -551,6 +551,9 @@ int main(int argc, char **argv)
 {
 	int rc;
 
+	/* Track the use of talloc NULL memory contexts */
+	talloc_enable_null_tracking();
+
 	hlr_ctx = talloc_named_const(NULL, 1, "OsmoHLR");
 	msgb_talloc_ctx_init(hlr_ctx, 0);
 	vty_info.tall_ctx = hlr_ctx;
@@ -631,6 +634,16 @@ int main(int argc, char **argv)
 	 */
 	talloc_report_full(hlr_ctx, stderr);
 	talloc_free(hlr_ctx);
+
+	/* FIXME: VTY code still uses NULL-context */
+	talloc_free(tall_vty_ctx);
+
+	/**
+	 * Report the heap state of NULL context, then free,
+	 * so both ASAN and Valgrind are happy...
+	 */
+	talloc_report_full(NULL, stderr);
+	talloc_disable_null_tracking();
 
 	return 0;
 }
