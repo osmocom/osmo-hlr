@@ -43,7 +43,7 @@
 #include "luop.h"
 #include "hlr_vty.h"
 
-static struct hlr *g_hlr;
+struct hlr *g_hlr;
 static int quit = 0;
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
@@ -569,7 +569,7 @@ int main(int argc, char **argv)
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
-	hlr_vty_init(g_hlr, &hlr_log_info);
+	hlr_vty_init(&hlr_log_info);
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {
