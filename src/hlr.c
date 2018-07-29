@@ -44,6 +44,7 @@
 #include "hlr_vty.h"
 
 static struct hlr *g_hlr;
+static int quit = 0;
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
  *
@@ -523,11 +524,7 @@ static void signal_hdlr(int signal)
 	switch (signal) {
 	case SIGINT:
 		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to SIGINT\n");
-		osmo_gsup_server_destroy(g_hlr->gs);
-		db_close(g_hlr->dbc);
-		log_fini();
-		talloc_report_full(hlr_ctx, stderr);
-		exit(0);
+		quit++;
 		break;
 	case SIGUSR1:
 		LOGP(DMAIN, LOGL_DEBUG, "Talloc Report due to SIGUSR1\n");
@@ -621,13 +618,14 @@ int main(int argc, char **argv)
 		}
 	}
 
-	while (1) {
+	while (!quit)
 		osmo_select_main(0);
-	}
 
+	osmo_gsup_server_destroy(g_hlr->gs);
 	db_close(g_hlr->dbc);
-
 	log_fini();
 
-	exit(0);
+	talloc_report_full(hlr_ctx, stderr);
+
+	return 0;
 }
