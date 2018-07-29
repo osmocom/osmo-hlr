@@ -625,7 +625,12 @@ int main(int argc, char **argv)
 	db_close(g_hlr->dbc);
 	log_fini();
 
+	/**
+	 * Report the heap state of root context, then free,
+	 * so both ASAN and Valgrind are happy...
+	 */
 	talloc_report_full(hlr_ctx, stderr);
+	talloc_free(hlr_ctx);
 
 	return 0;
 }
