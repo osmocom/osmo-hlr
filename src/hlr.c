@@ -43,7 +43,7 @@
 #include "luop.h"
 #include "hlr_vty.h"
 
-static struct hlr *g_hlr;
+struct hlr *g_hlr;
 static int quit = 0;
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.

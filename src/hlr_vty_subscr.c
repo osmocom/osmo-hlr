@@ -33,8 +33,6 @@ struct vty;
 
 #define hexdump_buf(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 
-static struct hlr *g_hlr = NULL;
-
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
@@ -478,8 +476,6 @@ DEFUN(subscriber_aud3g,
 
 void hlr_vty_subscriber_init(struct hlr *hlr)
 {
-	g_hlr = hlr;
-
 	install_element_ve(&subscriber_show_cmd);
 	install_element(ENABLE_NODE, &subscriber_create_cmd);
 	install_element(ENABLE_NODE, &subscriber_delete_cmd);

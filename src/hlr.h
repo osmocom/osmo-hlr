@@ -39,6 +39,8 @@ struct hlr {
 	char *gsup_bind_addr;
 };
 
+extern struct hlr *g_hlr;
+
 struct hlr_subscriber;
 
 void osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr);

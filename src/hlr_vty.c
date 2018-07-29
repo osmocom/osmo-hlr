@@ -32,8 +32,6 @@
 #include "hlr_vty_subscr.h"
 #include "gsup_server.h"
 
-static struct hlr *g_hlr = NULL;
-
 struct cmd_node hlr_node = {
 	HLR_NODE,
 	"%s(config-hlr)# ",
@@ -154,8 +152,6 @@ int hlr_vty_is_config_node(struct vty *vty, int node)
 
 void hlr_vty_init(struct hlr *hlr, const struct log_info *cat)
 {
-	g_hlr = hlr;
-
 	logging_vty_add_cmds(cat);
 	osmo_talloc_vty_add_cmds();
 
