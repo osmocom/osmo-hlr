@@ -57,6 +57,7 @@ vty-test:
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
 		$(U) $(srcdir)/*.vty
 	-rm -f $(VTY_TEST_DB)
+	-rm $(VTY_TEST_DB)-*
 
 CTRL_TEST_DB = hlr_ctrl_test.db
 
@@ -72,6 +73,7 @@ ctrl-test:
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(CTRL_TEST_DB)" \
 		$(U) $(srcdir)/*.ctrl
 	-rm -f $(CTRL_TEST_DB)
+	-rm $(CTRL_TEST_DB)-*
 
 else
 python-tests:
