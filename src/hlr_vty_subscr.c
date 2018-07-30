@@ -163,8 +163,9 @@ DEFUN(subscriber_create,
       subscriber_create_cmd,
       SUBSCR_CMD "imsi IDENT create",
       SUBSCR_CMD_HELP
-      "Create subscriber by IMSI\n"
-      "IMSI/MSISDN/ID of the subscriber\n")
+      "Identify subscriber by IMSI\n"
+      "IMSI/MSISDN/ID of the subscriber\n"
+      "Create subscriber by IMSI\n")
 {
 	int rc;
 	struct hlr_subscriber subscr;
