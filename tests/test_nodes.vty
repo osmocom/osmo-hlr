@@ -107,7 +107,7 @@ log stderr
   logging print category 1
   logging print extended-timestamp 1
   logging print file 1
-  logging level all debug
+  logging level all notice
   logging level main notice
   logging level db notice
   logging level auc notice
