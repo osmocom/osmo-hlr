@@ -173,12 +173,20 @@ bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr)
 void db_close(struct db_context *dbc)
 {
 	unsigned int i;
+	int rc;
 
 	for (i = 0; i < ARRAY_SIZE(dbc->stmt); i++) {
 		/* it is ok to call finalize on NULL */
 		sqlite3_finalize(dbc->stmt[i]);
 	}
-	sqlite3_close(dbc->db);
+
+	/* Ask sqlite3 to close DB */
+	rc = sqlite3_close(dbc->db);
+	if (rc != SQLITE_OK) { /* Make sure it's actually closed! */
+		LOGP(DDB, LOGL_ERROR, "Couldn't close database: (rc=%d) %s\n",
+			rc, sqlite3_errmsg(dbc->db));
+	}
+
 	talloc_free(dbc);
 }
 
@@ -200,6 +208,7 @@ static int db_bootstrap(struct db_context *dbc)
 		/* execute the statement */
 		rc = sqlite3_step(stmt);
 		db_remove_reset(stmt);
+		sqlite3_finalize(stmt);
 		if (rc != SQLITE_DONE) {
 			LOGP(DDB, LOGL_ERROR, "Cannot bootstrap database: SQL error: (%d) %s,"
 			     " during stmt '%s'",
