@@ -166,7 +166,8 @@ DEFUN(cfg_euse_defaultroute, cfg_euse_defaultroute_cmd,
 
 	if (g_hlr->euse_default != euse) {
 		vty_out(vty, "Switching default route from %s to %s%s",
-			g_hlr->euse_default->name, euse->name, VTY_NEWLINE);
+			g_hlr->euse_default ? g_hlr->euse_default->name : "<none>",
+			euse->name, VTY_NEWLINE);
 		g_hlr->euse_default = euse;
 	}
 
