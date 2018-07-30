@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/gsup.h>
