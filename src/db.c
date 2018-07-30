@@ -202,7 +202,7 @@ static int db_bootstrap(struct db_context *dbc)
 		if (rc != SQLITE_OK) {
 			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n",
 			     stmt_bootstrap_sql[i]);
-			return -1;
+			return rc;
 		}
 
 		/* execute the statement */
@@ -214,10 +214,10 @@ static int db_bootstrap(struct db_context *dbc)
 			     " during stmt '%s'",
 			     rc, sqlite3_errmsg(dbc->db),
 			     stmt_bootstrap_sql[i]);
-			return -1;
+			return rc;
 		}
 	}
-	return 0;
+	return SQLITE_OK;
 }
 
 struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logging)
@@ -274,7 +274,12 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 		LOGP(DDB, LOGL_ERROR, "Unable to set Write-Ahead Logging: %s\n",
 			err_msg);
 
-	db_bootstrap(dbc);
+	rc = db_bootstrap(dbc);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Failed to bootstrap DB: (rc=%d) %s\n",
+			rc, sqlite3_errmsg(dbc->db));
+		goto out_free;
+	}
 
 	/* prepare all SQL statements */
 	for (i = 0; i < ARRAY_SIZE(dbc->stmt); i++) {
