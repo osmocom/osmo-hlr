@@ -31,6 +31,7 @@ src/db_test
 src/db_bootstrap.h
 src/osmo-hlr
 src/osmo-hlr-db-tool
+src/osmo-euse-demo
 src/gsupclient/gsup-test-client
 
 tests/atconfig
