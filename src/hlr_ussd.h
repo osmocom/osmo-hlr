@@ -4,9 +4,8 @@
 
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/gsup.h>
-#include "gsup_server.h"
 
-struct osmo_gsup_conn;
+#include "gsup_server.h"
 
 struct hlr_ussd_route {
 	/* g_hlr.routes */
