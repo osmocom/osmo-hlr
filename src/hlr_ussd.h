@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
+
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/gsup.h>
 #include "gsup_server.h"
