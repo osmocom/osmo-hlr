@@ -1,4 +1,6 @@
 *.o
+*.lo
+*.la
 *.db
 *.pyc
 .*.sw?
@@ -23,16 +25,22 @@ missing
 .deps
 
 *.pc
+.libs
 
 src/db_test
 src/db_bootstrap.h
 src/osmo-hlr
 src/osmo-hlr-db-tool
+src/gsupclient/gsup-test-client
 
 tests/atconfig
 tests/testsuite
+tests/testsuite.log
+
 tests/auc/auc_3g_test
 tests/auc/auc_ts_55_205_test_sets.c
 tests/auc/auc_ts_55_205_test_sets
 tests/auc/auc_test
 tests/gsup_server/gsup_server_test
+tests/gsup/gsup_test
+tests/db/db_test
