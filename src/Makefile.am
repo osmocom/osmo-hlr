@@ -97,6 +97,11 @@ osmo_euse_demo_LDADD = \
 	$(LIBOSMOGSM_LIBS) \
 	$(NULL)
 
+if DB_SQLITE_DEBUG
+osmo_hlr_SOURCES += db_debug.c
+osmo_hlr_db_tool_SOURCES += db_debug.c
+endif
+
 BOOTSTRAP_SQL = $(top_srcdir)/sql/hlr.sql
 
 db_bootstrap.h: $(BOOTSTRAP_SQL) $(srcdir)/db_sql2c.sed

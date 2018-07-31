@@ -59,6 +59,21 @@ then
 	CPPFLAGS="$CPPFLAGS -fsanitize=address -fsanitize=undefined"
 fi
 
+AC_ARG_ENABLE([sqlite_talloc],
+		AC_HELP_STRING([--enable-sqlite-talloc],
+				[Configure SQLite3 to use talloc memory allocator [default=no]]),
+		[sqlite_talloc="$enableval"],[sqlite_talloc="no"])
+if test "x$sqlite_talloc" = "xyes" ; then
+	# Older versions of SQLite3 (at least 3.8.2) become unstable with talloc.
+	# Feel free to relax to 3.24.0 > VER > 3.8.2 if it works for you.
+	# FIXME: PKG_CHECK_MODULES() may return cached result here!
+	PKG_CHECK_MODULES(SQLITE3, sqlite3 >= 3.24.0)
+	AC_DEFINE([SQLITE_USE_TALLOC], 1, [Use talloc for SQLite3])
+fi
+AC_MSG_CHECKING([whether to use talloc for SQLite3])
+AC_MSG_RESULT([$sqlite_talloc])
+AM_CONDITIONAL([DB_SQLITE_DEBUG], [test "x$sqlite_talloc" = "xyes"])
+
 AC_ARG_ENABLE(werror,
 	[AS_HELP_STRING(
 		[--enable-werror],

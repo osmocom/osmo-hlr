@@ -36,6 +36,10 @@ db_test_LDADD = \
 	$(SQLITE3_LIBS) \
 	$(NULL)
 
+if DB_SQLITE_DEBUG
+db_test_LDADD += $(top_builddir)/src/db_debug.o
+endif
+
 .PHONY: db_test.db update_exp manual manual-nonverbose manual-gdb
 db_test.db:
 	rm -f db_test.db

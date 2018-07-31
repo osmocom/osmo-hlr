@@ -365,6 +365,17 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
 	LOGP(DDB, LOGL_INFO, "Running with SQLite3 lib version %s\n", sqlite3_libversion());
 
+#ifdef SQLITE_USE_TALLOC
+	/* Configure SQLite3 to use talloc memory allocator */
+	rc = db_sqlite3_use_talloc(ctx);
+	if (rc == SQLITE_OK) {
+		LOGP(DDB, LOGL_NOTICE, "SQLite3 is configured to use talloc\n");
+	} else {
+		LOGP(DDB, LOGL_ERROR, "Failed to configure SQLite3 "
+		     "to use talloc, using default memory allocator\n");
+	}
+#endif
+
 	dbc->fname = talloc_strdup(dbc, fname);
 
 	for (i = 0; i < 0xfffff; i++) {

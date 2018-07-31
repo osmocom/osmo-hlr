@@ -39,6 +39,11 @@ struct db_context {
 	sqlite3_stmt *stmt[_NUM_DB_STMT];
 };
 
+/* Optional feature to make SQLite3 using talloc */
+#ifdef SQLITE_USE_TALLOC
+int db_sqlite3_use_talloc(void *ctx);
+#endif
+
 void db_remove_reset(sqlite3_stmt *stmt);
 bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text);
 bool db_bind_int(sqlite3_stmt *stmt, const char *param_name, int nr);
