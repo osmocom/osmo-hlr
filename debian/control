@@ -42,7 +42,7 @@ Depends: ${shlibs:Depends},
 Pre-Depends: ${misc:Pre-Depends}
 Description: Osmocom GSUP (General Subscriber Update Protocol) client library
   This is a shared library that can be used to implement client programs for
-  the GSUP protcol.  The typical GSUP server is OsmoHLR, with OsmoMSC, OsmoSGSN
+  the GSUP protocol.  The typical GSUP server is OsmoHLR, with OsmoMSC, OsmoSGSN
   and External USSD Entities (EUSEs) using this library to implement clients.
 
 Package: libosmo-gsup-client-dev
@@ -52,7 +52,7 @@ Depends: ${misc:Depends},
 	 libosmocore-dev
 Description: Development headers of Osmocom GSUP client library
   This is a shared library that can be used to implement client programs for
-  the GSUP protcol.  The typical GSUP server is OsmoHLR, with OsmoMSC, OsmoSGSN
+  the GSUP protocol.  The typical GSUP server is OsmoHLR, with OsmoMSC, OsmoSGSN
   and External USSD Entities (EUSEs) using this library to implement clients.
   .
   This package contains the development headers.
