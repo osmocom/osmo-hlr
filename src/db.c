@@ -18,10 +18,12 @@
  */
 
 #include <osmocom/core/utils.h>
+#include <osmocom/core/talloc.h>
 
 #include <stdbool.h>
 #include <sqlite3.h>
 #include <string.h>
+#include <malloc.h>
 
 #include "logging.h"
 #include "db.h"
@@ -70,6 +72,109 @@ static const char *stmt_sql[] = {
 		"INSERT INTO auc_3g (subscriber_id, algo_id_3g, k, op, opc, ind_bitlen)"
 		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
 	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
+};
+
+/* Dedicated talloc context for SQLite */
+static void *db_sqlite_ctx = NULL;
+/* TEMP: used for memory footprint debugging */
+static int ctr = 0;
+
+/* talloc or malloc? */
+// #define ENABLE_TALLOC
+
+static void *tall_xMalloc(int size)
+{
+#ifdef ENABLE_TALLOC
+	void *p = talloc_size(db_sqlite_ctx, size);
+	int s = talloc_total_size(p);
+#else
+	void *p = malloc(size);
+	int s = malloc_usable_size(p);
+#endif
+	/* TEMP: used for memory footprint debugging */
+	printf("[%d] %s size_req=%d vs size_act=%d ptr=%c\n",
+		ctr++, __func__, size, s, p != NULL ? '+' : '!');
+	return p;
+}
+
+static void tall_xFree(void *ptr)
+{
+#ifdef ENABLE_TALLOC
+	int s = talloc_total_size(ptr);
+	talloc_free(ptr);
+#else
+	int s = malloc_usable_size(ptr);
+	free(ptr);
+#endif
+	/* TEMP: used for memory footprint debugging */
+	printf("[%d] %s size=%d\n", ctr++, __func__, s);
+}
+
+static void *tall_xRealloc(void *ptr, int size)
+{
+#ifdef ENABLE_TALLOC
+	void *p = talloc_realloc_fn(db_sqlite_ctx, ptr, size);
+	int s = talloc_total_size(p);
+#else
+	void *p = realloc(ptr, size);
+	int s = malloc_usable_size(p);
+#endif
+	/* TEMP: used for memory footprint debugging */
+	printf("[%d] %s size_req=%d vs size_act=%d ptr=%c\n",
+		ctr++, __func__, size, s, p != NULL ? '+' : '!');
+	return p;
+}
+
+static int tall_xSize(void *ptr)
+{
+#ifdef ENABLE_TALLOC
+	int s = talloc_total_size(ptr);
+#else
+	int s = malloc_usable_size(ptr);
+#endif
+	/* TEMP: used for memory footprint debugging */
+	printf("[%d] %s size=%d\n", ctr++, __func__, s);
+	return s;
+}
+
+static int tall_xRoundup(int size)
+{
+	/**
+	 * DUMMY: return size 'as-is'...
+	 * AFAIK talloc doesn't round up the allocation size.
+	 */
+	return size;
+}
+
+static int tall_xInit(void *data)
+{
+	/* DUMMY: nothing to initialize */
+	return 0;
+}
+
+static void tall_xShutdown(void *data)
+{
+	/* DUMMY: nothing to deinitialize */
+}
+
+/* Interface between SQLite and talloc memory allocator */
+static const struct sqlite3_mem_methods tall_sqlite_if = {
+	/* Memory allocation function */
+	.xMalloc = &tall_xMalloc,
+	/* Free a prior allocation */
+	.xFree = &tall_xFree,
+	/* Resize an allocation */
+	.xRealloc = &tall_xRealloc,
+	/* Return the size of an allocation */
+	.xSize = &tall_xSize,
+	/* Round up request size to allocation size */
+	.xRoundup = &tall_xRoundup,
+	/* Initialize the memory allocator */
+	.xInit = &tall_xInit,
+	/* Deinitialize the memory allocator */
+	.xShutdown = &tall_xShutdown,
+	/* Argument to xInit() and xShutdown() */
+	.pAppData = NULL,
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -230,6 +335,15 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 	LOGP(DDB, LOGL_NOTICE, "using database: %s\n", fname);
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
 	LOGP(DDB, LOGL_INFO, "Running with SQLite3 lib version %s\n", sqlite3_libversion());
+
+	db_sqlite_ctx = talloc_named_const(dbc, 0, "SQLite3");
+
+	/* Configure SQLite3 to use talloc memory allocator */
+	rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &tall_sqlite_if);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Unable to configure SQLite3 "
+			"to use talloc, using default memory allocator\n");
+	}
 
 	dbc->fname = talloc_strdup(dbc, fname);
 
