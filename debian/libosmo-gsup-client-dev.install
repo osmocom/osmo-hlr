@@ -1,0 +1,5 @@
+usr/include/osmocom/gsupclient
+usr/lib/*/libosmo-gsup-client*.a
+usr/lib/*/libosmo-gsup-client*.so
+usr/lib/*/libosmo-gsup-client*.la
+usr/lib/*/pkgconfig/libosmo-gsup-client.pc
