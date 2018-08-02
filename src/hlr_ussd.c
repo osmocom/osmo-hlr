@@ -126,8 +126,10 @@ static struct hlr_ussd_route *ussd_route_lookup_7bit(struct hlr *hlr, const char
 	struct hlr_ussd_route *rt;
 	llist_for_each_entry(rt, &hlr->ussd_routes, list) {
 		if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
-			LOGP(DSS, LOGL_DEBUG, "Found EUSE %s (prefix %s) for USSD Code '%s'\n",
-				rt->u.euse->name, rt->prefix, ussd_code);
+			LOGP(DSS, LOGL_DEBUG, "Found %s '%s' (prefix '%s') for USSD "
+				"Code '%s'\n", rt->is_external ? "EUSE" : "IUSE",
+				rt->is_external ? rt->u.euse->name : rt->u.iuse->name,
+				rt->prefix, ussd_code);
 			return rt;
 		}
 	}
