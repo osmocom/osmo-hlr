@@ -193,7 +193,13 @@ DEFUN(cfg_ussd_defaultroute, cfg_ussd_defaultroute_cmd,
 	USSD_STR "Configure default-route for all USSD to unknown destinations\n"
 	EXT_STR)
 {
-	struct hlr_euse *euse = euse_find(g_hlr, argv[0]);
+	struct hlr_euse *euse;
+
+	euse = euse_find(g_hlr, argv[0]);
+	if (!euse) {
+		vty_out(vty, "%% Cannot find EUSE %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
 
 	if (g_hlr->euse_default != euse) {
 		vty_out(vty, "Switching default route from %s to %s%s",
