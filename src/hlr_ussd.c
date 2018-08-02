@@ -297,7 +297,7 @@ static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session
 		if (strlen(subscr.msisdn) == 0)
 			snprintf(buf, sizeof(buf), "You have no MSISDN!");
 		else
-			snprintf(buf, sizeof(buf), "Your extension is %s\r", subscr.msisdn);
+			snprintf(buf, sizeof(buf), "Your extension is %s", subscr.msisdn);
 		ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
 		break;
 	case -ENOENT:
@@ -315,7 +315,7 @@ static int handle_ussd_own_imsi(struct osmo_gsup_conn *conn, struct ss_session *
 				const struct osmo_gsup_message *gsup, const struct ss_request *req)
 {
 	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
-	snprintf(buf, sizeof(buf), "Your IMSI is %s!\n", ss->imsi);
+	snprintf(buf, sizeof(buf), "Your IMSI is %s", ss->imsi);
 	ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
 	return 0;
 }
