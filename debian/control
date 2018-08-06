@@ -49,6 +49,7 @@ Package: libosmo-gsup-client-dev
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
+	 libosmo-gsup-client0 (= ${binary:Version}),
 	 libosmocore-dev
 Description: Development headers of Osmocom GSUP client library
   This is a shared library that can be used to implement client programs for
