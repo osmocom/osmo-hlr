@@ -5,6 +5,7 @@
 *.pyc
 .*.sw?
 .version
+.tarball-version
 Makefile
 Makefile.in
 aclocal.m4
