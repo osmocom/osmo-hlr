@@ -507,6 +507,11 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 						ss->is_external = false;
 						ss->u.iuse = rt->u.iuse;
 					}
+				} else {
+					if (hlr->euse_default) {
+						ss->is_external = true;
+						ss->u.euse = hlr->euse_default;
+					}
 				}
 			}
 			/* dispatch unstructured SS to routing */
