@@ -5,12 +5,16 @@ SUBDIRS = \
 	src \
 	include \
 	sql \
+	contrib \
 	tests \
 	$(NULL)
 
 EXTRA_DIST = \
 	.version \
 	$(NULL)
+
+DISTCHECK_CONFIGURE_FLAGS = \
+	--with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libosmo-gsup-client.pc
