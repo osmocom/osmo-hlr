@@ -1,3 +1,4 @@
+/etc/osmocom/osmo-hlr.cfg
 /lib/systemd/system/osmo-hlr.service
 /usr/bin/osmo-hlr
 /usr/bin/osmo-hlr-db-tool
