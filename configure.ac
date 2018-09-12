@@ -114,6 +114,7 @@ AC_MSG_RESULT([CPPFLAGS="$CPPFLAGS"])
 AC_OUTPUT(
 	Makefile
 	doc/Makefile
+	doc/examples/Makefile
 	src/Makefile
 	src/gsupclient/Makefile
 	include/Makefile
