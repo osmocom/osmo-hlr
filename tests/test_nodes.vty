@@ -117,4 +117,5 @@ hlr
  gsup
   bind ip 127.0.0.1
  ussd route prefix *#100# internal own-msisdn
+ ussd route prefix *#101# internal own-imsi
 end
