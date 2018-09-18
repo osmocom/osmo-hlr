@@ -44,6 +44,10 @@ python-tests:
 # don't run vty and ctrl tests concurrently so that the ports don't conflict
 	$(MAKE) vty-test
 	$(MAKE) ctrl-test
+else
+python-tests:
+	echo "Not running python-based external tests (determined at configure-time)"
+endif
 
 VTY_TEST_DB = hlr_vty_test.db
 
@@ -74,11 +78,6 @@ ctrl-test:
 		$(U) $(srcdir)/*.ctrl
 	-rm -f $(CTRL_TEST_DB)
 	-rm $(CTRL_TEST_DB)-*
-
-else
-python-tests:
-	echo "Not running python-based tests (determined at configure-time)"
-endif
 
 check-local: atconfig $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
