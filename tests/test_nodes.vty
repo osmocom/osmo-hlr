@@ -108,10 +108,10 @@ Current configuration:
 !
 log stderr
 ...
-  logging level main notice
-  logging level db notice
-  logging level auc notice
-  logging level ss info
+ logging level main notice
+ logging level db notice
+ logging level auc notice
+ logging level ss info
 ...
 hlr
  gsup
