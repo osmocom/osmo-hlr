@@ -242,11 +242,14 @@ void lu_op_rx_gsup(struct lu_operation *luop,
 static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 			  const struct osmo_gsup_message *gsup)
 {
+	struct hlr_subscriber *subscr;
 	struct lu_operation *luop = lu_op_alloc_conn(conn);
 	if (!luop) {
 		LOGP(DMAIN, LOGL_ERROR, "LU REQ from conn without addr?\n");
 		return -EINVAL;
 	}
+
+	subscr = &luop->subscr;
 
 	lu_op_statechg(luop, LU_S_LU_RECEIVED);
 
@@ -298,6 +301,15 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		lu_op_tx_cancel_old(luop);
 	} else
 #endif
+
+	/* Store the VLR / SGSN number with the subscriber, so we know where it was last seen. */
+	LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
+	     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
+	     osmo_quote_str((const char*)luop->peer, -1));
+	if (db_subscr_lu(g_hlr->dbc, subscr->id, (const char *)luop->peer, luop->is_ps))
+		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
+		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
+
 	{
 		/* TODO: Subscriber allowed to roam in PLMN? */
 		/* TODO: Update RoutingInfo */
