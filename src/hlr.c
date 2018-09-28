@@ -250,18 +250,19 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 
 	lu_op_statechg(luop, LU_S_LU_RECEIVED);
 
-	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_CS)
+	switch (gsup->cn_domain) {
+	case OSMO_GSUP_CN_DOMAIN_CS:
 		conn->supports_cs = true;
-	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
-		conn->supports_ps = true;
-		luop->is_ps = true;
-	} else {
+		break;
+	default:
 		/* The client didn't send a CN_DOMAIN IE; assume packet-switched in
 		 * accordance with the GSUP spec in osmo-hlr's user manual (section
 		 * 11.6.15 "CN Domain" says "if no CN Domain IE is present within
 		 * a request, the PS Domain is assumed." */
+	case OSMO_GSUP_CN_DOMAIN_PS:
 		conn->supports_ps = true;
 		luop->is_ps = true;
+		break;
 	}
 	llist_add(&luop->list, &g_lu_ops);
 
