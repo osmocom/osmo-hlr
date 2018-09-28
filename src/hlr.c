@@ -54,16 +54,15 @@ static int quit = 0;
 void
 osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 {
-	/* FIXME: the below code can only be re-enabled after we make sure that an ISD
-	 * is only sent tot the currently serving VLR and/or SGSN (if there are any).
-	 * We cannot blindly flood the entire PLMN with this, as it would create subscriber
-	 * state in every VLR/SGSN out there, even those that have never seen the subscriber.
-	 * See https://osmocom.org/issues/3154 for details. */
-#if 0
         struct osmo_gsup_conn *co;
 
-	if (g_hlr->gs == NULL)
+	if (g_hlr->gs == NULL) {
+		LOGP(DLGSUP, LOGL_DEBUG,
+		     "IMSI %s: NOT Notifying peers of subscriber data change,"
+		     " there is no GSUP server\n",
+		     subscr->imsi);
 		return;
+	}
 
 	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
 		struct osmo_gsup_message gsup = { };
@@ -72,20 +71,50 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		struct msgb *msg_out;
 		uint8_t *peer;
 		int peer_len;
+		size_t peer_strlen;
+		const char *peer_compare;
 		enum osmo_gsup_cn_domain cn_domain;
 
-		if (co->supports_ps)
+		if (co->supports_ps) {
 			cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
-		else if (co->supports_cs)
+			peer_compare = subscr->sgsn_number;
+		} else if (co->supports_cs) {
 			cn_domain = OSMO_GSUP_CN_DOMAIN_CS;
-		else {
-			/* We have not yet received a location update from this subscriber .*/
+			peer_compare = subscr->vlr_number;
+		} else {
+			/* We have not yet received a location update from this GSUP client.*/
 			continue;
 		}
 
+		peer_len = osmo_gsup_conn_ccm_get(co, &peer, IPAC_IDTAG_SERNR);
+		if (peer_len < 0) {
+			LOGP(DLGSUP, LOGL_ERROR,
+			       "IMSI='%s': cannot get peer name for connection %s:%u\n", subscr->imsi,
+			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
+			       co && co->conn && co->conn->server? co->conn->server->port : 0);
+			continue;
+		}
+
+		peer_strlen = strnlen((const char*)peer, peer_len);
+		if (strlen(peer_compare) != peer_strlen || strncmp(peer_compare, (const char *)peer, peer_len)) {
+			/* Mismatch. The subscriber is not subscribed with this GSUP client. */
+			/* I hope peer is always nul terminated... */
+			if (peer_strlen < peer_len)
+				LOGP(DLGSUP, LOGL_DEBUG,
+				     "IMSI %s: subscriber change: skipping %s peer %s\n",
+				     subscr->imsi, cn_domain == OSMO_GSUP_CN_DOMAIN_PS ? "PS" : "CS",
+				     osmo_quote_str((char*)peer, -1));
+			continue;
+		}
+
+		LOGP(DLGSUP, LOGL_DEBUG,
+		     "IMSI %s: subscriber change: notifying %s peer %s\n",
+		     subscr->imsi, cn_domain == OSMO_GSUP_CN_DOMAIN_PS ? "PS" : "CS",
+		     osmo_quote_str(peer_compare, -1));
+
 		if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, msisdn_enc,
 								sizeof(msisdn_enc), apn, sizeof(apn), cn_domain) != 0) {
-			LOGP(DMAIN, LOGL_ERROR,
+			LOGP(DLGSUP, LOGL_ERROR,
 			       "IMSI='%s': Cannot notify GSUP client; could not create gsup message "
 			       "for %s:%u\n", subscr->imsi,
 			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
@@ -96,7 +125,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		/* Send ISD to MSC/SGSN */
 		msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP ISD UPDATE");
 		if (msg_out == NULL) {
-			LOGP(DMAIN, LOGL_ERROR,
+			LOGP(DLGSUP, LOGL_ERROR,
 			       "IMSI='%s': Cannot notify GSUP client; could not allocate msg buffer "
 			       "for %s:%u\n", subscr->imsi,
 			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
@@ -104,15 +133,6 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 			continue;
 		}
 		osmo_gsup_encode(msg_out, &gsup);
-
-		peer_len = osmo_gsup_conn_ccm_get(co, &peer, IPAC_IDTAG_SERNR);
-		if (peer_len < 0) {
-			LOGP(DMAIN, LOGL_ERROR,
-			       "IMSI='%s': cannot get peer name for connection %s:%u\n", subscr->imsi,
-			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
-			       co && co->conn && co->conn->server? co->conn->server->port : 0);
-			continue;
-		}
 
 		if (osmo_gsup_addr_send(g_hlr->gs, peer, peer_len, msg_out) < 0) {
 			LOGP(DMAIN, LOGL_ERROR,
@@ -123,7 +143,6 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 			continue;
 		}
 	}
-#endif
 }
 
 /***********************************************************************
