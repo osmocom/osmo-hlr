@@ -399,8 +399,15 @@ static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup
 
 	LOGPSS(ss, LOGL_INFO, "SS CompType=%s, OpCode=%s\n",
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode));
-	/* FIXME */
-	return 0;
+
+	/**
+	 * FIXME: As we don't store any SS related information
+	 * (e.g. call forwarding preferences) in the database,
+	 * we don't handle "structured" SS requests at all.
+	 */
+	LOGPSS(ss, LOGL_NOTICE, "Structured SS requests are not supported, rejecting...\n");
+	ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_FACILITY_NOT_SUPPORTED);
+	return -ENOTSUP;
 }
 
 /* Handle a USSD GSUP message for a given SS Session received from VLR or EUSE */
