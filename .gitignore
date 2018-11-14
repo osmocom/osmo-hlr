@@ -46,3 +46,14 @@ tests/auc/auc_test
 tests/gsup_server/gsup_server_test
 tests/gsup/gsup_test
 tests/db/db_test
+
+# manuals
+doc/manuals/*.html
+doc/manuals/*.svg
+doc/manuals/*.pdf
+doc/manuals/*__*.png
+doc/manuals/*.check
+doc/manuals/generated/
+doc/manuals/osmomsc-usermanual.xml
+doc/manuals/common
+doc/manuals/build
