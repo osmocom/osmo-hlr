@@ -828,12 +828,12 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -910,12 +910,12 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -935,12 +935,12 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, "f000000000000f00000000000f000000")) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1037,12 +1037,12 @@ DAUC IMSI='123456789000000': No 2G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, NULL, false, NULL, 0)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1072,12 +1072,12 @@ DAUC IMSI='123456789000000': Updating SQN=0 in DB
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_NONE, "asdfasdfasd", false, "asdfasdfasdf", 99999)) --> 0
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1318,12 +1318,12 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
-db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -126
+db_get_auc(dbc, imsi0, 3, vec, N_VECTORS, NULL, NULL) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1450,7 +1450,7 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1461,7 +1461,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 db_update_sqn(dbc, id, 123) --> -ENOENT
 DAUC Cannot update SQN for subscriber ID=1: no auc_3g entry for such subscriber
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 
@@ -1469,7 +1469,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 db_update_sqn(dbc, id, 543) --> -ENOENT
 DAUC Cannot update SQN for subscriber ID=1: no auc_3g entry for such subscriber
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': No 2G Auth Data
 DAUC IMSI='123456789000000': No 3G Auth Data
 

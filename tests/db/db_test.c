@@ -51,7 +51,12 @@ static void _fill_invalid(void *dest, size_t size)
  * The return code is then available in g_rc. */
 #define ASSERT_RC(call, expect_rc) \
 	do { \
-		fprintf(stderr, #call " --> " #expect_rc "\n"); \
+    if ((expect_rc) == -ENOKEY) \
+		  fprintf(stderr, #call " --> -ENOKEY\n"); \
+    else if ((expect_rc) == -ENOTSUP) \
+		  fprintf(stderr, #call " --> -ENOTSUP\n"); \
+    else \
+		  fprintf(stderr, #call " --> " #expect_rc "\n"); \
 		g_rc = call; \
 		if (g_rc != (expect_rc)) \
 			fprintf(stderr, " MISMATCH: got rc = %d, expected: " \
@@ -67,7 +72,12 @@ static void _fill_invalid(void *dest, size_t size)
 	do { \
 		int rc; \
 		fill_invalid(g_subscr); \
-		fprintf(stderr, "db_subscr_get_by_" #by "(dbc, " #val ", &g_subscr) --> " \
+    if ((expect_rc) == -ENOKEY) \
+		  fprintf(stderr, "db_subscr_get_by_" #by "(dbc, " #val ", &g_subscr) --> -ENOKEY \n"); \
+    else if ((expect_rc) == -ENOTSUP) \
+		  fprintf(stderr, "db_subscr_get_by_" #by "(dbc, " #val ", &g_subscr) --> -ENOTSUP \n"); \
+    else \
+		  fprintf(stderr, "db_subscr_get_by_" #by "(dbc, " #val ", &g_subscr) --> " \
                                 #expect_rc "\n"); \
 		rc = db_subscr_get_by_##by(dbc, val, &g_subscr); \
 		if (rc != (expect_rc)) \
