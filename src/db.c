@@ -27,6 +27,8 @@
 #include "db.h"
 #include "db_bootstrap.h"
 
+#define CURRENT_SCHEMA_VERSION	0
+
 #define SEL_COLUMNS \
 	"id," \
 	"imsi," \
@@ -197,36 +199,90 @@ static int db_bootstrap(struct db_context *dbc)
 	for (i = 0; i < ARRAY_SIZE(stmt_bootstrap_sql); i++) {
 		int rc;
 		sqlite3_stmt *stmt;
-
-		rc = sqlite3_prepare_v2(dbc->db, stmt_bootstrap_sql[i], -1,
-					&stmt, NULL);
+		rc = sqlite3_prepare_v2(dbc->db, stmt_bootstrap_sql[i], -1, &stmt, NULL);
 		if (rc != SQLITE_OK) {
-			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n",
-			     stmt_bootstrap_sql[i]);
+			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", stmt_bootstrap_sql[i]);
 			return rc;
 		}
 
-		/* execute the statement */
 		rc = sqlite3_step(stmt);
 		db_remove_reset(stmt);
 		sqlite3_finalize(stmt);
 		if (rc != SQLITE_DONE) {
 			LOGP(DDB, LOGL_ERROR, "Cannot bootstrap database: SQL error: (%d) %s,"
 			     " during stmt '%s'",
-			     rc, sqlite3_errmsg(dbc->db),
-			     stmt_bootstrap_sql[i]);
+			     rc, sqlite3_errmsg(dbc->db), stmt_bootstrap_sql[i]);
 			return rc;
 		}
 	}
 	return SQLITE_OK;
 }
 
-struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logging)
+/* https://www.sqlite.org/fileformat2.html#storage_of_the_sql_database_schema */
+static bool db_table_exists(struct db_context *dbc, const char *table_name)
+{
+	const char *table_exists_sql = "SELECT name FROM sqlite_master WHERE type='table' AND name=?";
+	sqlite3_stmt *stmt;
+	int rc;
+
+	rc = sqlite3_prepare_v2(dbc->db, table_exists_sql, -1, &stmt, NULL);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", table_exists_sql);
+		return false;
+	}
+
+	if (!db_bind_text(stmt, NULL, table_name))
+		return false;
+
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	sqlite3_finalize(stmt);
+	return (rc == SQLITE_ROW);
+}
+
+/* Indicate whether the database is initialized with tables for schema version 0.
+ * We only check for the 'subscriber' table here because Neels said so. */
+static bool db_is_bootstrapped_v0(struct db_context *dbc)
+{
+	if (!db_table_exists(dbc, "subscriber")) {
+		LOGP(DDB, LOGL_DEBUG, "Table 'subscriber' not found in database '%s'\n", dbc->fname);
+		return false;
+	}
+
+	return true;
+}
+
+static int db_get_user_version(struct db_context *dbc)
+{
+	const char *user_version_sql = "PRAGMA user_version";
+	sqlite3_stmt *stmt;
+	int version, rc;
+
+	rc = sqlite3_prepare_v2(dbc->db, user_version_sql, -1, &stmt, NULL);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", user_version_sql);
+		return -1;
+	}
+	rc = sqlite3_step(stmt);
+	if (rc == SQLITE_ROW) {
+		version = sqlite3_column_int(stmt, 0);
+	} else {
+		LOGP(DDB, LOGL_ERROR, "SQL statement '%s' failed: %d\n", user_version_sql, rc);
+		version = -1;
+	}
+
+	db_remove_reset(stmt);
+	sqlite3_finalize(stmt);
+	return version;
+}
+
+struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logging, bool allow_upgrade)
 {
 	struct db_context *dbc = talloc_zero(ctx, struct db_context);
 	unsigned int i;
 	int rc;
 	bool has_sqlite_config_sqllog = false;
+	int version;
 
 	LOGP(DDB, LOGL_NOTICE, "using database: %s\n", fname);
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
@@ -275,10 +331,40 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 		LOGP(DDB, LOGL_ERROR, "Unable to set Write-Ahead Logging: %s\n",
 			err_msg);
 
-	rc = db_bootstrap(dbc);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Failed to bootstrap DB: (rc=%d) %s\n",
-			rc, sqlite3_errmsg(dbc->db));
+	version = db_get_user_version(dbc);
+	if (version < 0) {
+		LOGP(DDB, LOGL_ERROR, "Unable to read user version number from database '%s'\n", dbc->fname);
+		goto out_free;
+	}
+
+	/* An empty database will always report version zero. */
+	if (version == 0 && !db_is_bootstrapped_v0(dbc)) {
+		LOGP(DDB, LOGL_NOTICE, "Missing database tables detected; Bootstrapping database '%s'\n", dbc->fname);
+		rc = db_bootstrap(dbc);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "Failed to bootstrap DB: (rc=%d) %s\n",
+			     rc, sqlite3_errmsg(dbc->db));
+			goto out_free;
+		}
+	}
+
+	LOGP(DDB, LOGL_NOTICE, "Database '%s' has HLR DB schema version %d\n", dbc->fname, version);
+
+	if (version < CURRENT_SCHEMA_VERSION && allow_upgrade) {
+		/* Future version upgrades will happen here. */
+	}
+
+	if (version != CURRENT_SCHEMA_VERSION) {
+		if (version < CURRENT_SCHEMA_VERSION) {
+			LOGP(DDB, LOGL_NOTICE, "HLR DB schema version %d is outdated\n", version);
+			if (!allow_upgrade) {
+				LOGP(DDB, LOGL_ERROR, "Not upgrading HLR database to schema version %d; "
+				     "use the --db-upgrade option to allow HLR database upgrades\n",
+				     CURRENT_SCHEMA_VERSION);
+			}
+		} else
+			LOGP(DDB, LOGL_ERROR, "HLR DB schema version %d is unknown\n", version);
+
 		goto out_free;
 	}
 

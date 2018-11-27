@@ -44,8 +44,10 @@ static struct {
 	const char *db_file;
 	bool bootstrap;
 	const char *import_nitb_db;
+	bool db_upgrade;
 } cmdline_opts = {
 	.db_file = "hlr.db",
+	.db_upgrade = false,
 };
 
 static void print_help()
@@ -59,6 +61,7 @@ static void print_help()
 	printf("  -s --disable-color         Do not print ANSI colors in the log\n");
 	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
 	printf("  -e --log-level number      Set a global loglevel.\n");
+	printf("  -U --db-upgrade            Allow HLR database schema upgrades.\n");
 	printf("  -V --version               Print the version of OsmoHLR-db-tool.\n");
 	printf("\n");
 	printf("Commands:\n");
@@ -96,11 +99,12 @@ static void handle_options(int argc, char **argv)
 			{"disable-color", 0, 0, 's'},
 			{"timestamp", 0, 0, 'T'},
 			{"log-level", 1, 0, 'e'},
+			{"db-upgrade", 0, 0, 'U' },
 			{"version", 0, 0, 'V' },
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hl:d:sTe:V",
+		c = getopt_long(argc, argv, "hl:d:sTe:UV",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -123,6 +127,9 @@ static void handle_options(int argc, char **argv)
 			break;
 		case 'e':
 			log_set_log_level(osmo_stderr_target, atoi(optarg));
+			break;
+		case 'U':
+			cmdline_opts.db_upgrade = true;
 			break;
 		case 'V':
 			print_version(1);
@@ -409,7 +416,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	g_hlr_db_tool_ctx->dbc = db_open(g_hlr_db_tool_ctx, cmdline_opts.db_file, true);
+	g_hlr_db_tool_ctx->dbc = db_open(g_hlr_db_tool_ctx, cmdline_opts.db_file, true, cmdline_opts.db_upgrade);
 	if (!g_hlr_db_tool_ctx->dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(EXIT_FAILURE);

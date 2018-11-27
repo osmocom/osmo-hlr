@@ -483,6 +483,7 @@ static void print_help()
 	printf("  -s --disable-color         Do not print ANSI colors in the log\n");
 	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
 	printf("  -e --log-level number      Set a global loglevel.\n");
+	printf("  -U --db-upgrade            Allow HLR database schema upgrades.\n");
 	printf("  -V --version               Print the version of OsmoHLR.\n");
 }
 
@@ -490,10 +491,12 @@ static struct {
 	const char *config_file;
 	const char *db_file;
 	bool daemonize;
+	bool db_upgrade;
 } cmdline_opts = {
 	.config_file = "osmo-hlr.cfg",
 	.db_file = "hlr.db",
 	.daemonize = false,
+	.db_upgrade = false,
 };
 
 static void handle_options(int argc, char **argv)
@@ -509,11 +512,12 @@ static void handle_options(int argc, char **argv)
 			{"disable-color", 0, 0, 's'},
 			{"log-level", 1, 0, 'e'},
 			{"timestamp", 0, 0, 'T'},
+			{"db-upgrade", 0, 0, 'U' },
 			{"version", 0, 0, 'V' },
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(argc, argv, "hc:l:d:Dse:TV",
+		c = getopt_long(argc, argv, "hc:l:d:Dse:TUV",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -543,6 +547,9 @@ static void handle_options(int argc, char **argv)
 			break;
 		case 'T':
 			log_set_print_timestamp(osmo_stderr_target, 1);
+			break;
+		case 'U':
+			cmdline_opts.db_upgrade = true;
 			break;
 		case 'V':
 			print_version(1);
@@ -637,7 +644,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file, true);
+	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file, true, cmdline_opts.db_upgrade);
 	if (!g_hlr->dbc) {
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
 		exit(1);

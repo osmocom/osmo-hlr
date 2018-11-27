@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS subscriber (
+CREATE TABLE subscriber (
 -- OsmoHLR's DB scheme is modelled roughly after TS 23.008 version 13.3.0
 	id		INTEGER PRIMARY KEY,
 	-- Chapter 2.1.1.1
@@ -39,24 +39,24 @@ CREATE TABLE IF NOT EXISTS subscriber (
 	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS subscriber_apn (
+CREATE TABLE subscriber_apn (
 	subscriber_id	INTEGER,		-- subscriber.id
 	apn		VARCHAR(256) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS subscriber_multi_msisdn (
+CREATE TABLE subscriber_multi_msisdn (
 -- Chapter 2.1.3
 	subscriber_id	INTEGER,		-- subscriber.id
 	msisdn		VARCHAR(15) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS auc_2g (
+CREATE TABLE auc_2g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_2g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
 	ki		VARCHAR(32) NOT NULL	-- hex string: subscriber's secret key (128bit)
 );
 
-CREATE TABLE IF NOT EXISTS auc_3g (
+CREATE TABLE auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_3g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
 	k		VARCHAR(32) NOT NULL,	-- hex string: subscriber's secret key (128bit)
@@ -66,4 +66,7 @@ CREATE TABLE IF NOT EXISTS auc_3g (
 	ind_bitlen	INTEGER NOT NULL DEFAULT 5	-- nr of index bits at lower SQN end
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_subscr_imsi ON subscriber (imsi);
+CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
+
+-- Set HLR database schema version number
+PRAGMA user_version = 0;

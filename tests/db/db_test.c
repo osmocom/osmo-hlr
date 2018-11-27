@@ -850,7 +850,7 @@ int main(int argc, char **argv)
 	log_set_log_level(osmo_stderr_target, LOGL_ERROR);
 	/* Disable SQLite logging so that we're not vulnerable on SQLite error messages changing across
 	 * library versions. */
-	dbc = db_open(ctx, "db_test.db", false);
+	dbc = db_open(ctx, "db_test.db", false, false);
 	log_set_log_level(osmo_stderr_target, 0);
 	OSMO_ASSERT(dbc);
 
