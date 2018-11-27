@@ -1,0 +1,42 @@
+GET 1 subscriber.by-imsi-901990000000003.info
+GET_REPLY 1 subscriber.by-imsi-901990000000003.info 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+GET 2 subscriber.by-msisdn-103.info-aud
+GET_REPLY 2 subscriber.by-msisdn-103.info-aud 
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	0
+
+GET 3 subscriber.by-id-3.info-all
+GET_REPLY 3 subscriber.by-id-3.info-all 
+id	3
+imsi	901990000000003
+msisdn	103
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+aud2g.algo	COMP128v1
+aud2g.ki	000102030405060708090a0b0c0d0e0f
+aud3g.algo	MILENAGE
+aud3g.k	000102030405060708090a0b0c0d0e0f
+aud3g.opc	101112131415161718191a1b1c1d1e1f
+aud3g.ind_bitlen	5
+aud3g.sqn	0

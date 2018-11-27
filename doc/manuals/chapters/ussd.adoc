@@ -1,0 +1,78 @@
+[[ussd]]
+== Unstructured Supplementary Services Data (USSD)
+
+The _Unstructured Supplementary Services Data (USSD)_ is one service within
+2G/3G networks next to other services such as circuit-switched voice, packet-switched
+data and SMS (Short Message Service).
+
+It is on an abstract level quite similar to SMS in that USSD can be used to send
+textual messages.  However, there are the following differences:
+
+* USSD is between the MS (phone) and an USSD application on the network, while
+  SMS is primarily between two subscribers identified by their MSISDN
+* USSD is faster, as it doesn't suffer from the complicated three-layer CP/RP/TP
+  protocol stack of SMS with it's acknowledgement of the acknowledged acknowledgement.
+* USSD is session-oriented, i.e. a dialogue/session between subscriber and application
+  can persist for the transfer of more than one message.  The dedicated radio channel
+  on the RAN remains established throughout that dialogue.
+
+=== USSD in Osmocom
+
+Until August 2018, OsmoMSC contained some minimalistic internal USSD
+handling with no
+ability to attach/extend it with external USSD applications.
+
+From August 2018 onwards, OsmoMSC doesn't contain any internal USSD
+handlers/applications anymore.  Instead, all USSD is transported to/from
+OsmoHLR via the GSUP protocol.
+
+OsmoHLR contains some intenal USSD handlers and can route USSD messages
+to any number of external USSD entities (EUSEs).  The EUSE also use GSUP
+to communicate USSD from/to OsmoHLR.
+
+Each EUSE is identified by its name.  The name consists of a single-word
+string preceding a currently fixed ("-00-00-00-00-00-00") suffix.
+There is no authentication between EUSE and OsmoHLR: Any client program
+able to connect to the GSUP port of OsmoHLR can register as any EUSE
+(name).
+
+NOTE:: We plan to remove the requirement for this suffix as soon as we
+are done resolving all more important issues.
+
+=== USSD Configuration
+
+USSD configuration in OsmoHLR happens within the `hlr` VTY node.
+
+`euse foobar-00-00-00-00-00-00` defines an EUSE with the given name `foobar`
+
+`ussd route prefix *123 external foobar-00-00-00-00-00-00` installs a
+prefix route to the named EUSE.  All USSD short codes starting with *123 will be
+routed to the named EUSE.
+
+`ussd route prefix *#100# internal own-msisdn` installs a prefix route
+to the named internal USSD handler.  There above command will restore
+the old behavior, in which *#100# will return a text message containing
+the subscribers own phone number.  There is one other handler called
+`own-imsi` which will return the IMSI instead of the MSISDN.
+
+`ussd default-route external foobar-00-00-00-00-00-00` installs a
+default route to the named EUSE.  This means that all USSD codes for
+which no more specific route exists will be routed to the named EUSE.
+
+=== Example EUSE program
+
+We have provided an example EUSE developed in C language using existing
+Osmocom libraries for GSUP protocol handling and USSD encoding/decoding.
+It will register as `foobar` EUSE to OsmoHLR on localhost.  You can run
+it on a different machine by specifying e.g. `osmo-euse-demo 1.2.3.4 5678`
+to make it connect to OsmoHLR on IP address 1.2.3.4 and GSUP/TCP port
+5678.
+
+The idea is that you can use this as a template to develop your own USSD
+applications, or any gateways to other protocols or interfaces.
+
+You can find it in `osmo-hlr/src/osmo-euse-demo.c` or online by
+following the link to http://git.osmocom.org/osmo-hlr/tree/src/osmo-euse-demo.c
+
+This demonstration program will echo back any USSD message sent/routed
+to it, quoted like _You sent "..."_.

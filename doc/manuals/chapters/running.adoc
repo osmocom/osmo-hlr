@@ -1,0 +1,80 @@
+== Running OsmoHLR
+
+The OsmoHLR executable (`osmo-hlr`) offers the following command-line
+arguments:
+
+=== SYNOPSIS
+
+*osmo-hlr* [-h|-V] [-d 'DBGMASK'] [-D] [-c 'CONFIGFILE'] [-s] [-T] [-e 'LOGLEVEL'] [-l 'DATABASE']
+
+=== OPTIONS
+
+*-h, --help*::
+	Print a short help message about the supported options
+*-V, --version*::
+	Print the compile-time version number of the OsmoBTS program
+*-d, --debug 'DBGMASK','DBGLEVELS'*::
+	Set the log subsystems and levels for logging to stderr. This
+	has mostly been superseded by VTY-based logging configuration,
+	see <<logging>> for further information.
+*-D, --daemonize*::
+	Fork the process as a daemon into background.
+*-c, --config-file 'CONFIGFILE'*::
+	Specify the file and path name of the configuration file to be
+	used. If none is specified, use `osmo-hlr.cfg` in the current
+	working directory.
+*-s, --disable-color*::
+	Disable colors for logging to stderr. This has mostly been
+	deprecated by VTY based logging configuration, see <<logging>>
+	for more information.
+*-T, --timestamp*::
+	Enable time-stamping of log messages to stderr. This has mostly
+	been deprecated by VTY based logging configuration, see
+	<<logging>> for more information.
+*-e, --log-level 'LOGLEVEL'*::
+	Set the global log level for logging to stderr. This has mostly
+	been deprecated by VTY based logging configuration, see
+	<<logging>> for more information.
+*-l, --database 'DATABASE'*::
+	Specify the file name of the SQLite3 database to use as HLR/AUC
+	storage
+
+=== Bootstrap the Database
+
+If no database exists yet, OsmoHLR will automatically create and bootstrap a
+database file with empty tables. If no `-l` command-line option is provided,
+this database file will be created in the current working directory.
+
+Alternatively, you may use the `osmo-hlr-db-tool`, which is installed along
+with `osmo-hlr`, to bootstrap an empty database, or to migrate subscriber data
+from an old 'OsmoNITB' database. See `osmo-hlr-db-tool --help`.
+
+=== Multiple instances
+
+Running multiple instances of `osmo-hlr` on the same computer is possible if
+all interfaces (VTY, CTRL) are separated using the appropriate configuration
+options. The IP based interfaces are binding to local host by default. In order
+to separate the processes, the user has to bind those services to specific but
+different IP addresses and/or ports.
+
+The VTY and the Control interface can be bound to IP addresses from the loopback
+address range, for example:
+
+----
+line vty
+ bind 127.0.0.2
+ctrl
+ bind 127.0.0.2
+----
+
+The GSUP interface can be bound to a specific IP address by the following
+configuration options:
+
+----
+hlr
+ gsup
+  bind ip 10.23.42.1
+----
+
+NOTE: At the time of writing, OsmoHLR lacks a config option to change the GSUP
+port, which is by default TCP port 4222.
