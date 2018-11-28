@@ -360,6 +360,42 @@ int osmo_gsup_client_send(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	return 0;
 }
 
+/*! Encode and send a GSUP message.
+ * \param[in] gsupc    GSUP client.
+ * \param[in] gsup_msg GSUP message to be sent.
+ * \returns 0 in case of success, negative on error.
+ */
+int osmo_gsup_client_enc_send(struct osmo_gsup_client *gsupc,
+			      const struct osmo_gsup_message *gsup_msg)
+{
+	struct msgb *gsup_msgb;
+	int rc;
+
+	gsup_msgb = osmo_gsup_client_msgb_alloc();
+	if (!gsup_msgb) {
+		LOGP(DLGSUP, LOGL_ERROR, "Couldn't allocate GSUP message\n");
+		return -ENOMEM;
+	}
+
+	rc = osmo_gsup_encode(gsup_msgb, gsup_msg);
+	if (rc) {
+		LOGP(DLGSUP, LOGL_ERROR, "Couldn't encode GSUP message\n");
+		goto error;
+	}
+
+	rc = osmo_gsup_client_send(gsupc, gsup_msgb);
+	if (rc) {
+		LOGP(DLGSUP, LOGL_ERROR, "Couldn't send GSUP message\n");
+		goto error;
+	}
+
+	return 0;
+
+error:
+	talloc_free(gsup_msgb);
+	return rc;
+}
+
 struct msgb *osmo_gsup_client_msgb_alloc(void)
 {
 	return msgb_alloc_headroom(4000, 64, __func__);
