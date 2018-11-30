@@ -455,6 +455,8 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		} else {
 			/* Handle internally */
 			ss->u.iuse->handle_ussd(conn, ss, gsup, req);
+			/* Release session immediately */
+			ss_session_free(ss);
 		}
 	}
 
