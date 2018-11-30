@@ -208,10 +208,9 @@ struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t 
 
 	OSMO_STRLCPY_ARRAY(ss->imsi, imsi);
 	ss->session_id = session_id;
+
+	/* Schedule self-destruction timer */
 	osmo_timer_setup(&ss->timeout, ss_session_timeout, ss);
-	/* NOTE: The timeout is currently not refreshed with subsequent messages
-	 * within the SS/USSD session. So X seconds after the initial SS message,
-	 * the session will timeout! */
 	if (g_hlr->ncss_guard_timeout > 0)
 		osmo_timer_schedule(&ss->timeout, g_hlr->ncss_guard_timeout, 0);
 
@@ -538,6 +537,11 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
+
+		/* Reschedule self-destruction timer */
+		if (g_hlr->ncss_guard_timeout > 0)
+			osmo_timer_schedule(&ss->timeout, g_hlr->ncss_guard_timeout, 0);
+
 		if (ss_op_is_ussd(req.opcode)) {
 			/* dispatch unstructured SS to routing */
 			handle_ussd(conn, ss, gsup, &req);
