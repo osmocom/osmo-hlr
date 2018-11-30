@@ -7,6 +7,8 @@
 
 #include "gsup_server.h"
 
+#define NCSS_GUARD_TIMEOUT_DEFAULT 30
+
 struct hlr_ussd_route {
 	/* g_hlr.routes */
 	struct llist_head list;

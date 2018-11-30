@@ -209,10 +209,11 @@ struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t 
 	OSMO_STRLCPY_ARRAY(ss->imsi, imsi);
 	ss->session_id = session_id;
 	osmo_timer_setup(&ss->timeout, ss_session_timeout, ss);
-	/* NOTE: The timeout is currently global and not refreshed with subsequent messages
-	 * within the SS/USSD session.  So 30s after the initial SS message, the session will
-	 * timeout! */
-	osmo_timer_schedule(&ss->timeout, 30, 0);
+	/* NOTE: The timeout is currently not refreshed with subsequent messages
+	 * within the SS/USSD session. So X seconds after the initial SS message,
+	 * the session will timeout! */
+	if (g_hlr->ncss_guard_timeout > 0)
+		osmo_timer_schedule(&ss->timeout, g_hlr->ncss_guard_timeout, 0);
 
 	llist_add_tail(&ss->list, &hlr->ss_sessions);
 	return ss;

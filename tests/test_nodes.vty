@@ -78,6 +78,7 @@ OsmoHLR(config-hlr)# list
   no ussd route prefix PREFIX
   ussd default-route external EUSE
   no ussd default-route
+  ncss-guard-timeout <0-255>
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# list

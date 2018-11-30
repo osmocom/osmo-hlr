@@ -35,6 +35,7 @@
 #include "hlr.h"
 #include "hlr_vty.h"
 #include "hlr_vty_subscr.h"
+#include "hlr_ussd.h"
 #include "gsup_server.h"
 
 struct cmd_node hlr_node = {
@@ -288,7 +289,20 @@ static int config_write_euse(struct vty *vty)
 	if (g_hlr->euse_default)
 		vty_out(vty, " ussd default-route external %s%s", g_hlr->euse_default->name, VTY_NEWLINE);
 
+	if (g_hlr->ncss_guard_timeout != NCSS_GUARD_TIMEOUT_DEFAULT)
+		vty_out(vty, " ncss-guard-timeout %i%s",
+			g_hlr->ncss_guard_timeout, VTY_NEWLINE);
+
 	return 0;
+}
+
+DEFUN(cfg_ncss_guard_timeout, cfg_ncss_guard_timeout_cmd,
+	"ncss-guard-timeout <0-255>",
+	"Set guard timer for NCSS (call independent SS) session activity\n"
+	"Guard timer value (sec.), or 0 to disable")
+{
+	g_hlr->ncss_guard_timeout = atoi(argv[0]);
+	return CMD_SUCCESS;
 }
 
 /***********************************************************************
@@ -353,6 +367,7 @@ void hlr_vty_init(const struct log_info *cat)
 	install_element(HLR_NODE, &cfg_ussd_no_route_pfx_cmd);
 	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
+	install_element(HLR_NODE, &cfg_ncss_guard_timeout_cmd);
 
 	hlr_vty_subscriber_init();
 }

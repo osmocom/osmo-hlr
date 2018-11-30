@@ -611,6 +611,9 @@ int main(int argc, char **argv)
 	INIT_LLIST_HEAD(&g_hlr->ss_sessions);
 	INIT_LLIST_HEAD(&g_hlr->ussd_routes);
 
+	/* Init default (call independent) SS session guard timeout value */
+	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
+
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {
 		fprintf(stderr, "Error initializing logging\n");

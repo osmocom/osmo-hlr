@@ -45,6 +45,9 @@ struct hlr {
 	struct hlr_euse *euse_default;
 	struct llist_head iuse_list;
 
+	/* NCSS (call independent) session guard timeout value */
+	int ncss_guard_timeout;
+
 	struct llist_head ussd_routes;
 
 	struct llist_head ss_sessions;
