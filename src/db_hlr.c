@@ -135,7 +135,7 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 
 /*! Set a subscriber's MSISDN in the HLR database.
  * \param[in,out] dbc  database context.
- * \param[in] imsi  ASCII string of IMSI digits.
+ * \param[in] imsi  ASCII string of IMSI digits, or NULL to remove the MSISDN.
  * \param[in] msisdn  ASCII string of MSISDN digits.
  * \returns 0 on success, -EINVAL in case of invalid MSISDN string, -EIO on
  *          database failure, -ENOENT if no such subscriber exists.
@@ -146,19 +146,22 @@ int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 	int rc;
 	int ret = 0;
 
-	if (!osmo_msisdn_str_valid(msisdn)) {
+	if (msisdn && !osmo_msisdn_str_valid(msisdn)) {
 		LOGHLR(imsi, LOGL_ERROR,
 		       "Cannot update subscriber: invalid MSISDN: '%s'\n",
 		       msisdn);
 		return -EINVAL;
 	}
 
-	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SET_MSISDN_BY_IMSI];
+	sqlite3_stmt *stmt = dbc->stmt[
+		msisdn ? DB_STMT_SET_MSISDN_BY_IMSI : DB_STMT_DELETE_MSISDN_BY_IMSI];
 
 	if (!db_bind_text(stmt, "$imsi", imsi))
 		return -EIO;
-	if (!db_bind_text(stmt, "$msisdn", msisdn))
-		return -EIO;
+	if (msisdn) {
+		if (!db_bind_text(stmt, "$msisdn", msisdn))
+			return -EIO;
+	}
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);

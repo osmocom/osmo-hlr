@@ -142,6 +142,7 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 
 #define SUBSCR_UPDATE		SUBSCR "update "
 #define SUBSCR_UPDATE_HELP	SUBSCR_HELP "Set or update subscriber data\n"
+#define SUBSCR_MSISDN_HELP	"Set MSISDN (phone number) of the subscriber\n"
 
 DEFUN(subscriber_show,
       subscriber_show_cmd,
@@ -228,9 +229,9 @@ DEFUN(subscriber_delete,
 
 DEFUN(subscriber_msisdn,
       subscriber_msisdn_cmd,
-      SUBSCR_UPDATE "msisdn MSISDN",
-      SUBSCR_UPDATE_HELP
-      "Set MSISDN (phone number) of the subscriber\n"
+      SUBSCR_UPDATE "msisdn (none|MSISDN)",
+      SUBSCR_UPDATE_HELP SUBSCR_MSISDN_HELP
+      "Remove MSISDN (phone number)\n"
       "New MSISDN (phone number)\n")
 {
 	struct hlr_subscriber subscr;
@@ -238,15 +239,19 @@ DEFUN(subscriber_msisdn,
 	const char *id = argv[1];
 	const char *msisdn = argv[2];
 
-	if (strlen(msisdn) > sizeof(subscr.msisdn) - 1) {
-		vty_out(vty, "%% MSISDN is too long, max. %zu characters are allowed%s",
-			sizeof(subscr.msisdn)-1, VTY_NEWLINE);
-		return CMD_WARNING;
-	}
+	if (strcmp(msisdn, "none") == 0)
+		msisdn = NULL;
+	else {
+		if (strlen(msisdn) > sizeof(subscr.msisdn) - 1) {
+			vty_out(vty, "%% MSISDN is too long, max. %zu characters are allowed%s",
+				sizeof(subscr.msisdn)-1, VTY_NEWLINE);
+			return CMD_WARNING;
+		}
 
-	if (!osmo_msisdn_str_valid(msisdn)) {
-		vty_out(vty, "%% MSISDN invalid: '%s'%s", msisdn, VTY_NEWLINE);
-		return CMD_WARNING;
+		if (!osmo_msisdn_str_valid(msisdn)) {
+			vty_out(vty, "%% MSISDN invalid: '%s'%s", msisdn, VTY_NEWLINE);
+			return CMD_WARNING;
+		}
 	}
 
 	if (get_subscr_by_argv(vty, id_type, id, &subscr))
@@ -258,11 +263,18 @@ DEFUN(subscriber_msisdn,
 		return CMD_WARNING;
 	}
 
-	vty_out(vty, "%% Updated subscriber IMSI='%s' to MSISDN='%s'%s",
-		subscr.imsi, msisdn, VTY_NEWLINE);
+	if (msisdn) {
+		vty_out(vty, "%% Updated subscriber IMSI='%s' to MSISDN='%s'%s",
+			subscr.imsi, msisdn, VTY_NEWLINE);
 
-	if (db_subscr_get_by_msisdn(g_hlr->dbc, msisdn, &subscr) == 0)
+		if (db_subscr_get_by_msisdn(g_hlr->dbc, msisdn, &subscr) == 0)
+			osmo_hlr_subscriber_update_notify(&subscr);
+	} else {
+		vty_out(vty, "%% Updated subscriber IMSI='%s': removed MSISDN%s",
+			subscr.imsi, VTY_NEWLINE);
+
 		osmo_hlr_subscriber_update_notify(&subscr);
+	}
 
 	return CMD_SUCCESS;
 }

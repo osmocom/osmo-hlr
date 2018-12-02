@@ -6,7 +6,7 @@ OsmoHLR# list
   show subscriber (imsi|msisdn|id) IDENT
   subscriber imsi IDENT create
   subscriber (imsi|msisdn|id) IDENT delete
-  subscriber (imsi|msisdn|id) IDENT update msisdn MSISDN
+  subscriber (imsi|msisdn|id) IDENT update msisdn (none|MSISDN)
   subscriber (imsi|msisdn|id) IDENT update aud2g none
   subscriber (imsi|msisdn|id) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
   subscriber (imsi|msisdn|id) IDENT update aud3g none
@@ -86,6 +86,21 @@ OsmoHLR# subscriber msisdn 12345 update msisdn 423
 OsmoHLR# subscriber msisdn 12345 show
 % No subscriber for msisdn = '12345'
 
+OsmoHLR# subscriber msisdn 423 update msisdn none
+% Updated subscriber IMSI='123456789023000': removed MSISDN
+OsmoHLR# subscriber msisdn 423 show
+% No subscriber for msisdn = '423'
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: none
+OsmoHLR# subscriber imsi 123456789023000 update msisdn 423
+% Updated subscriber IMSI='123456789023000' to MSISDN='423'
+OsmoHLR# subscriber msisdn 423 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 423
+
 OsmoHLR# subscriber imsi 123456789023000 show
     ID: 1
     IMSI: 123456789023000
@@ -103,6 +118,10 @@ OsmoHLR# subscriber imsi 123456789023000 update ?
   msisdn  Set MSISDN (phone number) of the subscriber
   aud2g   Set 2G authentication data
   aud3g   Set UMTS authentication data (3G, and 2G with UMTS AKA)
+
+OsmoHLR# subscriber imsi 123456789023000 update msisdn ?
+  none    Remove MSISDN (phone number)
+  MSISDN  New MSISDN (phone number)
 
 OsmoHLR# subscriber imsi 123456789023000 update aud2g ?
   none       Delete 2G authentication data

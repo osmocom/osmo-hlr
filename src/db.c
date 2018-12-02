@@ -62,6 +62,7 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SUBSCR_CREATE] = "INSERT INTO subscriber (imsi) VALUES ($imsi)",
 	[DB_STMT_DEL_BY_ID] = "DELETE FROM subscriber WHERE id = $subscriber_id",
 	[DB_STMT_SET_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = $msisdn WHERE imsi = $imsi",
+	[DB_STMT_DELETE_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = NULL WHERE imsi = $imsi",
 	[DB_STMT_AUC_2G_INSERT] =
 		"INSERT INTO auc_2g (subscriber_id, algo_id_2g, ki)"
 		" VALUES($subscriber_id, $algo_id_2g, $ki)",
