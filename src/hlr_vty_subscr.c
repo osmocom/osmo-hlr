@@ -130,14 +130,14 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 #define SUBSCR_CMD "subscriber "
 #define SUBSCR_CMD_HELP "Subscriber management commands\n"
 
-#define SUBSCR_ID "(imsi|msisdn|id) IDENT "
+#define SUBSCR_ID "(imsi|msisdn|id) IDENT"
 #define SUBSCR_ID_HELP \
 	"Identify subscriber by IMSI\n" \
 	"Identify subscriber by MSISDN (phone number)\n" \
 	"Identify subscriber by database ID\n" \
 	"IMSI/MSISDN/ID of the subscriber\n"
 
-#define SUBSCR 		SUBSCR_CMD SUBSCR_ID
+#define SUBSCR 		SUBSCR_CMD SUBSCR_ID " "
 #define SUBSCR_HELP	SUBSCR_CMD_HELP SUBSCR_ID_HELP
 
 #define SUBSCR_UPDATE		SUBSCR "update "
@@ -158,6 +158,10 @@ DEFUN(subscriber_show,
 	subscr_dump_full_vty(vty, &subscr);
 	return CMD_SUCCESS;
 }
+
+ALIAS(subscriber_show, show_subscriber_cmd,
+      "show " SUBSCR_CMD SUBSCR_ID,
+      SHOW_STR SUBSCR_CMD_HELP SUBSCR_ID_HELP);
 
 DEFUN(subscriber_create,
       subscriber_create_cmd,
@@ -478,6 +482,7 @@ DEFUN(subscriber_aud3g,
 void hlr_vty_subscriber_init(void)
 {
 	install_element_ve(&subscriber_show_cmd);
+	install_element_ve(&show_subscriber_cmd);
 	install_element(ENABLE_NODE, &subscriber_create_cmd);
 	install_element(ENABLE_NODE, &subscriber_delete_cmd);
 	install_element(ENABLE_NODE, &subscriber_msisdn_cmd);

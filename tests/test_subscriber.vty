@@ -3,6 +3,7 @@ OsmoHLR> enable
 OsmoHLR# list
 ...
   subscriber (imsi|msisdn|id) IDENT show
+  show subscriber (imsi|msisdn|id) IDENT
   subscriber imsi IDENT create
   subscriber (imsi|msisdn|id) IDENT delete
   subscriber (imsi|msisdn|id) IDENT update msisdn MSISDN
@@ -31,6 +32,13 @@ OsmoHLR# subscriber imsi 123456789023000 show
 OsmoHLR# subscriber id 1 show
 % No subscriber for id = '1'
 OsmoHLR# subscriber msisdn 12345 show
+% No subscriber for msisdn = '12345'
+
+OsmoHLR# show subscriber imsi 123456789023000
+% No subscriber for imsi = '123456789023000'
+OsmoHLR# show subscriber id 1
+% No subscriber for id = '1'
+OsmoHLR# show subscriber msisdn 12345
 % No subscriber for msisdn = '12345'
 
 OsmoHLR# subscriber imsi 1234567890230001 create

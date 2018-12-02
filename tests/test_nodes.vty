@@ -18,6 +18,7 @@ OsmoHLR> list
   show talloc-context (application|all) (full|brief|DEPTH) filter REGEXP
   show gsup-connections
   subscriber (imsi|msisdn|id) IDENT show
+  show subscriber (imsi|msisdn|id) IDENT
 
 OsmoHLR> enable
 OsmoHLR# list
