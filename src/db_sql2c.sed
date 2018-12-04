@@ -1,4 +1,4 @@
-# Input to this is sql/hlr.sql.
+# Input to this are sql/*.sql files.
 #
 # We want each SQL statement line wrapped in "...\n", and each end (";") to
 # become a comma:
