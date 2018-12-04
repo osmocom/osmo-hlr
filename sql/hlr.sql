@@ -36,7 +36,11 @@ CREATE TABLE subscriber (
 	-- Chapter 2.7.5
 	ms_purged_cs	BOOLEAN NOT NULL DEFAULT 0,
 	-- Chapter 2.7.6
-	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0
+	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0,
+
+	-- Timestamp of last location update seen from subscriber
+	-- The value is a string which encodes a UTC timestamp in granularity of seconds.
+	last_lu_seen TIMESTAMP default NULL
 );
 
 CREATE TABLE subscriber_apn (
@@ -69,4 +73,5 @@ CREATE TABLE auc_3g (
 CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
-PRAGMA user_version = 0;
+-- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
+PRAGMA user_version = 1;

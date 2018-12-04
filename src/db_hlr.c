@@ -20,6 +20,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <time.h>
 
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
@@ -577,6 +578,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 {
 	sqlite3_stmt *stmt;
 	int rc, ret = 0;
+	struct timespec localtime;
 
 	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_SGSN_BY_ID
 			       : DB_STMT_UPD_VLR_BY_ID];
@@ -603,13 +605,54 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		     ": no such subscriber\n",
 		     is_ps? "SGSN" : "VLR", subscr_id);
 		ret = -ENOENT;
+		goto out;
 	} else if (rc != 1) {
 		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%"PRId64
 		       ": SQL modified %d rows (expected 1)\n",
 		       is_ps? "SGSN" : "VLR", subscr_id, rc);
 		ret = -EIO;
+		goto out;
 	}
 
+	db_remove_reset(stmt);
+
+	if (osmo_clock_gettime(CLOCK_REALTIME, &localtime) != 0) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot get the current time: (%d) %s\n", errno, strerror(errno));
+		ret = -errno;
+		goto out;
+	}
+
+	stmt = dbc->stmt[DB_STMT_SET_LAST_LU_SEEN];
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
+	/* The timestamp will be converted to UTC by SQLite. */
+	if (!db_bind_int64(stmt, "$val", (int64_t)localtime.tv_sec)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR,
+		       "Cannot update LU timestamp for subscriber ID=%"PRId64": SQL error: (%d) %s\n",
+		       subscr_id, rc, sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update LU timestamp for subscriber ID=%"PRId64
+		     ": no such subscriber\n", subscr_id);
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Update LU timestamp for subscriber ID=%"PRId64
+		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
+		ret = -EIO;
+	}
 out:
 	db_remove_reset(stmt);
 	return ret;

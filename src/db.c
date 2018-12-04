@@ -27,7 +27,8 @@
 #include "db.h"
 #include "db_bootstrap.h"
 
-#define CURRENT_SCHEMA_VERSION	0
+/* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
+#define CURRENT_SCHEMA_VERSION	1
 
 #define SEL_COLUMNS \
 	"id," \
@@ -42,7 +43,8 @@
 	"nam_ps," \
 	"lmsi," \
 	"ms_purged_cs," \
-	"ms_purged_ps"
+	"ms_purged_ps," \
+	"last_lu_seen"
 
 static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
@@ -73,6 +75,7 @@ static const char *stmt_sql[] = {
 		"INSERT INTO auc_3g (subscriber_id, algo_id_3g, k, op, opc, ind_bitlen)"
 		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
 	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
+	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -252,6 +255,41 @@ static bool db_is_bootstrapped_v0(struct db_context *dbc)
 	return true;
 }
 
+static int
+db_upgrade_v1(struct db_context *dbc)
+{
+	sqlite3_stmt *stmt;
+	int rc;
+	const char *update_stmt_sql = "ALTER TABLE subscriber ADD COLUMN last_lu_seen TIMESTAMP default NULL";
+	const char *set_schema_version_sql = "PRAGMA user_version = 1";
+
+	rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", update_stmt_sql);
+		return rc;
+	}
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	sqlite3_finalize(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
+		return rc;
+	}
+
+	rc = sqlite3_prepare_v2(dbc->db, set_schema_version_sql, -1, &stmt, NULL);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", set_schema_version_sql);
+		return rc;
+	}
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE)
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
+
+	db_remove_reset(stmt);
+	sqlite3_finalize(stmt);
+	return rc;
+}
+
 static int db_get_user_version(struct db_context *dbc)
 {
 	const char *user_version_sql = "PRAGMA user_version";
@@ -346,12 +384,28 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 			     rc, sqlite3_errmsg(dbc->db));
 			goto out_free;
 		}
+		version = CURRENT_SCHEMA_VERSION;
 	}
 
 	LOGP(DDB, LOGL_NOTICE, "Database '%s' has HLR DB schema version %d\n", dbc->fname, version);
 
 	if (version < CURRENT_SCHEMA_VERSION && allow_upgrade) {
-		/* Future version upgrades will happen here. */
+		switch (version) {
+		case 0:
+			rc = db_upgrade_v1(dbc);
+			if (rc != SQLITE_DONE) {
+				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 1: (rc=%d) %s\n",
+				     rc, sqlite3_errmsg(dbc->db));
+				goto out_free;
+			}
+			version = 1;
+			/* fall through */
+		/* case N: ... */
+		default:
+			break;
+		}
+		LOGP(DDB, LOGL_NOTICE, "Database '%s' has been upgraded to HLR DB schema version %d\n",
+		     dbc->fname, version);
 	}
 
 	if (version != CURRENT_SCHEMA_VERSION) {
