@@ -23,6 +23,7 @@
 
 #include <osmocom/core/timer.h>
 #include <osmocom/gsm/oap_client.h>
+#include <osmocom/gsm/ipa.h>
 
 /* a loss of GSUP between MSC and HLR is considered quite serious, let's try to recover as quickly as
  * possible.  Even one new connection attempt per second should be quite acceptable until the link is
@@ -38,7 +39,7 @@ struct osmo_gsup_client;
 typedef int (*osmo_gsup_client_read_cb_t)(struct osmo_gsup_client *gsupc, struct msgb *msg);
 
 struct osmo_gsup_client {
-	const char *unit_name;
+	const char *unit_name; /* same as ipa_dev->unit_name, for backwards compat */
 
 	struct ipa_client_conn *link;
 	osmo_gsup_client_read_cb_t read_cb;
@@ -50,8 +51,16 @@ struct osmo_gsup_client {
 	struct osmo_timer_list connect_timer;
 	int is_connected;
 	int got_ipa_pong;
+
+	struct ipaccess_unit *ipa_dev; /* identification information sent to IPA server */
 };
 
+struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
+						  struct ipaccess_unit *ipa_dev,
+						  const char *ip_addr,
+						  unsigned int tcp_port,
+						  osmo_gsup_client_read_cb_t read_cb,
+						  struct osmo_oap_client_config *oapc_config);
 struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
 						 const char *unit_name,
 						 const char *ip_addr,

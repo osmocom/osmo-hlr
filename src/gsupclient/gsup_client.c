@@ -170,16 +170,12 @@ static int gsup_client_read_cb(struct ipa_client_conn *link, struct msgb *msg)
 	struct ipaccess_head_ext *he = (struct ipaccess_head_ext *) msgb_l2(msg);
 	struct osmo_gsup_client *gsupc = (struct osmo_gsup_client *)link->data;
 	int rc;
-	struct ipaccess_unit ipa_dev = {
-		/* see gsup_client_create() on const vs non-const */
-		.unit_name = (char*)gsupc->unit_name,
-	};
 
-	OSMO_ASSERT(ipa_dev.unit_name);
+	OSMO_ASSERT(gsupc->unit_name);
 
 	msg->l2h = &hh->data[0];
 
-	rc = ipaccess_bts_handle_ccm(link, &ipa_dev, msg);
+	rc = ipaccess_bts_handle_ccm(link, gsupc->ipa_dev, msg);
 
 	if (rc < 0) {
 		LOGP(DLGSUP, LOGL_NOTICE,
@@ -262,24 +258,33 @@ static void start_test_procedure(struct osmo_gsup_client *gsupc)
 	gsup_client_send_ping(gsupc);
 }
 
-struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
-						 const char *unit_name,
-						 const char *ip_addr,
-						 unsigned int tcp_port,
-						 osmo_gsup_client_read_cb_t read_cb,
-						 struct osmo_oap_client_config *oapc_config)
+/*!
+ * Create a gsup client connecting to the specified IP address and TCP port.
+ * Use the provided ipaccess unit as the client-side identifier; ipa_dev should
+ * be allocated in talloc_ctx talloc_ctx as well.
+ * \param[in] talloc_ctx talloc context.
+ * \param[in] ipa_dev IP access unit which contains client identification information; must be allocated
+ *                    in talloc_ctx as well to ensure it lives throughout the lifetime of the connection.
+ * \param[in] ip_addr GSUP server IP address.
+ * \param[in] tcp_port GSUP server TCP port.
+ * \param[in] read_cb callback for reading from the GSUP connection.
+ * \param[in] oapc_config OPA client configuration.
+ *  \returns a GSUP client connection or NULL on failure.
+ */
+struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
+						  struct ipaccess_unit *ipa_dev,
+						  const char *ip_addr,
+						  unsigned int tcp_port,
+						  osmo_gsup_client_read_cb_t read_cb,
+						  struct osmo_oap_client_config *oapc_config)
 {
 	struct osmo_gsup_client *gsupc;
 	int rc;
 
 	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
 	OSMO_ASSERT(gsupc);
-
-	/* struct ipaccess_unit has a non-const unit_name, so let's copy to be
-	 * able to have a non-const unit_name here as well. To not taint the
-	 * public gsup_client API, let's store it in a const char* anyway. */
-	gsupc->unit_name = talloc_strdup(gsupc, unit_name);
-	OSMO_ASSERT(gsupc->unit_name);
+	gsupc->unit_name = (const char *)ipa_dev->unit_name; /* API backwards compat */
+	gsupc->ipa_dev = ipa_dev;
 
 	/* a NULL oapc_config will mark oap_state disabled. */
 	rc = osmo_oap_client_init(oapc_config, &gsupc->oap_state);
@@ -311,6 +316,22 @@ struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
 failed:
 	osmo_gsup_client_destroy(gsupc);
 	return NULL;
+}
+
+/**
+ * Like osmo_gsup_client_create2() except it expects a unit name instead
+ * of a full-blown ipacess_unit as the client-side identifier.
+ */
+struct osmo_gsup_client *osmo_gsup_client_create(void *talloc_ctx,
+						 const char *unit_name,
+						 const char *ip_addr,
+						 unsigned int tcp_port,
+						 osmo_gsup_client_read_cb_t read_cb,
+						 struct osmo_oap_client_config *oapc_config)
+{
+	struct ipaccess_unit *ipa_dev = talloc_zero(talloc_ctx, struct ipaccess_unit);
+	ipa_dev->unit_name = talloc_strdup(ipa_dev, unit_name);
+	return osmo_gsup_client_create2(talloc_ctx, ipa_dev, ip_addr, tcp_port, read_cb, oapc_config);
 }
 
 void osmo_gsup_client_destroy(struct osmo_gsup_client *gsupc)
