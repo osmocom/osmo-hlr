@@ -84,7 +84,13 @@ struct hlr_subscriber {
 	uint32_t	lmsi;
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
+	time_t		last_lu_seen;
 };
+
+/* A format string for use with strptime(3). This format string is
+ * used to parse the last_lu_seen column stored in the HLR database.
+ * See https://sqlite.org/lang_datefunc.html, function datetime(). */
+#define DB_LAST_LU_SEEN_FMT "%Y-%m-%d %H:%M:%S"
 
 /* Like struct osmo_sub_auth_data, but the keys are in hexdump representation.
  * This is useful because SQLite requires them in hexdump format, and callers

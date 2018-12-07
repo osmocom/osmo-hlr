@@ -20,6 +20,8 @@
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <time.h>
 
 #include <osmocom/gsm/gsm23003.h>
 #include <osmocom/vty/vty.h>
@@ -33,11 +35,24 @@ struct vty;
 
 #define hexdump_buf(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 
+static char *
+get_datestr(const time_t *t, char *datebuf)
+{
+	char *p, *s = ctime_r(t, datebuf);
+
+	/* Strip trailing newline. */
+	p = strchr(s, '\n');
+	if (p)
+		*p = '\0';
+	return s;
+}
+
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
 	struct osmo_sub_auth_data aud2g;
 	struct osmo_sub_auth_data aud3g;
+	char datebuf[26]; /* for ctime_r(3) */
 
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
@@ -63,6 +78,8 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS disabled%s", VTY_NEWLINE);
 	if (subscr->ms_purged_ps)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
+	if (subscr->last_lu_seen)
+		vty_out(vty, "    last LU seen: %s UTC%s", get_datestr(&subscr->last_lu_seen, datebuf), VTY_NEWLINE);
 
 	if (!*subscr->imsi)
 		return;

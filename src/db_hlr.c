@@ -17,6 +17,11 @@
  *
  */
 
+#define _POSIX_C_SOURCE 200809L /* for strptime(3) */
+/* These are needed as well due to the above _POSIX_C_SOURCE definition: */
+#define _DEFAULT_SOURCE		/* for struct timezone */
+#define _XOPEN_SOURCE		/* for clockid_t */
+
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -387,6 +392,8 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 {
 	int rc;
 	int ret = 0;
+	const char *last_lu_seen_str;
+	struct tm tm;
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
@@ -419,6 +426,20 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	subscr->lmsi = sqlite3_column_int(stmt, 10);
 	subscr->ms_purged_cs = sqlite3_column_int(stmt, 11);
 	subscr->ms_purged_ps = sqlite3_column_int(stmt, 12);
+	last_lu_seen_str = (const char *)sqlite3_column_text(stmt, 13);
+	if (last_lu_seen_str && last_lu_seen_str[0] != '\0') {
+		if (strptime(last_lu_seen_str, DB_LAST_LU_SEEN_FMT, &tm) == NULL) {
+			LOGP(DAUC, LOGL_ERROR, "Cannot parse last LU timestamp '%s' of subscriber with IMSI='%s': %s\n",
+			     last_lu_seen_str, subscr->imsi, strerror(errno));
+		} else {
+			subscr->last_lu_seen = mktime(&tm);
+			if (subscr->last_lu_seen == -1) {
+				LOGP(DAUC, LOGL_ERROR, "Cannot convert LU timestamp '%s' to time_t: %s\n",
+				     last_lu_seen_str, strerror(errno));
+				subscr->last_lu_seen = 0;
+			}
+		}
+	}
 
 out:
 	db_remove_reset(stmt);
