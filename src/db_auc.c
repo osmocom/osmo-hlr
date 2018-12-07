@@ -49,7 +49,7 @@ int db_update_sqn(struct db_context *dbc, int64_t subscr_id, uint64_t new_sqn)
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%" PRId64
 		     ": SQL error: (%d) %s\n",
 		     subscr_id, rc, sqlite3_errmsg(dbc->db));
 		ret = -EIO;
@@ -59,11 +59,11 @@ int db_update_sqn(struct db_context *dbc, int64_t subscr_id, uint64_t new_sqn)
 	/* verify execution result */
 	rc = sqlite3_changes(dbc->db);
 	if (!rc) {
-		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Cannot update SQN for subscriber ID=%" PRId64
 		     ": no auc_3g entry for such subscriber\n", subscr_id);
 		ret = -ENOENT;
 	} else if (rc != 1) {
-		LOGP(DAUC, LOGL_ERROR, "Update SQN for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Update SQN for subscriber ID=%" PRId64
 		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
 		ret = -EIO;
 	}

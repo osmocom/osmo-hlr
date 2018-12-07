@@ -93,7 +93,7 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
 		LOGP(DAUC, LOGL_ERROR,
-		       "Cannot delete subscriber ID=%"PRId64": SQL error: (%d) %s\n",
+		       "Cannot delete subscriber ID=%" PRId64 ": SQL error: (%d) %s\n",
 		       subscr_id, rc, sqlite3_errmsg(dbc->db));
 		db_remove_reset(stmt);
 		return -EIO;
@@ -102,11 +102,11 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 	/* verify execution result */
 	rc = sqlite3_changes(dbc->db);
 	if (!rc) {
-		LOGP(DAUC, LOGL_ERROR, "Cannot delete: no such subscriber: ID=%"PRId64"\n",
+		LOGP(DAUC, LOGL_ERROR, "Cannot delete: no such subscriber: ID=%" PRId64 "\n",
 		     subscr_id);
 		ret = -ENOENT;
 	} else if (rc != 1) {
-		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%" PRId64
 		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
 		ret = -EIO;
 	}
@@ -316,7 +316,7 @@ int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 		 * empty, and no entry is not an error then.*/
 		ret = -ENOENT;
 	else if (rc != 1) {
-		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Delete subscriber ID=%" PRId64
 		     " from %s: SQL modified %d rows (expected 1)\n",
 		     subscr_id, label, rc);
 		ret = -EIO;
@@ -504,7 +504,7 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 
 	rc = db_sel(dbc, stmt, subscr, &err);
 	if (rc)
-		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: ID=%"PRId64": %s\n",
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: ID=%" PRId64 ": %s\n",
 		     id, err);
 	return rc;
 }
@@ -592,7 +592,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%"PRId64": SQL Error: %s\n",
+		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%" PRId64 ": SQL Error: %s\n",
 		     is_ps? "SGSN" : "VLR", subscr_id, sqlite3_errmsg(dbc->db));
 		ret = -EIO;
 		goto out;
@@ -601,13 +601,13 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	/* verify execution result */
 	rc = sqlite3_changes(dbc->db);
 	if (!rc) {
-		LOGP(DAUC, LOGL_ERROR, "Cannot update %s number for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Cannot update %s number for subscriber ID=%" PRId64
 		     ": no such subscriber\n",
 		     is_ps? "SGSN" : "VLR", subscr_id);
 		ret = -ENOENT;
 		goto out;
 	} else if (rc != 1) {
-		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Update %s number for subscriber ID=%" PRId64
 		       ": SQL modified %d rows (expected 1)\n",
 		       is_ps? "SGSN" : "VLR", subscr_id, rc);
 		ret = -EIO;
@@ -635,7 +635,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE) {
 		LOGP(DAUC, LOGL_ERROR,
-		       "Cannot update LU timestamp for subscriber ID=%"PRId64": SQL error: (%d) %s\n",
+		       "Cannot update LU timestamp for subscriber ID=%" PRId64 ": SQL error: (%d) %s\n",
 		       subscr_id, rc, sqlite3_errmsg(dbc->db));
 		ret = -EIO;
 		goto out;
@@ -644,12 +644,12 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	/* verify execution result */
 	rc = sqlite3_changes(dbc->db);
 	if (!rc) {
-		LOGP(DAUC, LOGL_ERROR, "Cannot update LU timestamp for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Cannot update LU timestamp for subscriber ID=%" PRId64
 		     ": no such subscriber\n", subscr_id);
 		ret = -ENOENT;
 		goto out;
 	} else if (rc != 1) {
-		LOGP(DAUC, LOGL_ERROR, "Update LU timestamp for subscriber ID=%"PRId64
+		LOGP(DAUC, LOGL_ERROR, "Update LU timestamp for subscriber ID=%" PRId64
 		     ": SQL modified %d rows (expected 1)\n", subscr_id, rc);
 		ret = -EIO;
 	}

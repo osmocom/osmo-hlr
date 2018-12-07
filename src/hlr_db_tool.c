@@ -300,7 +300,7 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 
 	imsi = sqlite3_column_int64(stmt, 0);
 
-	snprintf(imsi_str, sizeof(imsi_str), "%"PRId64, imsi);
+	snprintf(imsi_str, sizeof(imsi_str), "%" PRId64, imsi);
 
 	rc = db_subscr_create(dbc, imsi_str);
 	if (rc < 0) {

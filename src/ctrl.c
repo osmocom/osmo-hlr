@@ -132,7 +132,7 @@ static void print_subscr_info(struct ctrl_cmd *cmd,
 			      struct hlr_subscriber *subscr)
 {
 	ctrl_cmd_reply_printf(cmd,
-		"\nid\t%"PRIu64
+		"\nid\t%" PRIu64
 		FMT_S
 		FMT_S
 		FMT_BOOL
@@ -189,7 +189,7 @@ static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_d
 	ctrl_cmd_reply_printf(cmd,
 		"\naud3g.%s\t%s"
 		"\naud3g.ind_bitlen\t%u"
-		"\naud3g.sqn\t%"PRIu64
+		"\naud3g.sqn\t%" PRIu64
 		,
 		aud->u.umts.opc_is_op? "op" : "opc",
 		hexdump_buf(aud->u.umts.opc),
