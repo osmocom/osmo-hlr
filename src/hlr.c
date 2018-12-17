@@ -32,6 +32,7 @@
 #include <osmocom/vty/ports.h>
 #include <osmocom/ctrl/control_vty.h>
 #include <osmocom/gsm/apn.h>
+#include <osmocom/gsm/gsm48_ie.h>
 
 #include "db.h"
 #include "hlr.h"
@@ -399,6 +400,38 @@ static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
 	return osmo_gsup_conn_send(conn, msg_out);
 }
 
+static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+{
+	struct osmo_gsup_message gsup_reply = {0};
+	struct msgb *msg_out;
+	char imei[GSM23003_IMEI_NUM_DIGITS+1] = {0};
+
+	/* Encoded IMEI length check */
+	if (!gsup->imei_enc || gsup->imei_enc_len < 1 || gsup->imei_enc[0] >= sizeof(imei)) {
+		LOGP(DMAIN, LOGL_ERROR, "%s: wrong encoded IMEI length\n", gsup->imsi);
+		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		return -1;
+	}
+
+	/* Decode IMEI */
+	if (gsm48_decode_bcd_number(imei, sizeof(imei), gsup->imei_enc, 0) < 0) {
+		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI\n", gsup->imsi);
+		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		return -1;
+	}
+
+	/* Only print the IMEI for now, it's planned to store it here (OS#2541) */
+	LOGP(DMAIN, LOGL_INFO, "%s: has IMEI: %s\n", gsup->imsi, imei);
+
+	/* Accept all IMEIs */
+	gsup_reply.imei_result = OSMO_GSUP_IMEI_RESULT_ACK;
+	gsup_reply.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_RESULT;
+	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP Check_IMEI response");
+	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
+	osmo_gsup_encode(msg_out, &gsup_reply);
+	return osmo_gsup_conn_send(conn, msg_out);
+}
+
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
 	static struct osmo_gsup_message gsup;
@@ -458,6 +491,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 			}
 			lu_op_rx_gsup(luop, &gsup);
 		}
+		break;
+	case OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST:
+		rx_check_imei_req(conn, &gsup);
 		break;
 	default:
 		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
