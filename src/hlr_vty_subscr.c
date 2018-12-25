@@ -35,16 +35,15 @@ struct vty;
 
 #define hexdump_buf(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 
-static char *
-get_datestr(const time_t *t, char *datebuf)
+static char *get_datestr(const time_t *t)
 {
-	char *p, *s = ctime_r(t, datebuf);
+	static char buf[32];
+	struct tm tm;
 
-	/* Strip trailing newline. */
-	p = strchr(s, '\n');
-	if (p)
-		*p = '\0';
-	return s;
+	tm = *gmtime(t);
+
+	strftime(buf, sizeof(buf), "%FT%T+00:00", &tm);
+	return buf;
 }
 
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
@@ -52,7 +51,6 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 	int rc;
 	struct osmo_sub_auth_data aud2g;
 	struct osmo_sub_auth_data aud3g;
-	char datebuf[26]; /* for ctime_r(3) */
 
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
@@ -88,7 +86,7 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 	if (subscr->ms_purged_ps)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
 	if (subscr->last_lu_seen)
-		vty_out(vty, "    last LU seen: %s UTC%s", get_datestr(&subscr->last_lu_seen, datebuf), VTY_NEWLINE);
+		vty_out(vty, "    last LU seen: %s%s", get_datestr(&subscr->last_lu_seen), VTY_NEWLINE);
 
 	if (!*subscr->imsi)
 		return;
