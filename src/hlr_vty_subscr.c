@@ -36,25 +36,21 @@ struct vty;
 
 #define hexdump_buf(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 
-static char *
-get_datestr(const time_t *t, char *datebuf)
+static char *get_datestr(const time_t *t, char *buf, size_t bufsize)
 {
-	char *p, *s = ctime_r(t, datebuf);
-
-	/* Strip trailing newline. */
-	p = strchr(s, '\n');
-	if (p)
-		*p = '\0';
-	return s;
+	struct tm tm;
+	gmtime_r(t, &tm);
+	strftime(buf, bufsize, "%FT%T+00:00", &tm);
+	return buf;
 }
 
 static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen)
 {
 	uint32_t age;
-	char datebuf[26]; /* for ctime_r(3) */
+	char datebuf[32];
 	if (!last_lu_seen)
 		return;
-	vty_out(vty, "    last LU seen on %s: %s UTC", domain_label, get_datestr(&last_lu_seen, datebuf));
+	vty_out(vty, "    last LU seen on %s: %s", domain_label, get_datestr(&last_lu_seen, datebuf, sizeof(datebuf)));
 	if (!timestamp_age(&last_lu_seen, &age))
 		vty_out(vty, " (invalid timestamp)%s", VTY_NEWLINE);
 	else
