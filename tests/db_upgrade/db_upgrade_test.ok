@@ -175,6 +175,14 @@ subscriber_id|INTEGER|0||0
 
 Table subscriber_multi_msisdn contents:
 
+Table: subscriber_rat
+name|type|notnull|dflt_value|pk
+allowed|BOOLEAN|1|0|0
+rat|TEXT|1||0
+subscriber_id|INTEGER|0||0
+
+Table subscriber_rat contents:
+
 Verify that osmo-hlr can open it:
 osmo-hlr --database $db --db-check --config-file $srcdir/osmo-hlr.cfg
 rc = 0

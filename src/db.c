@@ -96,6 +96,12 @@ static const char *stmt_sql[] = {
 	[DB_STMT_IND_ADD] = "INSERT INTO ind (vlr) VALUES ($vlr)",
 	[DB_STMT_IND_SELECT] = "SELECT ind FROM ind WHERE vlr = $vlr",
 	[DB_STMT_IND_DEL] = "DELETE FROM ind WHERE vlr = $vlr",
+	[DB_STMT_UPD_RAT_FLAG] = "INSERT OR REPLACE INTO subscriber_rat (subscriber_id, rat, allowed)"
+		" VALUES ($subscriber_id, $rat, $allowed)",
+	[DB_STMT_RAT_BY_ID] =
+		"SELECT rat, allowed"
+		" FROM subscriber_rat"
+		" WHERE subscriber_id = $subscriber_id",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -553,6 +559,30 @@ static int db_upgrade_v7(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v8(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"-- Optional: add subscriber entries to allow or disallow specific RATs (2G or 3G or ...).\n"
+		"-- If a subscriber has no entry, that means that all RATs are allowed (backwards compat).\n"
+		"CREATE TABLE subscriber_rat (\n"
+		"	subscriber_id	INTEGER,		-- subscriber.id\n"
+		"	rat		TEXT CHECK(rat in ('GERAN-A', 'UTRAN-Iu')) NOT NULL,	-- Radio Access Technology, see enum ran_type\n"
+		"	allowed		BOOLEAN CHECK(allowed in (0, 1)) NOT NULL DEFAULT 0,\n"
+		"	UNIQUE (subscriber_id, rat)\n"
+		")",
+		"CREATE UNIQUE INDEX idx_subscr_rat_flag ON subscriber_rat (subscriber_id, rat)",
+		"PRAGMA user_version = 7",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 6\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -562,6 +592,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v5,
 	db_upgrade_v6,
 	db_upgrade_v7,
+	db_upgrade_v8,
 };
 
 static int db_get_user_version(struct db_context *dbc)
@@ -692,9 +723,9 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 		if (version < CURRENT_SCHEMA_VERSION) {
 			LOGP(DDB, LOGL_NOTICE, "HLR DB schema version %d is outdated\n", version);
 			if (!allow_upgrade) {
-				LOGP(DDB, LOGL_ERROR, "Not upgrading HLR database to schema version %d; "
+				LOGP(DDB, LOGL_ERROR, "Not upgrading HLR database from schema version %d to %d; "
 				     "use the --db-upgrade option to allow HLR database upgrades\n",
-				     CURRENT_SCHEMA_VERSION);
+				     version, CURRENT_SCHEMA_VERSION);
 			}
 		} else
 			LOGP(DDB, LOGL_ERROR, "HLR DB schema version %d is unknown\n", version);
