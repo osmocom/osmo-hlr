@@ -263,6 +263,9 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 {
 	struct hlr_subscriber *subscr;
 	struct lu_operation *luop = lu_op_alloc_conn(conn);
+	int i;
+	bool allowed;
+
 	if (!luop) {
 		LOGP(DMAIN, LOGL_ERROR, "LU REQ from conn without addr?\n");
 		return -EINVAL;
@@ -305,6 +308,34 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		return 0;
 	} else if (luop->is_ps && !luop->subscr.nam_ps) {
 		lu_op_tx_error(luop, GMM_CAUSE_GPRS_NOTALLOWED);
+		return 0;
+	}
+
+	/* Check if any available RAT type is allowed. See 3GPP TS 29.010 3.2 'Routeing area updating' and 3.8 'Location
+	 * update' for the "No Suitable cells in location area" error code. */
+	allowed = false;
+	LOGP(DAUC, LOGL_DEBUG, "LU: IMSI='%s' on %s sent RAT types: %zu\n", subscr->imsi,
+	     gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_CS ? "CS" : "PS", gsup->rat_types_len);
+	for (i = 0; i < gsup->rat_types_len; i++) {
+		enum osmo_rat_type rat = gsup->rat_types[i];
+		if (rat <= 0 || rat >= OSMO_RAT_COUNT) {
+			lu_op_tx_error(luop, GMM_CAUSE_COND_IE_ERR);
+			return 0;
+		}
+		if (luop->subscr.rat_types[rat]) {
+			allowed = true;
+			LOGP(DAUC, LOGL_DEBUG, "LU: IMSI='%s' allowed on %s\n",
+			     subscr->imsi, osmo_rat_type_name(rat));
+		} else {
+			LOGP(DAUC, LOGL_DEBUG, "LU: IMSI='%s' not allowed on %s\n",
+			     subscr->imsi, osmo_rat_type_name(rat));
+		}
+	}
+	if (!allowed && gsup->rat_types_len > 0) {
+		LOGP(DAUC, LOGL_DEBUG, "ISMI='%s' not allowed on %s%s\n",
+		     subscr->imsi, osmo_rat_type_name(gsup->rat_types[0]),
+		     gsup->rat_types_len > 1 ? " (nor on the other available RAT types)" : "");
+		lu_op_tx_error(luop, GMM_CAUSE_NO_SUIT_CELL_IN_LA);
 		return 0;
 	}
 

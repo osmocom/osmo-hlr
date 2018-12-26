@@ -27,6 +27,7 @@
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
 #include <osmocom/core/utils.h>
+#include <osmocom/gsm/gsm_utils.h>
 
 #include "hlr.h"
 #include "db.h"
@@ -49,6 +50,7 @@ static char *get_datestr(const time_t *t)
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
+	int i;
 	struct osmo_sub_auth_data aud2g;
 	struct osmo_sub_auth_data aud3g;
 
@@ -78,6 +80,12 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
 	if (subscr->last_lu_seen)
 		vty_out(vty, "    last LU seen: %s%s", get_datestr(&subscr->last_lu_seen), VTY_NEWLINE);
+	for (i = OSMO_RAT_UNKNOWN + 1; i < ARRAY_SIZE(subscr->rat_types); i++) {
+		vty_out(vty, "    %s: %s%s", osmo_rat_type_name(i), subscr->rat_types[i] ? "allowed" : "forbidden",
+			VTY_NEWLINE);
+	}
+	if (subscr->ms_purged_cs)
+		vty_out(vty, "    CS purged%s", VTY_NEWLINE);
 
 	if (!*subscr->imsi)
 		return;
@@ -506,6 +514,45 @@ DEFUN(subscriber_aud3g,
 	return CMD_SUCCESS;
 }
 
+DEFUN(subscriber_rat,
+      subscriber_rat_cmd,
+      SUBSCR_UPDATE "rat (geran-a|utran-iu) (allowed|forbidden)",
+      SUBSCR_UPDATE_HELP
+      "Allow or forbid specific Radio Access Types\n"
+      "Set access to GERAN-A\n"
+      "Set access to UTRAN-Iu\n"
+      "Allow access\n"
+      "Forbid access\n")
+{
+	struct hlr_subscriber subscr;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	const char *rat_str = argv[2];
+	const char *allowed_forbidden = argv[3];
+	enum osmo_rat_type rat;
+	bool allowed;
+	int rc;
+
+	if (strcmp(rat_str, "geran-a") == 0)
+		rat = OSMO_RAT_GERAN_A;
+	else if (strcmp(rat_str, "utran-iu") == 0)
+		rat = OSMO_RAT_UTRAN_IU;
+
+	allowed = (strcmp(allowed_forbidden, "allowed") == 0);
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	rc = hlr_subscr_rat_flag(g_hlr, &subscr, rat, allowed);
+
+	if (rc && rc != -ENOEXEC) {
+		vty_out(vty, "%% Error: cannot set %s to %s%s",
+			osmo_rat_type_name(rat), allowed ? "allowed" : "forbidden", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	return CMD_SUCCESS;
+}
+
 void hlr_vty_subscriber_init(void)
 {
 	install_element_ve(&subscriber_show_cmd);
@@ -517,4 +564,5 @@ void hlr_vty_subscriber_init(void)
 	install_element(ENABLE_NODE, &subscriber_aud2g_cmd);
 	install_element(ENABLE_NODE, &subscriber_no_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_aud3g_cmd);
+	install_element(ENABLE_NODE, &subscriber_rat_cmd);
 }
