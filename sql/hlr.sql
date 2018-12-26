@@ -87,8 +87,18 @@ CREATE TABLE ind (
 	UNIQUE (vlr)
 );
 
+-- Optional: add subscriber entries to allow or disallow specific RATs (2G or 3G or ...).
+-- If a subscriber has no entry, that means that all RATs are allowed (backwards compat).
+CREATE TABLE subscriber_rat (
+	subscriber_id	INTEGER,		-- subscriber.id
+	rat		TEXT CHECK(rat in ('GERAN-A', 'UTRAN-Iu')) NOT NULL,	-- Radio Access Technology, see enum ran_type
+	allowed		BOOLEAN CHECK(allowed in (0, 1)) NOT NULL DEFAULT 0,
+	UNIQUE (subscriber_id, rat)
+);
+
 CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
+CREATE UNIQUE INDEX idx_subscr_rat_flag ON subscriber_rat (subscriber_id, rat);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 6;
+PRAGMA user_version = 7;

@@ -108,6 +108,8 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 {
 	struct osmo_fsm_inst *fi;
 	struct lu *lu;
+	bool any_rat_allowed;
+	int i;
 
 	OSMO_ASSERT(update_location_req);
 	OSMO_ASSERT(update_location_req->gsup.message_type == OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST);
@@ -148,6 +150,28 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 	}
 	if (lu->is_ps && !lu->subscr.nam_ps) {
 		lu_failure(lu, GMM_CAUSE_GPRS_NOTALLOWED, "nam_ps == false");
+		return;
+	}
+
+	/* Check if any available RAT type is allowed. See 3GPP TS 29.010 3.2 'Routeing area updating' and 3.8 'Location
+	 * update' for the "No Suitable cells in location area" error code. */
+	any_rat_allowed = false;
+	for (i = 0; i < update_location_req->gsup.supported_rat_types_len; i++) {
+		enum osmo_rat_type rat = update_location_req->gsup.supported_rat_types[i];
+		if (rat <= 0 || rat >= OSMO_RAT_COUNT) {
+			lu_failure(lu, GMM_CAUSE_COND_IE_ERR, "Invalid RAT type in GSUP request: %s",
+				   osmo_rat_type_name(rat));
+			return;
+		}
+		if (lu->subscr.rat_types[rat]) {
+			any_rat_allowed = true;
+			LOG_LU(lu, LOGL_DEBUG, "subscriber allowed on %s\n", osmo_rat_type_name(rat));
+		} else {
+			LOG_LU(lu, LOGL_DEBUG, "subscriber not allowed on %s\n", osmo_rat_type_name(rat));
+		}
+	}
+	if (!any_rat_allowed && update_location_req->gsup.supported_rat_types_len > 0) {
+		lu_failure(lu, GMM_CAUSE_NO_SUIT_CELL_IN_LA, "subscriber not allowed on any available RAT type");
 		return;
 	}
 
