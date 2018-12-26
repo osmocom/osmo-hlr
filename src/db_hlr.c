@@ -409,7 +409,7 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	if (!subscr)
 		goto out;
 
-	*subscr = (struct hlr_subscriber){};
+	*subscr = hlr_subscriber_empty;
 
 	/* obtain the various columns */
 	subscr->id = sqlite3_column_int64(stmt, 0);
@@ -443,6 +443,9 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 
 out:
 	db_remove_reset(stmt);
+
+	if (ret == 0)
+		db_subscr_get_rat_types(dbc, subscr);
 
 	switch (ret) {
 	case 0:
@@ -780,5 +783,121 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 		lu_op_tx_del_subscr_data(luop);
 		lu_op_free(luop);
 	}
+	return 0;
+}
+
+int db_subscr_set_rat_type_flag(struct db_context *dbc, int64_t subscr_id, enum osmo_rat_type rat, bool allowed)
+{
+	int rc;
+	int ret = 0;
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_RAT_FLAG];
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
+		return -EIO;
+
+	OSMO_ASSERT(rat >= 0 && rat < OSMO_RAT_COUNT);
+	if (!db_bind_text(stmt, "$rat", osmo_rat_type_name(rat)))
+		return -EIO;
+
+	if (!db_bind_int(stmt, "$allowed", allowed ? 1 : 0))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "%s %s: SQL error: %s\n",
+		     allowed ? "enable" : "disable", osmo_rat_type_name(rat),
+		     sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DDB, LOGL_ERROR, "Cannot %s %s: no such subscriber: ID=%" PRIu64 "\n",
+		     allowed ? "enable" : "disable", osmo_rat_type_name(rat),
+		     subscr_id);
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != 1) {
+		LOGP(DDB, LOGL_ERROR, "%s %s: SQL modified %d rows (expected 1)\n",
+		     allowed ? "enable" : "disable", osmo_rat_type_name(rat),
+		     rc);
+		ret = -EIO;
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
+}
+
+int db_subscr_get_rat_types(struct db_context *dbc, struct hlr_subscriber *subscr)
+{
+	int rc;
+	int ret = 0;
+	int i;
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_RAT_BY_ID];
+
+	if (!db_bind_int64(stmt, "$subscriber_id", subscr->id))
+		return -EIO;
+
+	for (i = 0; i < OSMO_RAT_COUNT; i++)
+		subscr->rat_types[i] = true;
+
+	/* execute the statement */
+	while (1) {
+		enum osmo_rat_type rat;
+		bool allowed;
+
+		rc = sqlite3_step(stmt);
+
+		if (rc == SQLITE_DONE)
+			break;
+		if (rc != SQLITE_ROW)
+			return -rc;
+
+		rc = get_string_value(osmo_rat_type_names, (const char*)sqlite3_column_text(stmt, 0));
+		if (rc == -EINVAL) {
+			ret = -EINVAL;
+			goto out;
+		}
+		if (rc <= 0 || rc >= OSMO_RAT_COUNT) {
+			ret = -EINVAL;
+			goto out;
+		}
+		rat = rc;
+
+		allowed = sqlite3_column_int(stmt, 1);
+
+		subscr->rat_types[rat] = allowed;
+		LOGP(DAUC, LOGL_DEBUG, "db: imsi='%s' %s %s\n",
+		     subscr->imsi, osmo_rat_type_name(rat), allowed ? "allowed" : "forbidden");
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
+}
+
+int hlr_subscr_rat_flag(struct hlr *hlr, struct hlr_subscriber *subscr, enum osmo_rat_type rat, bool allowed)
+{
+	int rc;
+	OSMO_ASSERT(rat >= 0 && rat < OSMO_RAT_COUNT);
+
+	db_subscr_get_rat_types(hlr->dbc, subscr);
+
+	if (subscr->rat_types[rat] == allowed) {
+		LOGHLR(subscr->imsi, LOGL_DEBUG, "Already has the requested value when asked to %s %s\n",
+		       allowed ? "enable" : "disable", osmo_rat_type_name(rat));
+		return -ENOEXEC;
+	}
+
+	rc = db_subscr_set_rat_type_flag(hlr->dbc, subscr->id, rat, allowed);
+	if (rc)
+		return rc > 0? -rc : rc;
+
+	/* FIXME: If we're disabling, send message to VLR to detach subscriber */
+
 	return 0;
 }
