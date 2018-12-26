@@ -355,6 +355,41 @@ static int handle_ussd_own_imsi(struct osmo_gsup_conn *conn, struct ss_session *
 	return 0;
 }
 
+static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *ss,
+			       const struct osmo_gsup_message *gsup,
+			       const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	const char *response;
+	int rc;
+
+#define RAN_TYPE_DESC "Available RAN types: "
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		if (subscr.rat_types[OSMO_RAT_GERAN_A] && subscr.rat_types[OSMO_RAT_UTRAN_IU])
+			response = RAN_TYPE_DESC "GERAN-A (2G) & UTRAN-Iu (3G)";
+		else if (subscr.rat_types[OSMO_RAT_GERAN_A])
+			response = RAN_TYPE_DESC "GERAN-A (2G)";
+		else if (subscr.rat_types[OSMO_RAT_UTRAN_IU])
+			response = RAN_TYPE_DESC "UTRAN-Iu (3G)";
+		else
+			response = "No RAN types available";
+
+		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id, response);
+		break;
+	case -ENOENT:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
 
 static const struct hlr_iuse hlr_iuses[] = {
 	{
@@ -364,6 +399,10 @@ static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "own-imsi",
 		.handle_ussd = handle_ussd_own_imsi,
+	},
+	{
+		.name = "get-ran",
+		.handle_ussd = handle_ussd_get_ran,
 	},
 };
 
