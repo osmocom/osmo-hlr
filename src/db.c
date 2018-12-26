@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	2
+#define CURRENT_SCHEMA_VERSION	3
 
 #define SEL_COLUMNS \
 	"id," \
@@ -81,6 +81,12 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
+	[DB_STMT_UPD_RAT_FLAG] = "INSERT OR REPLACE INTO subscriber_rat (subscriber_id, rat, allowed)"
+		" VALUES ($subscriber_id, $rat, $allowed)",
+	[DB_STMT_RAT_BY_ID] =
+		"SELECT rat, allowed"
+		" FROM subscriber_rat"
+		" WHERE subscriber_id = $subscriber_id",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -329,6 +335,51 @@ static int db_upgrade_v2(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v3(struct db_context *dbc)
+{
+	int i;
+	const char *stmts[] = {
+		"CREATE TABLE subscriber_rat",
+		"CREATE UNIQUE INDEX idx_subscr_rat_flag",
+		NULL
+	};
+	sqlite3_stmt *stmt = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(stmts); i++) {
+		int rc;
+		int j;
+		const char *stmt_sql = NULL;
+
+		if (stmts[i] != NULL) {
+			for (j = 0; j < ARRAY_SIZE(stmt_bootstrap_sql); j++) {
+				if (strstr(stmt_bootstrap_sql[j], stmts[i])) {
+					/* make sure we have a unique match, hence also not break; here */
+					OSMO_ASSERT(!stmt_sql);
+					stmt_sql = stmt_bootstrap_sql[j];
+				}
+			}
+		} else
+			stmt_sql = "PRAGMA user_version = 3";
+		OSMO_ASSERT(stmt_sql);
+
+		rc = sqlite3_prepare_v2(dbc->db, stmt_sql, -1, &stmt, NULL);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", stmt_sql);
+			return rc;
+		}
+		rc = sqlite3_step(stmt);
+		db_remove_reset(stmt);
+		sqlite3_finalize(stmt);
+		if (rc != SQLITE_DONE) {
+			LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 2: '%s'\n",
+			     stmt_sql);
+			return rc;
+		}
+	}
+
+	return SQLITE_DONE;
+}
+
 static int db_get_user_version(struct db_context *dbc)
 {
 	const char *user_version_sql = "PRAGMA user_version";
@@ -440,6 +491,8 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 	LOGP(DDB, LOGL_NOTICE, "Database '%s' has HLR DB schema version %d\n", dbc->fname, version);
 
 	if (version < CURRENT_SCHEMA_VERSION && allow_upgrade) {
+		int orig_version = version;
+
 		switch (version) {
 		case 0:
 			rc = db_upgrade_v1(dbc);
@@ -459,21 +512,30 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 			}
 			version = 2;
 			/* fall through */
+		case 2:
+			rc = db_upgrade_v3(dbc);
+			if (rc != SQLITE_DONE) {
+				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 2: (rc=%d) %s\n",
+				     rc, sqlite3_errmsg(dbc->db));
+				goto out_free;
+			}
+			version = 3;
+			/* fall through */
 		/* case N: ... */
 		default:
 			break;
 		}
-		LOGP(DDB, LOGL_NOTICE, "Database '%s' has been upgraded to HLR DB schema version %d\n",
-		     dbc->fname, version);
+		LOGP(DDB, LOGL_NOTICE, "Database '%s' has been upgraded from HLR DB schema version %d to %d\n",
+		     dbc->fname, orig_version, version);
 	}
 
 	if (version != CURRENT_SCHEMA_VERSION) {
 		if (version < CURRENT_SCHEMA_VERSION) {
 			LOGP(DDB, LOGL_NOTICE, "HLR DB schema version %d is outdated\n", version);
 			if (!allow_upgrade) {
-				LOGP(DDB, LOGL_ERROR, "Not upgrading HLR database to schema version %d; "
+				LOGP(DDB, LOGL_ERROR, "Not upgrading HLR database from schema version %d to %d; "
 				     "use the --db-upgrade option to allow HLR database upgrades\n",
-				     CURRENT_SCHEMA_VERSION);
+				     version, CURRENT_SCHEMA_VERSION);
 			}
 		} else
 			LOGP(DDB, LOGL_ERROR, "HLR DB schema version %d is unknown\n", version);

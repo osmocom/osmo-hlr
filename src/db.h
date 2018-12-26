@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 
+#include <osmocom/gsm/gsm_utils.h>
+
 struct hlr;
 
 enum stmt_idx {
@@ -30,6 +32,8 @@ enum stmt_idx {
 	DB_STMT_SET_LAST_LU_SEEN,
 	DB_STMT_EXISTS_BY_IMSI,
 	DB_STMT_EXISTS_BY_MSISDN,
+	DB_STMT_UPD_RAT_FLAG,
+	DB_STMT_RAT_BY_ID,
 	_NUM_DB_STMT
 };
 
@@ -95,7 +99,12 @@ struct hlr_subscriber {
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
+	bool		rat_types[OSMO_RAT_COUNT];
 };
+
+static const struct hlr_subscriber hlr_subscriber_empty = {
+		.rat_types = { true, true, true },
+	};
 
 /* A format string for use with strptime(3). This format string is
  * used to parse the last_lu_seen column stored in the HLR database.
@@ -155,6 +164,10 @@ int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
 
 int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
+
+int db_subscr_set_rat_type_flag(struct db_context *dbc, int64_t subscr_id, enum osmo_rat_type rat, bool allowed);
+int db_subscr_get_rat_types(struct db_context *dbc, struct hlr_subscriber *subscr);
+int hlr_subscr_rat_flag(struct hlr *hlr, struct hlr_subscriber *subscr, enum osmo_rat_type rat, bool allowed);
 
 /*! Call sqlite3_column_text() and copy result to a char[].
  * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.
