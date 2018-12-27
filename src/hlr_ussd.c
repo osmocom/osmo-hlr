@@ -329,16 +329,17 @@ static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *s
 	int rc;
 
 #define RAN_TYPE_DESC "Available RAN types: "
+#define RAN_TYPE_HINT " (experimental 3G: to enable dial *#301# -- to disable dial *#300#)"
 
 	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 	switch (rc) {
 	case 0:
 		if (subscr.rat_types[OSMO_RAT_GERAN_A] && subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "GERAN-A (2G) & UTRAN-Iu (3G)";
+			response = RAN_TYPE_DESC "GERAN-A (2G) & UTRAN-Iu (3G)" RAN_TYPE_HINT;
 		else if (subscr.rat_types[OSMO_RAT_GERAN_A])
-			response = RAN_TYPE_DESC "GERAN-A (2G)";
+			response = RAN_TYPE_DESC "GERAN-A (2G)" RAN_TYPE_HINT;
 		else if (subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "UTRAN-Iu (3G)";
+			response = RAN_TYPE_DESC "UTRAN-Iu (3G)" RAN_TYPE_HINT;
 		else
 			response = "No RAN types available";
 
