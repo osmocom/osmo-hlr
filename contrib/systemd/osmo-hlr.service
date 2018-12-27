@@ -6,6 +6,7 @@ Type=simple
 Restart=always
 ExecStart=/usr/bin/osmo-hlr -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
 RestartSec=2
+ExecStopPost=/usr/local/bin/save_log_tail osmo-hlr
 
 [Install]
 WantedBy=multi-user.target
