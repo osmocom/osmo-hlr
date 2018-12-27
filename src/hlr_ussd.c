@@ -391,6 +391,58 @@ static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *s
 	return rc;
 }
 
+static int handle_ussd_umts_on(struct osmo_gsup_conn *conn, struct ss_session *ss,
+			       const struct osmo_gsup_message *gsup,
+			       const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_UTRAN_IU, true);
+		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id,
+			"Enabled UTRAN-Iu (3G)");
+		break;
+	case -ENOENT:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
+static int handle_ussd_umts_off(struct osmo_gsup_conn *conn, struct ss_session *ss,
+				const struct osmo_gsup_message *gsup,
+				const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_UTRAN_IU, false);
+		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id,
+			"Disabled UTRAN-Iu (3G)");
+		break;
+	case -ENOENT:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
 static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "own-msisdn",
@@ -403,6 +455,14 @@ static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "get-ran",
 		.handle_ussd = handle_ussd_get_ran,
+	},
+	{
+		.name = "umts-on",
+		.handle_ussd = handle_ussd_umts_on,
+	},
+	{
+		.name = "umts-off",
+		.handle_ussd = handle_ussd_umts_off,
 	},
 };
 
