@@ -99,6 +99,7 @@ struct hlr_subscriber {
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
+	char		last_lu_rat[128];
 	bool		rat_types[OSMO_RAT_COUNT];
 };
 
@@ -158,7 +159,8 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps);
+		 const char *vlr_or_sgsn_number, bool is_ps,
+		 const enum osmo_rat_type rat_types[], size_t rat_types_len);
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
