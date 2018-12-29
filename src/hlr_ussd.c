@@ -464,6 +464,56 @@ static int handle_ussd_get_ran(struct ss_session *ss,
 	return rc;
 }
 
+static int handle_ussd_gsm_on(struct ss_session *ss,
+			      const struct osmo_gsup_message *gsup,
+			      const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_GERAN_A, true);
+		rc = ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, "Enabled GERAN-A (2G)");
+		break;
+	case -ENOENT:
+		rc = ss_tx_to_ms_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_to_ms_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
+static int handle_ussd_gsm_off(struct ss_session *ss,
+			       const struct osmo_gsup_message *gsup,
+			       const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_GERAN_A, false);
+		rc = ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, "Disabled GERAN-A (2G)");
+		break;
+	case -ENOENT:
+		rc = ss_tx_to_ms_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_to_ms_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
 static int handle_ussd_umts_on(struct ss_session *ss,
 			       const struct osmo_gsup_message *gsup,
 			       const struct ss_request *req)
@@ -530,6 +580,14 @@ static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "get-ran",
 		.handle_ussd = handle_ussd_get_ran,
+	},
+	{
+		.name = "gsm-on",
+		.handle_ussd = handle_ussd_gsm_on,
+	},
+	{
+		.name = "gsm-off",
+		.handle_ussd = handle_ussd_gsm_off,
 	},
 	{
 		.name = "umts-on",
