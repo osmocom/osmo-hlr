@@ -40,7 +40,12 @@ CREATE TABLE subscriber (
 
 	-- Timestamp of last location update seen from subscriber
 	-- The value is a string which encodes a UTC timestamp in granularity of seconds.
-	last_lu_seen TIMESTAMP default NULL
+	last_lu_seen TIMESTAMP default NULL,
+
+	-- Last Radio Access Type list as sent during Location Updating Request.
+	-- This is usually just one RAT name, but can be a comma separated list of strings
+	-- of all the RAT types sent during Location Updating Request.
+	last_lu_rat	TEXT default NULL
 );
 
 CREATE TABLE subscriber_apn (
@@ -83,4 +88,4 @@ CREATE UNIQUE INDEX idx_subscr_rat_flag ON subscriber_rat (subscriber_id, rat);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;

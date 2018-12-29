@@ -80,6 +80,8 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
 	if (subscr->last_lu_seen)
 		vty_out(vty, "    last LU seen: %s%s", get_datestr(&subscr->last_lu_seen), VTY_NEWLINE);
+	if (subscr->last_lu_rat[0])
+		vty_out(vty, "    last LU RAT: %s%s", subscr->last_lu_rat, VTY_NEWLINE);
 	for (i = OSMO_RAT_UNKNOWN + 1; i < ARRAY_SIZE(subscr->rat_types); i++) {
 		vty_out(vty, "    %s: %s%s", osmo_rat_type_name(i), subscr->rat_types[i] ? "allowed" : "forbidden",
 			VTY_NEWLINE);

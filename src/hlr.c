@@ -356,7 +356,8 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
 	     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
 	     osmo_quote_str((const char*)luop->peer, -1));
-	if (db_subscr_lu(g_hlr->dbc, subscr->id, (const char *)luop->peer, luop->is_ps))
+	if (db_subscr_lu(g_hlr->dbc, subscr->id, (const char *)luop->peer, luop->is_ps,
+			 gsup->rat_types, gsup->rat_types_len))
 		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
 		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
 

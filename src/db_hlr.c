@@ -440,6 +440,7 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 			}
 		}
 	}
+	copy_sqlite3_text_to_buf(subscr->last_lu_rat, stmt, 14);
 
 out:
 	db_remove_reset(stmt);
@@ -598,11 +599,14 @@ out:
  *         -EIO on database errors.
  */
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps)
+		 const char *vlr_or_sgsn_number, bool is_ps,
+		 const enum osmo_rat_type rat_types[], size_t rat_types_len)
 {
 	sqlite3_stmt *stmt;
 	int rc, ret = 0;
 	struct timespec localtime;
+	char rat_types_str[128] = "";
+	int i;
 
 	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_SGSN_BY_ID
 			       : DB_STMT_UPD_VLR_BY_ID];
@@ -652,6 +656,21 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		return -EIO;
 	/* The timestamp will be converted to UTC by SQLite. */
 	if (!db_bind_int64(stmt, "$val", (int64_t)localtime.tv_sec)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	for (i = 0; i < rat_types_len; i++) {
+		char *pos = rat_types_str + strnlen(rat_types_str, sizeof(rat_types_str));
+		int len = pos - rat_types_str;
+		rc = snprintf(pos, len, "%s%s", pos == rat_types_str ? "" : ",", osmo_rat_type_name(rat_types[i]));
+		if (rc > len) {
+			osmo_strlcpy(rat_types_str + sizeof(rat_types_str) - 4, "...", 4);
+			break;
+		}
+	}
+
+	if (!db_bind_text(stmt, "$rat", rat_types_str)) {
 		ret = -EIO;
 		goto out;
 	}
