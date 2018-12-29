@@ -441,6 +441,30 @@ struct hlr_subscriber {
   .sgsn_number = '111',
 }
 
+db_subscr_lu(dbc, id0, "333", false, rat_types, 1) --> 0
+
+db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .vlr_number = '333',
+  .sgsn_number = '111',
+  .last_lu_rat = 'GERAN-A',
+}
+
+db_subscr_lu(dbc, id0, "333", false, rat_types, 1) --> 0
+
+db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .vlr_number = '333',
+  .sgsn_number = '111',
+  .last_lu_rat = 'GERAN-A',
+}
+
 
 --- Unset LU info for PS and CS (SGSN and VLR names)
 
@@ -451,7 +475,7 @@ struct hlr_subscriber {
   .id = 1,
   .imsi = '123456789000000',
   .msisdn = '543210123456789',
-  .vlr_number = '222',
+  .vlr_number = '333',
 }
 
 db_subscr_lu(dbc, id0, "", false, NULL, 0) --> 0

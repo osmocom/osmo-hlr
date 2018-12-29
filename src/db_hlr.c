@@ -662,7 +662,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 
 	for (i = 0; i < rat_types_len; i++) {
 		char *pos = rat_types_str + strnlen(rat_types_str, sizeof(rat_types_str));
-		int len = pos - rat_types_str;
+		int len = sizeof(rat_types_str) - (pos - rat_types_str);
 		rc = snprintf(pos, len, "%s%s", pos == rat_types_str ? "" : ",", osmo_rat_type_name(rat_types[i]));
 		if (rc > len) {
 			osmo_strlcpy(rat_types_str + sizeof(rat_types_str) - 4, "...", 4);
