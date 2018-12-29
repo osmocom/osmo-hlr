@@ -378,22 +378,27 @@ static int handle_ussd_get_ran(struct ss_session *ss,
 			       const struct ss_request *req)
 {
 	struct hlr_subscriber subscr;
-	const char *response;
+	char response[512];
 	int rc;
-
-#define RAN_TYPE_DESC "Available RAN types: "
+	const char *rat;
 
 	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 	switch (rc) {
 	case 0:
-		if (subscr.rat_types[OSMO_RAT_GERAN_A] && subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "GERAN-A (2G) & UTRAN-Iu (3G)";
-		else if (subscr.rat_types[OSMO_RAT_GERAN_A])
-			response = RAN_TYPE_DESC "GERAN-A (2G)";
-		else if (subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "UTRAN-Iu (3G)";
+		if (!*subscr.last_lu_rat_cs)
+			rat = "nothing, you don't exist";
+		else if (!strcmp(subscr.last_lu_rat_cs, "GERAN-A"))
+			rat = "2G";
+		else if (!strcmp(subscr.last_lu_rat_cs, "UTRAN-Iu"))
+			rat = "3G";
 		else
-			response = "No RAN types available";
+			rat = subscr.last_lu_rat_cs;
+
+		snprintf(response, sizeof(response),
+			 "Now on %s. Available:%s%s.",
+			 rat,
+			 subscr.rat_types[OSMO_RAT_GERAN_A]? " 2G" : "",
+			 subscr.rat_types[OSMO_RAT_UTRAN_IU]? " 3G" : "");
 
 		rc = ss_tx_to_ms_ussd_7bit(ss, true, req->invoke_id, response);
 		break;
