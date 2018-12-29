@@ -373,7 +373,7 @@ DAUC Cannot disable CS: no such subscriber: IMSI='foobar'
 
 --- Record LU for PS and CS (SGSN and VLR names)
 
-db_subscr_lu(dbc, id0, "5952", true) --> 0
+db_subscr_lu(dbc, id0, "5952", true, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -383,7 +383,7 @@ struct hlr_subscriber {
   .sgsn_number = '5952',
 }
 
-db_subscr_lu(dbc, id0, "712", false) --> 0
+db_subscr_lu(dbc, id0, "712", false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -397,7 +397,7 @@ struct hlr_subscriber {
 
 --- Record LU for PS and CS (SGSN and VLR names) *again*
 
-db_subscr_lu(dbc, id0, "111", true) --> 0
+db_subscr_lu(dbc, id0, "111", true, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -408,7 +408,7 @@ struct hlr_subscriber {
   .sgsn_number = '111',
 }
 
-db_subscr_lu(dbc, id0, "111", true) --> 0
+db_subscr_lu(dbc, id0, "111", true, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -419,7 +419,7 @@ struct hlr_subscriber {
   .sgsn_number = '111',
 }
 
-db_subscr_lu(dbc, id0, "222", false) --> 0
+db_subscr_lu(dbc, id0, "222", false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -430,7 +430,7 @@ struct hlr_subscriber {
   .sgsn_number = '111',
 }
 
-db_subscr_lu(dbc, id0, "222", false) --> 0
+db_subscr_lu(dbc, id0, "222", false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -444,7 +444,7 @@ struct hlr_subscriber {
 
 --- Unset LU info for PS and CS (SGSN and VLR names)
 
-db_subscr_lu(dbc, id0, "", true) --> 0
+db_subscr_lu(dbc, id0, "", true, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -454,7 +454,7 @@ struct hlr_subscriber {
   .vlr_number = '222',
 }
 
-db_subscr_lu(dbc, id0, "", false) --> 0
+db_subscr_lu(dbc, id0, "", false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -463,9 +463,9 @@ struct hlr_subscriber {
   .msisdn = '543210123456789',
 }
 
-db_subscr_lu(dbc, id0, "111", true) --> 0
+db_subscr_lu(dbc, id0, "111", true, NULL, 0) --> 0
 
-db_subscr_lu(dbc, id0, "222", false) --> 0
+db_subscr_lu(dbc, id0, "222", false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -476,7 +476,7 @@ struct hlr_subscriber {
   .sgsn_number = '111',
 }
 
-db_subscr_lu(dbc, id0, NULL, true) --> 0
+db_subscr_lu(dbc, id0, NULL, true, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -486,7 +486,7 @@ struct hlr_subscriber {
   .vlr_number = '222',
 }
 
-db_subscr_lu(dbc, id0, NULL, false) --> 0
+db_subscr_lu(dbc, id0, NULL, false, NULL, 0) --> 0
 
 db_subscr_get_by_id(dbc, id0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -498,10 +498,10 @@ struct hlr_subscriber {
 
 --- Record LU for non-existent ID
 
-db_subscr_lu(dbc, 99999, "5952", true) --> -ENOENT
+db_subscr_lu(dbc, 99999, "5952", true, NULL, 0) --> -ENOENT
 DAUC Cannot update SGSN number for subscriber ID=99999: no such subscriber
 
-db_subscr_lu(dbc, 99999, "712", false) --> -ENOENT
+db_subscr_lu(dbc, 99999, "712", false, NULL, 0) --> -ENOENT
 DAUC Cannot update VLR number for subscriber ID=99999: no such subscriber
 
 db_subscr_get_by_id(dbc, 99999, &g_subscr) --> -ENOENT
