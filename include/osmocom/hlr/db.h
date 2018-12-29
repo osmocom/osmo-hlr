@@ -114,6 +114,8 @@ struct hlr_subscriber {
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
 	time_t		last_lu_seen_ps;
+	char		last_lu_rat_cs[128];
+	char		last_lu_rat_ps[128];
 	/* talloc'd IPA unit name */
 	struct osmo_ipa_name	vlr_via_proxy;
 	struct osmo_ipa_name	sgsn_via_proxy;
@@ -180,7 +182,8 @@ int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_s
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		 const struct osmo_ipa_name *vlr_name, bool is_ps,
-		 const struct osmo_ipa_name *via_proxy);
+		 const struct osmo_ipa_name *via_proxy,
+		 const enum osmo_rat_type rat_types[], size_t rat_types_len);
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);

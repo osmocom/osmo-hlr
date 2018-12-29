@@ -173,6 +173,8 @@ void dump_subscr(struct hlr_subscriber *subscr)
 		Pfo(lmsi, "0x%x", subscr);
 	Pb(true, ms_purged_cs);
 	Pb(true, ms_purged_ps);
+	Ps(last_lu_rat_cs);
+	Ps(last_lu_rat_ps);
 	fprintf(stderr, "}\n");
 #undef Ps
 #undef Pd
@@ -247,7 +249,7 @@ static int db_subscr_lu_str(struct db_context *dbc, int64_t subscr_id,
 {
 	struct osmo_ipa_name vlr_nr;
 	osmo_ipa_name_set_str(&vlr_nr, vlr_or_sgsn_number);
-	return db_subscr_lu(dbc, subscr_id, &vlr_nr, is_ps, NULL);
+	return db_subscr_lu(dbc, subscr_id, &vlr_nr, is_ps, NULL, NULL, 0);
 }
 
 static void test_subscr_create_update_sel_delete(void)

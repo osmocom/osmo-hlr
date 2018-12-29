@@ -510,8 +510,10 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 			   subscr->imsi, "CS");
 	parse_last_lu_seen(&subscr->last_lu_seen_ps, (const char *)sqlite3_column_text(stmt, 15),
 			   subscr->imsi, "PS");
-	copy_sqlite3_text_to_ipa_name(&subscr->vlr_via_proxy, stmt, 16);
-	copy_sqlite3_text_to_ipa_name(&subscr->sgsn_via_proxy, stmt, 17);
+	copy_sqlite3_text_to_buf(subscr->last_lu_rat_cs, stmt, 16);
+	copy_sqlite3_text_to_buf(subscr->last_lu_rat_ps, stmt, 17);
+	copy_sqlite3_text_to_ipa_name(&subscr->vlr_via_proxy, stmt, 18);
+	copy_sqlite3_text_to_ipa_name(&subscr->sgsn_via_proxy, stmt, 19);
 
 out:
 	db_remove_reset(stmt);
@@ -833,11 +835,14 @@ out:
  */
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		 const struct osmo_ipa_name *vlr_name, bool is_ps,
-		 const struct osmo_ipa_name *via_proxy)
+		 const struct osmo_ipa_name *via_proxy,
+		 const enum osmo_rat_type rat_types[], size_t rat_types_len)
 {
 	sqlite3_stmt *stmt;
 	int rc, ret = 0;
 	struct timespec localtime;
+	char rat_types_str[128] = "";
+	int i;
 
 	stmt = dbc->stmt[is_ps ? DB_STMT_UPD_SGSN_BY_ID
 			       : DB_STMT_UPD_VLR_BY_ID];
@@ -895,6 +900,21 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		return -EIO;
 	/* The timestamp will be converted to UTC by SQLite. */
 	if (!db_bind_int64(stmt, "$val", (int64_t)localtime.tv_sec)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	for (i = 0; i < rat_types_len; i++) {
+		char *pos = rat_types_str + strnlen(rat_types_str, sizeof(rat_types_str));
+		int len = pos - rat_types_str;
+		rc = snprintf(pos, len, "%s%s", pos == rat_types_str ? "" : ",", osmo_rat_type_name(rat_types[i]));
+		if (rc > len) {
+			osmo_strlcpy(rat_types_str + sizeof(rat_types_str) - 4, "...", 4);
+			break;
+		}
+	}
+
+	if (!db_bind_text(stmt, "$rat", rat_types_str)) {
 		ret = -EIO;
 		goto out;
 	}
