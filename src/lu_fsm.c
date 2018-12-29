@@ -210,7 +210,8 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 		return;
 	}
 	if (db_subscr_lu(g_hlr->dbc, lu->subscr.id, &lu->vlr_name.ipa_name, lu->is_ps,
-			 osmo_gsup_peer_id_is_empty(&lu->via_proxy)? NULL : &lu->via_proxy.ipa_name)) {
+			 osmo_gsup_peer_id_is_empty(&lu->via_proxy)? NULL : &lu->via_proxy.ipa_name,
+			 update_location_req->gsup.supported_rat_types, update_location_req->gsup.supported_rat_types_len)) {
 		lu_failure(lu, GMM_CAUSE_NET_FAIL, "Cannot update %s in the database",
 			   lu->is_ps ? "SGSN number" : "VLR number");
 		return;

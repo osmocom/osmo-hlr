@@ -45,6 +45,12 @@ CREATE TABLE subscriber (
 	last_lu_seen TIMESTAMP default NULL,
 	last_lu_seen_ps TIMESTAMP default NULL,
 
+	-- Last Radio Access Type list as sent during Location Updating Request.
+	-- This is usually just one RAT name, but can be a comma separated list of strings
+	-- of all the RAT types sent during Location Updating Request.
+	last_lu_rat_cs	TEXT default NULL,
+	last_lu_rat_ps	TEXT default NULL,
+
 	-- When a LU was received via a proxy, that proxy's hlr_number is stored here,
 	-- while vlr_number reflects the MSC on the far side of that proxy.
 	vlr_via_proxy	VARCHAR,
@@ -100,4 +106,4 @@ CREATE UNIQUE INDEX idx_subscr_rat_flag ON subscriber_rat (subscriber_id, rat);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 7;
+PRAGMA user_version = 8;
