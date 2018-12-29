@@ -343,11 +343,63 @@ static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *s
 
 		snprintf(response, sizeof(response),
 			 "Now on %s. Available:%s%s."
-			 " (enable 3G: *#301#  disable 3G: *#300#)", rat,
+			 " (2G on: *#201# off: *#200# -- 3G on: *#301# off: *#300#)", rat,
 			 subscr.rat_types[OSMO_RAT_GERAN_A]? " 2G" : "",
 			 subscr.rat_types[OSMO_RAT_UTRAN_IU]? " 3G" : "");
 
 		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id, response);
+		break;
+	case -ENOENT:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
+static int handle_ussd_gsm_on(struct osmo_gsup_conn *conn, struct ss_session *ss,
+			      const struct osmo_gsup_message *gsup,
+			      const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_GERAN_A, true);
+		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id,
+			"Enabled GERAN-A (2G)");
+		break;
+	case -ENOENT:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		break;
+	case -EIO:
+	default:
+		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		break;
+	}
+
+	return rc;
+}
+
+static int handle_ussd_gsm_off(struct osmo_gsup_conn *conn, struct ss_session *ss,
+			       const struct osmo_gsup_message *gsup,
+			       const struct ss_request *req)
+{
+	struct hlr_subscriber subscr;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+	switch (rc) {
+	case 0:
+		hlr_subscr_rat_flag(g_hlr, &subscr, OSMO_RAT_GERAN_A, false);
+		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id,
+			"Disabled GERAN-A (2G)");
 		break;
 	case -ENOENT:
 		rc = ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
@@ -425,6 +477,14 @@ static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "get-ran",
 		.handle_ussd = handle_ussd_get_ran,
+	},
+	{
+		.name = "gsm-on",
+		.handle_ussd = handle_ussd_gsm_on,
+	},
+	{
+		.name = "gsm-off",
+		.handle_ussd = handle_ussd_gsm_off,
 	},
 	{
 		.name = "umts-on",
