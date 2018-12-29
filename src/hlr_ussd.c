@@ -325,23 +325,27 @@ static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *s
 			       const struct ss_request *req)
 {
 	struct hlr_subscriber subscr;
-	const char *response;
+	char response[512];
 	int rc;
-
-#define RAN_TYPE_DESC "Available RAN types: "
-#define RAN_TYPE_HINT " (experimental 3G: to enable dial *#301# -- to disable dial *#300#)"
+	const char *rat;
 
 	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 	switch (rc) {
 	case 0:
-		if (subscr.rat_types[OSMO_RAT_GERAN_A] && subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "GERAN-A (2G) & UTRAN-Iu (3G)" RAN_TYPE_HINT;
-		else if (subscr.rat_types[OSMO_RAT_GERAN_A])
-			response = RAN_TYPE_DESC "GERAN-A (2G)" RAN_TYPE_HINT;
-		else if (subscr.rat_types[OSMO_RAT_UTRAN_IU])
-			response = RAN_TYPE_DESC "UTRAN-Iu (3G)" RAN_TYPE_HINT;
+		if (!*subscr.last_lu_rat)
+			rat = "nothing, you don't exist";
+		else if (!strcmp(subscr.last_lu_rat, "GERAN-A"))
+			rat = "2G";
+		else if (!strcmp(subscr.last_lu_rat, "UTRAN-Iu"))
+			rat = "3G";
 		else
-			response = "No RAN types available";
+			rat = subscr.last_lu_rat;
+
+		snprintf(response, sizeof(response),
+			 "Now on %s. Available:%s%s."
+			 " (enable 3G: *#301#  disable 3G: *#300#)", rat,
+			 subscr.rat_types[OSMO_RAT_GERAN_A]? " 2G" : "",
+			 subscr.rat_types[OSMO_RAT_UTRAN_IU]? " 3G" : "");
 
 		rc = ss_tx_ussd_7bit(ss, true, req->invoke_id, response);
 		break;

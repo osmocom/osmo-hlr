@@ -159,6 +159,7 @@ void dump_subscr(struct hlr_subscriber *subscr)
 		Pfo(lmsi, "0x%x", subscr);
 	Pb(true, ms_purged_cs);
 	Pb(true, ms_purged_ps);
+	Ps(last_lu_rat);
 	fprintf(stderr, "}\n");
 #undef Ps
 #undef Pd
@@ -212,6 +213,7 @@ static const char *imsi1 = "123456789000001";
 static const char *imsi2 = "123456789000002";
 static const char *short_imsi = "123456";
 static const char *unknown_imsi = "999999999";
+static const enum osmo_rat_type rat_types[2] = { OSMO_RAT_GERAN_A, OSMO_RAT_UTRAN_IU, };
 
 static void test_subscr_create_update_sel_delete()
 {
@@ -351,6 +353,11 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_RC(db_subscr_lu(dbc, id0, "222", false, NULL, 0), 0);
 	ASSERT_SEL(id, id0, 0);
 	ASSERT_RC(db_subscr_lu(dbc, id0, "222", false, NULL, 0), 0);
+	ASSERT_SEL(id, id0, 0);
+
+	ASSERT_RC(db_subscr_lu(dbc, id0, "333", false, rat_types, 1), 0);
+	ASSERT_SEL(id, id0, 0);
+	ASSERT_RC(db_subscr_lu(dbc, id0, "333", false, rat_types, 1), 0);
 	ASSERT_SEL(id, id0, 0);
 
 	comment("Unset LU info for PS and CS (SGSN and VLR names)");
