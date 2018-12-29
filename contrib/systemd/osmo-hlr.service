@@ -4,7 +4,7 @@ Description=Osmocom Home Location Register (OsmoHLR)
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/bin/osmo-hlr -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
+ExecStart=/usr/bin/osmo-hlr -U -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
 RestartSec=2
 ExecStopPost=/usr/local/bin/save_log_tail osmo-hlr
 
