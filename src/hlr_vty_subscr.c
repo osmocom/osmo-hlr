@@ -49,7 +49,7 @@ static char *get_datestr(const time_t *t, char *buf, size_t bufsize)
 	return buf;
 }
 
-static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen)
+static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen, const char *last_lu_rat)
 {
 	uint32_t age;
 	char datebuf[32];
@@ -57,7 +57,7 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 		return;
 	vty_out(vty, "    last LU seen on %s: %s", domain_label, get_datestr(&last_lu_seen, datebuf, sizeof(datebuf)));
 	if (!timestamp_age(&last_lu_seen, &age))
-		vty_out(vty, " (invalid timestamp)%s", VTY_NEWLINE);
+		vty_out(vty, " (invalid timestamp)");
 	else {
 		vty_out(vty, " (");
 #define UNIT_AGO(UNITNAME, UNITVAL) \
@@ -69,9 +69,12 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 		UNIT_AGO("h", 60*60);
 		UNIT_AGO("m", 60);
 		UNIT_AGO("s", 1);
-		vty_out(vty, " ago)%s", VTY_NEWLINE);
+		vty_out(vty, " ago)");
 #undef UNIT_AGO
 	}
+	if (last_lu_rat && *last_lu_rat != '\0')
+		vty_out(vty, " on %s", last_lu_rat);
+	vty_out(vty, "%s", VTY_NEWLINE);
 }
 
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
@@ -114,8 +117,8 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS disabled%s", VTY_NEWLINE);
 	if (subscr->ms_purged_ps)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
-	dump_last_lu_seen(vty, "CS", subscr->last_lu_seen);
-	dump_last_lu_seen(vty, "PS", subscr->last_lu_seen_ps);
+	dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, subscr->last_lu_rat_cs);
+	dump_last_lu_seen(vty, "PS", subscr->last_lu_seen_ps, subscr->last_lu_rat_ps);
 	for (i = OSMO_RAT_UNKNOWN + 1; i < ARRAY_SIZE(subscr->rat_types); i++) {
 		vty_out(vty, "    %s: %s%s", osmo_rat_type_name(i), subscr->rat_types[i] ? "allowed" : "forbidden",
 			VTY_NEWLINE);

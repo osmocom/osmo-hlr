@@ -30,7 +30,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	7
+#define CURRENT_SCHEMA_VERSION	8
 
 #define SEL_COLUMNS \
 	"id," \
@@ -49,6 +49,8 @@
 	"ms_purged_ps," \
 	"last_lu_seen," \
 	"last_lu_seen_ps," \
+	"last_lu_rat_cs," \
+	"last_lu_rat_ps," \
 	"vlr_via_proxy," \
 	"sgsn_via_proxy"
 
@@ -83,8 +85,12 @@ static const char *stmt_sql[] = {
 		"INSERT INTO auc_3g (subscriber_id, algo_id_3g, k, op, opc, ind_bitlen)"
 		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
 	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
-	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
-	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
+	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch'),"
+		" last_lu_rat_cs = $rat"
+		" WHERE id = $subscriber_id",
+	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch'),"
+		" last_lu_rat_ps = $rat"
+		" WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
 	[DB_STMT_IND_ADD] = "INSERT INTO ind (vlr) VALUES ($vlr)",
@@ -537,6 +543,23 @@ static int db_upgrade_v7(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v8(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_cs TEXT default NULL",
+		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_ps TEXT default NULL",
+		"PRAGMA user_version = 8",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 7\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -546,6 +569,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v5,
 	db_upgrade_v6,
 	db_upgrade_v7,
+	db_upgrade_v8,
 };
 
 static int db_get_user_version(struct db_context *dbc)
