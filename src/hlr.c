@@ -330,13 +330,12 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
 		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
 
-	{
-		/* TODO: Subscriber allowed to roam in PLMN? */
-		/* TODO: Update RoutingInfo */
-		/* TODO: Reset Flag MS Purged (cs/ps) */
-		/* TODO: Control_Tracing_HLR / Control_Tracing_HLR_with_SGSN */
-		lu_op_tx_insert_subscr_data(luop);
-	}
+	/* TODO: Subscriber allowed to roam in PLMN? */
+	/* TODO: Update RoutingInfo */
+	/* TODO: Reset Flag MS Purged (cs/ps) */
+	/* TODO: Control_Tracing_HLR / Control_Tracing_HLR_with_SGSN */
+	lu_op_tx_insert_subscr_data(luop);
+
 	return 0;
 }
 
