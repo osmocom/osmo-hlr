@@ -386,6 +386,53 @@ out:
 	return ret;
 }
 
+/*! Set a subscriber's IMEI in the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits
+ * \param[in] imei  ASCII string of identifier digits, or NULL to remove the IMEI.
+ * \returns 0 on success, -ENOENT when the given subscriber does not exist,
+ *         -EIO on database errors.
+ */
+int db_subscr_update_imei_by_imsi(struct db_context *dbc, const char* imsi, const char *imei)
+{
+	int rc, ret = 0;
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_UPD_IMEI_BY_IMSI];
+
+	if (imei && !osmo_imei_str_valid(imei, false)) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update subscriber IMSI='%s': invalid IMEI: '%s'\n", imsi, imei);
+		return -EINVAL;
+	}
+
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+	if (imei && !db_bind_text(stmt, "$imei", imei))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR, "Update IMEI for subscriber IMSI='%s': SQL Error: %s\n", imsi,
+		     sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update IMEI for subscriber IMSI='%s': no such subscriber\n", imsi);
+		ret = -ENOENT;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Update IMEI for subscriber IMSI='%s': SQL modified %d rows (expected 1)\n",
+		     imsi, rc);
+		ret = -EIO;
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
+}
+
 /* Common code for db_subscr_get_by_*() functions. */
 static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscriber *subscr,
 		  const char **err)
@@ -415,18 +462,19 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	subscr->id = sqlite3_column_int64(stmt, 0);
 	copy_sqlite3_text_to_buf(subscr->imsi, stmt, 1);
 	copy_sqlite3_text_to_buf(subscr->msisdn, stmt, 2);
+	copy_sqlite3_text_to_buf(subscr->imei, stmt, 3);
 	/* FIXME: These should all be BLOBs as they might contain NUL */
-	copy_sqlite3_text_to_buf(subscr->vlr_number, stmt, 3);
-	copy_sqlite3_text_to_buf(subscr->sgsn_number, stmt, 4);
-	copy_sqlite3_text_to_buf(subscr->sgsn_address, stmt, 5);
-	subscr->periodic_lu_timer = sqlite3_column_int(stmt, 6);
-	subscr->periodic_rau_tau_timer = sqlite3_column_int(stmt, 7);
-	subscr->nam_cs = sqlite3_column_int(stmt, 8);
-	subscr->nam_ps = sqlite3_column_int(stmt, 9);
-	subscr->lmsi = sqlite3_column_int(stmt, 10);
-	subscr->ms_purged_cs = sqlite3_column_int(stmt, 11);
-	subscr->ms_purged_ps = sqlite3_column_int(stmt, 12);
-	last_lu_seen_str = (const char *)sqlite3_column_text(stmt, 13);
+	copy_sqlite3_text_to_buf(subscr->vlr_number, stmt, 4);
+	copy_sqlite3_text_to_buf(subscr->sgsn_number, stmt, 5);
+	copy_sqlite3_text_to_buf(subscr->sgsn_address, stmt, 6);
+	subscr->periodic_lu_timer = sqlite3_column_int(stmt, 7);
+	subscr->periodic_rau_tau_timer = sqlite3_column_int(stmt, 8);
+	subscr->nam_cs = sqlite3_column_int(stmt, 9);
+	subscr->nam_ps = sqlite3_column_int(stmt, 10);
+	subscr->lmsi = sqlite3_column_int(stmt, 11);
+	subscr->ms_purged_cs = sqlite3_column_int(stmt, 12);
+	subscr->ms_purged_ps = sqlite3_column_int(stmt, 13);
+	last_lu_seen_str = (const char *)sqlite3_column_text(stmt, 14);
 	if (last_lu_seen_str && last_lu_seen_str[0] != '\0') {
 		if (strptime(last_lu_seen_str, DB_LAST_LU_SEEN_FMT, &tm) == NULL) {
 			LOGP(DAUC, LOGL_ERROR, "Cannot parse last LU timestamp '%s' of subscriber with IMSI='%s': %s\n",
@@ -527,6 +575,28 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 	if (rc)
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: ID=%" PRId64 ": %s\n",
 		     id, err);
+	return rc;
+}
+
+/*! Retrieve subscriber data from the HLR database.
+ * \param[in,out] dbc  database context.
+ * \param[in] imei  ASCII string of identifier digits
+ * \param[out] subscr  place retrieved data in this struct.
+ * \returns 0 on success, -ENOENT if no such subscriber was found, -EIO on
+ *          database error.
+ */
+int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SEL_BY_IMEI];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, NULL, imei))
+		return -EIO;
+
+	rc = db_sel(dbc, stmt, subscr, &err);
+	if (rc)
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: IMEI=%s: %s\n", imei, err);
 	return rc;
 }
 

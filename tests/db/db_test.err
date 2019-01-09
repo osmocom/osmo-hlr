@@ -227,6 +227,54 @@ db_subscr_get_by_msisdn(dbc, "99", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: MSISDN='99': No such subscriber
 
 
+--- Set valid / invalid IMEI
+
+db_subscr_update_imei_by_imsi(dbc, imsi0, "12345678901234") --> 0
+
+db_subscr_get_by_imei(dbc, "12345678901234", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .imei = '12345678901234',
+}
+
+db_subscr_update_imei_by_imsi(dbc, imsi0, "123456789012345") --> -EINVAL
+DAUC Cannot update subscriber IMSI='123456789000000': invalid IMEI: '123456789012345'
+
+db_subscr_get_by_imei(dbc, "12345678901234", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .imei = '12345678901234',
+}
+
+db_subscr_get_by_imei(dbc, "123456789012345", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMEI=123456789012345: No such subscriber
+
+
+--- Set the same IMEI again
+
+db_subscr_update_imei_by_imsi(dbc, imsi0, "12345678901234") --> 0
+
+db_subscr_get_by_imei(dbc, "12345678901234", &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .msisdn = '543210123456789',
+  .imei = '12345678901234',
+}
+
+
+--- Remove IMEI
+
+db_subscr_update_imei_by_imsi(dbc, imsi0, NULL) --> 0
+
+db_subscr_get_by_imei(dbc, "12345678901234", &g_subscr) --> -ENOENT
+DAUC Cannot read subscriber from db: IMEI=12345678901234: No such subscriber
+
+
 --- Set / unset nam_cs and nam_ps
 
 db_subscr_nam(dbc, imsi0, false, true) --> 0

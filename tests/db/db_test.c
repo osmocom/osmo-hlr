@@ -148,6 +148,7 @@ void dump_subscr(struct hlr_subscriber *subscr)
 	Pd(id);
 	Ps(imsi);
 	Ps(msisdn);
+	Ps(imei);
 	Ps(vlr_number);
 	Ps(sgsn_number);
 	Ps(sgsn_address);
@@ -295,6 +296,23 @@ static void test_subscr_create_update_sel_delete()
 
 	ASSERT_RC(db_subscr_update_msisdn_by_imsi(dbc, "foobar", "99"), -ENOENT);
 	ASSERT_SEL(msisdn, "99", -ENOENT);
+
+	comment("Set valid / invalid IMEI");
+
+	ASSERT_RC(db_subscr_update_imei_by_imsi(dbc, imsi0, "12345678901234"), 0);
+	ASSERT_SEL(imei, "12345678901234", 0);
+
+	ASSERT_RC(db_subscr_update_imei_by_imsi(dbc, imsi0, "123456789012345"), -EINVAL); /* too long */
+	ASSERT_SEL(imei, "12345678901234", 0);
+	ASSERT_SEL(imei, "123456789012345", -ENOENT);
+
+	comment("Set the same IMEI again");
+	ASSERT_RC(db_subscr_update_imei_by_imsi(dbc, imsi0, "12345678901234"), 0);
+	ASSERT_SEL(imei, "12345678901234", 0);
+
+	comment("Remove IMEI");
+	ASSERT_RC(db_subscr_update_imei_by_imsi(dbc, imsi0, NULL), 0);
+	ASSERT_SEL(imei, "12345678901234", -ENOENT);
 
 	comment("Set / unset nam_cs and nam_ps");
 

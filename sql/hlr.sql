@@ -5,8 +5,10 @@ CREATE TABLE subscriber (
 	imsi		VARCHAR(15) UNIQUE NOT NULL,
 	-- Chapter 2.1.2
 	msisdn		VARCHAR(15) UNIQUE,
-	-- Chapter 2.2.3: Most recent / current IMEI
+	-- Chapter 2.2.3: Most recent / current IMEISV
 	imeisv		VARCHAR,
+	-- Chapter 2.1.9: Most recent / current IMEI
+	imei		VARCHAR(14),
 	-- Chapter 2.4.5
 	vlr_number	VARCHAR(15),
 	-- Chapter 2.4.6
@@ -74,4 +76,4 @@ CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;

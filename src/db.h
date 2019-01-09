@@ -9,8 +9,10 @@ enum stmt_idx {
 	DB_STMT_SEL_BY_IMSI,
 	DB_STMT_SEL_BY_MSISDN,
 	DB_STMT_SEL_BY_ID,
+	DB_STMT_SEL_BY_IMEI,
 	DB_STMT_UPD_VLR_BY_ID,
 	DB_STMT_UPD_SGSN_BY_ID,
+	DB_STMT_UPD_IMEI_BY_IMSI,
 	DB_STMT_AUC_BY_IMSI,
 	DB_STMT_AUC_UPD_SQN,
 	DB_STMT_UPD_PURGE_CS_BY_IMSI,
@@ -71,6 +73,7 @@ struct hlr_subscriber {
 	char		imsi[GSM23003_IMSI_MAX_DIGITS+1];
 	char		msisdn[GT_MAX_DIGITS+1];
 	/* imeisv? */
+	char		imei[GSM23003_IMEI_NUM_DIGITS+1];
 	char		vlr_number[32];
 	char		sgsn_number[32];
 	char		sgsn_address[GT_MAX_DIGITS+1];
@@ -122,6 +125,7 @@ int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 				    const char *msisdn);
 int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 			       const struct sub_auth_data_str *aud);
+int db_subscr_update_imei_by_imsi(struct db_context *dbc, const char* imsi, const char *imei);
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);
@@ -129,6 +133,7 @@ int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 			    struct hlr_subscriber *subscr);
 int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 			struct hlr_subscriber *subscr);
+int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		 const char *vlr_or_sgsn_number, bool is_ps);
