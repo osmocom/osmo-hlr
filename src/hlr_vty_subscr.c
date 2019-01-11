@@ -58,6 +58,15 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 
 	vty_out(vty, "    IMSI: %s%s", *subscr->imsi ? subscr->imsi : "none", VTY_NEWLINE);
 	vty_out(vty, "    MSISDN: %s%s", *subscr->msisdn ? subscr->msisdn : "none", VTY_NEWLINE);
+
+	if (*subscr->imei) {
+		char checksum = osmo_luhn(subscr->imei, 14);
+		if (checksum == -EINVAL)
+			vty_out(vty, "    IMEI: %s (INVALID LENGTH!)%s", subscr->imei, VTY_NEWLINE);
+		else
+			vty_out(vty, "    IMEI: %s%c%s", subscr->imei, checksum, VTY_NEWLINE);
+	}
+
 	if (*subscr->vlr_number)
 		vty_out(vty, "    VLR number: %s%s", subscr->vlr_number, VTY_NEWLINE);
 	if (*subscr->sgsn_number)
@@ -131,6 +140,7 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 
 static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id, struct hlr_subscriber *subscr)
 {
+	char imei_buf[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1];
 	int rc = -1;
 	if (strcmp(type, "imsi") == 0)
 		rc = db_subscr_get_by_imsi(g_hlr->dbc, id, subscr);
@@ -138,6 +148,17 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 		rc = db_subscr_get_by_msisdn(g_hlr->dbc, id, subscr);
 	else if (strcmp(type, "id") == 0)
 		rc = db_subscr_get_by_id(g_hlr->dbc, atoll(id), subscr);
+	else if (strcmp(type, "imei") == 0) {
+		/* Verify IMEI with checksum digit */
+		if (osmo_imei_str_valid(id, true)) {
+			/* Cut the checksum off */
+			osmo_strlcpy(imei_buf, id, sizeof(imei_buf));
+			id = imei_buf;
+			vty_out(vty, "%% Checksum validated and stripped for search: imei = '%s'%s", id,
+				VTY_NEWLINE);
+		}
+		rc = db_subscr_get_by_imei(g_hlr->dbc, id, subscr);
+	}
 	if (rc)
 		vty_out(vty, "%% No subscriber for %s = '%s'%s",
 			type, id, VTY_NEWLINE);
@@ -147,12 +168,13 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 #define SUBSCR_CMD "subscriber "
 #define SUBSCR_CMD_HELP "Subscriber management commands\n"
 
-#define SUBSCR_ID "(imsi|msisdn|id) IDENT"
+#define SUBSCR_ID "(imsi|msisdn|id|imei) IDENT"
 #define SUBSCR_ID_HELP \
 	"Identify subscriber by IMSI\n" \
 	"Identify subscriber by MSISDN (phone number)\n" \
 	"Identify subscriber by database ID\n" \
-	"IMSI/MSISDN/ID of the subscriber\n"
+	"Identify subscriber by IMEI\n" \
+	"IMSI/MSISDN/ID/IMEI of the subscriber\n"
 
 #define SUBSCR 		SUBSCR_CMD SUBSCR_ID " "
 #define SUBSCR_HELP	SUBSCR_CMD_HELP SUBSCR_ID_HELP
@@ -508,6 +530,54 @@ DEFUN(subscriber_aud3g,
 	return CMD_SUCCESS;
 }
 
+DEFUN(subscriber_imei,
+      subscriber_imei_cmd,
+      SUBSCR_UPDATE "imei (none|IMEI)",
+      SUBSCR_UPDATE_HELP
+      "Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)\n"
+      "Forget IMEI\n"
+      "Set IMEI (use for debug only!)\n")
+{
+	struct hlr_subscriber subscr;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	const char *imei = argv[2];
+	char imei_buf[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1];
+
+	if (strcmp(imei, "none") == 0)
+		imei = NULL;
+	else {
+		/* Verify IMEI with checksum digit */
+		if (osmo_imei_str_valid(imei, true)) {
+			/* Cut the checksum off */
+			osmo_strlcpy(imei_buf, imei, sizeof(imei_buf));
+			imei = imei_buf;
+		} else if (!osmo_imei_str_valid(imei, false)) {
+			vty_out(vty, "%% IMEI invalid: '%s'%s", imei, VTY_NEWLINE);
+			return CMD_WARNING;
+		}
+	}
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	if (db_subscr_update_imei_by_imsi(g_hlr->dbc, subscr.imsi, imei)) {
+		vty_out(vty, "%% Error: cannot update IMEI for subscriber IMSI='%s'%s",
+			subscr.imsi, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (imei)
+		vty_out(vty, "%% Updated subscriber IMSI='%s' to IMEI='%s'%s",
+			subscr.imsi, imei, VTY_NEWLINE);
+	else
+		vty_out(vty, "%% Updated subscriber IMSI='%s': removed IMEI%s",
+			subscr.imsi, VTY_NEWLINE);
+
+	return CMD_SUCCESS;
+}
+
+
 void hlr_vty_subscriber_init(void)
 {
 	install_element_ve(&subscriber_show_cmd);
@@ -519,4 +589,5 @@ void hlr_vty_subscriber_init(void)
 	install_element(ENABLE_NODE, &subscriber_aud2g_cmd);
 	install_element(ENABLE_NODE, &subscriber_no_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_aud3g_cmd);
+	install_element(ENABLE_NODE, &subscriber_imei_cmd);
 }

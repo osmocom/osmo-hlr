@@ -2,15 +2,16 @@ OsmoHLR> enable
 
 OsmoHLR# list
 ...
-  subscriber (imsi|msisdn|id) IDENT show
-  show subscriber (imsi|msisdn|id) IDENT
+  subscriber (imsi|msisdn|id|imei) IDENT show
+  show subscriber (imsi|msisdn|id|imei) IDENT
   subscriber imsi IDENT create
-  subscriber (imsi|msisdn|id) IDENT delete
-  subscriber (imsi|msisdn|id) IDENT update msisdn (none|MSISDN)
-  subscriber (imsi|msisdn|id) IDENT update aud2g none
-  subscriber (imsi|msisdn|id) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
-  subscriber (imsi|msisdn|id) IDENT update aud3g none
-  subscriber (imsi|msisdn|id) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
+  subscriber (imsi|msisdn|id|imei) IDENT delete
+  subscriber (imsi|msisdn|id|imei) IDENT update msisdn (none|MSISDN)
+  subscriber (imsi|msisdn|id|imei) IDENT update aud2g none
+  subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
+  subscriber (imsi|msisdn|id|imei) IDENT update aud3g none
+  subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
+  subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
 
 OsmoHLR# subscriber?
   subscriber  Subscriber management commands
@@ -19,13 +20,16 @@ OsmoHLR# subscriber ?
   imsi    Identify subscriber by IMSI
   msisdn  Identify subscriber by MSISDN (phone number)
   id      Identify subscriber by database ID
+  imei    Identify subscriber by IMEI
 
 OsmoHLR# subscriber imsi ?
-  IDENT  IMSI/MSISDN/ID of the subscriber
+  IDENT  IMSI/MSISDN/ID/IMEI of the subscriber
 OsmoHLR# subscriber msisdn ?
-  IDENT  IMSI/MSISDN/ID of the subscriber
+  IDENT  IMSI/MSISDN/ID/IMEI of the subscriber
 OsmoHLR# subscriber id ?
-  IDENT  IMSI/MSISDN/ID of the subscriber
+  IDENT  IMSI/MSISDN/ID/IMEI of the subscriber
+OsmoHLR# subscriber imei ?
+  IDENT  IMSI/MSISDN/ID/IMEI of the subscriber
 
 OsmoHLR# subscriber imsi 123456789023000 show
 % No subscriber for imsi = '123456789023000'
@@ -33,6 +37,9 @@ OsmoHLR# subscriber id 101 show
 % No subscriber for id = '101'
 OsmoHLR# subscriber msisdn 12345 show
 % No subscriber for msisdn = '12345'
+OsmoHLR# subscriber imei 357613004448485 show
+% Checksum validated and stripped for search: imei = '35761300444848'
+% No subscriber for imei = '35761300444848'
 
 OsmoHLR# show subscriber imsi 123456789023000
 % No subscriber for imsi = '123456789023000'
@@ -40,6 +47,9 @@ OsmoHLR# show subscriber id 101
 % No subscriber for id = '101'
 OsmoHLR# show subscriber msisdn 12345
 % No subscriber for msisdn = '12345'
+OsmoHLR# show subscriber imei 357613004448485
+% Checksum validated and stripped for search: imei = '35761300444848'
+% No subscriber for imei = '35761300444848'
 
 OsmoHLR# subscriber imsi 1234567890230001 create
 % Not a valid IMSI: 1234567890230001
@@ -118,6 +128,7 @@ OsmoHLR# subscriber imsi 123456789023000 update ?
   msisdn  Set MSISDN (phone number) of the subscriber
   aud2g   Set 2G authentication data
   aud3g   Set UMTS authentication data (3G, and 2G with UMTS AKA)
+  imei    Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)
 
 OsmoHLR# subscriber imsi 123456789023000 update msisdn ?
   none    Remove MSISDN (phone number)
@@ -374,3 +385,55 @@ OsmoHLR# subscriber imsi 123456789023000 create
 
 OsmoHLR# subscriber imsi 123456789023000 delete
 % Deleted subscriber for IMSI '123456789023000'
+
+OsmoHLR# subscriber imsi 123456789023000 create
+% Created subscriber 123456789023000
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+
+OsmoHLR# subscriber imsi 123456789023000 update imei ?
+  none  Forget IMEI
+  IMEI  Set IMEI (use for debug only!)
+
+OsmoHLR# subscriber imsi 123456789023000 update imei 35761300444848
+% Updated subscriber IMSI='123456789023000' to IMEI='35761300444848'
+
+OsmoHLR# subscriber imsi 123456789023000 update imei 357613004448484
+% IMEI invalid: '357613004448484'
+
+OsmoHLR# subscriber imsi 123456789023000 update imei 357613004448485
+% Updated subscriber IMSI='123456789023000' to IMEI='35761300444848'
+
+OsmoHLR# show subscriber imei 35761300444848
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+    IMEI: 357613004448485
+
+OsmoHLR# show subscriber imei 357613004448485
+% Checksum validated and stripped for search: imei = '35761300444848'
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+    IMEI: 357613004448485
+
+OsmoHLR# show subscriber imei 357613004448484
+% No subscriber for imei = '357613004448484'
+
+OsmoHLR# subscriber imsi 123456789023000 update imei none
+% Updated subscriber IMSI='123456789023000': removed IMEI
+
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+
+OsmoHLR# subscriber imsi 123456789023000 delete
+% Deleted subscriber for IMSI '123456789023000'
+
+OsmoHLR# show subscriber id 99
+    ID: 99
+    IMSI: 000000000000099
+    MSISDN: none
+    IMEI: 12345 (INVALID LENGTH!)
