@@ -51,6 +51,8 @@ struct hlr {
 	struct llist_head ussd_routes;
 
 	struct llist_head ss_sessions;
+
+	bool store_imei;
 };
 
 extern struct hlr *g_hlr;

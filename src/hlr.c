@@ -419,8 +419,22 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 		return -1;
 	}
 
-	/* Only print the IMEI for now, it's planned to store it here (OS#2541) */
-	LOGP(DMAIN, LOGL_INFO, "%s: has IMEI: %s\n", gsup->imsi, imei);
+	/* Save in DB if desired */
+	if (g_hlr->store_imei) {
+		LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing IMEI = %s\n", gsup->imsi, imei);
+		if (db_subscr_update_imei_by_imsi(g_hlr->dbc, gsup->imsi, imei) < 0) {
+			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			return -1;
+		}
+	} else {
+		/* Check if subscriber exists and print IMEI */
+		LOGP(DMAIN, LOGL_INFO, "IMSI='%s': has IMEI = %s (consider setting 'store-imei')\n", gsup->imsi, imei);
+		struct hlr_subscriber subscr;
+		if (db_subscr_get_by_imsi(g_hlr->dbc, gsup->imsi, &subscr) < 0) {
+			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			return -1;
+		}
+	}
 
 	/* Accept all IMEIs */
 	gsup_reply.imei_result = OSMO_GSUP_IMEI_RESULT_ACK;

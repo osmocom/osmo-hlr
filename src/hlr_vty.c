@@ -71,6 +71,8 @@ DEFUN(cfg_gsup,
 static int config_write_hlr(struct vty *vty)
 {
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
+	if (g_hlr->store_imei)
+		vty_out(vty, " store-imei%s", VTY_NEWLINE);
 	return CMD_SUCCESS;
 }
 
@@ -305,6 +307,23 @@ DEFUN(cfg_ncss_guard_timeout, cfg_ncss_guard_timeout_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_store_imei, cfg_store_imei_cmd,
+	"store-imei",
+	"Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send"
+	" Check IMEI requests (for OsmoMSC, you may want to set 'check-imei-rqd 1').")
+{
+	g_hlr->store_imei = true;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_store_imei, cfg_no_store_imei_cmd,
+	"no store-imei",
+	"Do not save the IMEI in the database, when receiving Check IMEI requests.")
+{
+	g_hlr->store_imei = false;
+	return CMD_SUCCESS;
+}
+
 /***********************************************************************
  * Common Code
  ***********************************************************************/
@@ -368,6 +387,8 @@ void hlr_vty_init(const struct log_info *cat)
 	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ncss_guard_timeout_cmd);
+	install_element(HLR_NODE, &cfg_store_imei_cmd);
+	install_element(HLR_NODE, &cfg_no_store_imei_cmd);
 
 	hlr_vty_subscriber_init();
 }

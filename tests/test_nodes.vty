@@ -79,6 +79,8 @@ OsmoHLR(config-hlr)# list
   ussd default-route external EUSE
   no ussd default-route
   ncss-guard-timeout <0-255>
+  store-imei
+  no store-imei
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# list
@@ -98,6 +100,7 @@ OsmoHLR(config-hlr)# exit
 OsmoHLR(config)# exit
 OsmoHLR# configure terminal
 OsmoHLR(config)# hlr
+OsmoHLR(config-hlr)# store-imei
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# end
 OsmoHLR# disable
@@ -116,6 +119,7 @@ log stderr
  logging level ss info
 ...
 hlr
+ store-imei
  gsup
   bind ip 127.0.0.1
  ussd route prefix *#100# internal own-msisdn
