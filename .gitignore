@@ -46,6 +46,7 @@ tests/auc/auc_test
 tests/gsup_server/gsup_server_test
 tests/gsup/gsup_test
 tests/db/db_test
+tests/hlr_vty_test.db*
 
 # manuals
 doc/manuals/*.html
