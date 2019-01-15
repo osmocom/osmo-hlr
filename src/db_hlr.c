@@ -141,8 +141,8 @@ int db_subscr_delete_by_id(struct db_context *dbc, int64_t subscr_id)
 
 /*! Set a subscriber's MSISDN in the HLR database.
  * \param[in,out] dbc  database context.
- * \param[in] imsi  ASCII string of IMSI digits, or NULL to remove the MSISDN.
- * \param[in] msisdn  ASCII string of MSISDN digits.
+ * \param[in] imsi  ASCII string of IMSI digits
+ * \param[in] msisdn  ASCII string of MSISDN digits, or NULL to remove the MSISDN.
  * \returns 0 on success, -EINVAL in case of invalid MSISDN string, -EIO on
  *          database failure, -ENOENT if no such subscriber exists.
  */
