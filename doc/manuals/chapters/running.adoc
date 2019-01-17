@@ -5,7 +5,7 @@ arguments:
 
 === SYNOPSIS
 
-*osmo-hlr* [-h] [-c 'CONFIGFILE'] [-l 'DATABASE'] [-d 'DBGMASK'] [-D] [-s] [-T] [-e 'LOGLEVEL'] [-V]
+*osmo-hlr* [-h] [-c 'CONFIGFILE'] [-l 'DATABASE'] [-d 'DBGMASK'] [-D] [-s] [-T] [-e 'LOGLEVEL'] [-U] [-V]
 
 === OPTIONS
 
@@ -38,6 +38,11 @@ arguments:
 	Set the global log level for logging to stderr. This has mostly
 	been deprecated by VTY based logging configuration, see
 	<<logging>> for more information.
+*-U, --db-upgrade*::
+	Allow HLR database schema upgrades. If OsmoHLR was updated and
+	requires a newer database schema, it will refuse to start unless
+	this option is specified. The updated database can not be
+	downgraded, make backups as necessary.
 *-V, --version*::
 	Print the compile-time version number of the OsmoHLR program
 
