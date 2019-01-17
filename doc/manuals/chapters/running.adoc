@@ -39,7 +39,7 @@ arguments:
 	been deprecated by VTY based logging configuration, see
 	<<logging>> for more information.
 *-V, --version*::
-	Print the compile-time version number of the OsmoBTS program
+	Print the compile-time version number of the OsmoHLR program
 
 === Bootstrap the Database
 
