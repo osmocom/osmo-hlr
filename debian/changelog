@@ -1,3 +1,75 @@
+osmo-hlr (1.0.0) unstable; urgency=medium
+
+  [ Stefan Sperling ]
+  * move creation of insert subscriber data messages to a common function
+
+  [ Harald Welte ]
+  * Return proper GSUP error in case of too short IMSI
+  * disable blind subscriber insertion into every VLR/SGSN
+  * gsup_server: Add "priv" pointer and make it point to 'struct hlr'
+  * move osmo_gsup_addr_send() declaration from luop.h to gsup_router.h
+  * gsup_router: Use "#pragma once" and add missing #includes
+  * Add "show gsup-connections" VTY command
+  * import gsup_client.c as new libosmo-gsup-client
+  * gsup_client: rename gsup_client_* to osmo_gsup_client_*
+  * GSUP: Log GSUP route add/remove
+  * hlr: Export + Declare global g_hlr symbol
+  * USSD: Add Core USSD handling + VTY routing config to HLR
+  * USSD: Add basic dispatch + decode of GSUP-encapsulated SS/USSD
+  * hlr_ussd: Introduce LOGPSS() macro
+  * USSD: Send ReturnError component if USSD Code unknown / EUSE disconnected
+  * USSD: Further unification of log output; Use LOGPSS when possible
+  * osmo-hlr.cfg: Don't enable DEBUG logging by default
+  * USSD: Add new "DSS" logging category and use it appropriately
+  * USSD: fix null-pointer deref in "default-route" vty/config cmd
+  * Add osmo-euse-demo as minimalistic test of a External USSD (EUSE) handler
+  * USSD: Add support for internal USSD handlers
+  * debian: Add sub-package for libosmo-gsup-client
+  * pkg-config: Fix libosmo-gsup-client pkg-config file
+  * gitignore: Add .tarball-version
+  * debian: Make libosmo-gsup-client-dev depend on libosmo-gsup-client0
+  * USSD: Fix "ussd default-route"
+  * libosmo-gsup-client: License is GPLv2-or-later
+  * osmo-hlr.cfg: Ensure well-formed config file example
+  * test_nodes.vty: Since libosmocore 1.0.0, we only have one space
+
+  [ Martin Hauke ]
+  * sql/Makefile.am: Make docsdir completely configurable
+  * debian: Fix typo in package description
+
+  [ Pau Espin Pedrol ]
+  * debian: Avoid installing duplicate cfg file in /etc
+  * sql/Makefile: Install hlr_data.sql as example together with hlr.sql
+  * sql/Makefile: Install sql files under doc/.../sql subdir
+  * sql/Makefile: Create empty /var/lib/osmocom directory at install time
+  * Install systemd services with autotools
+  * Move doc/Makefile.am to doc/examples/Makefile.am
+  * Install sample cfg file to /etc/osmocom
+
+  [ Vadim Yanitskiy ]
+  * hlr.c: move deinitialization code from SIGINT handler
+  * hlr.c: free root talloc context on exit
+  * hlr.c: track the use of talloc NULL memory contexts
+  * src/db.c: fix: make sure the database is properly closed
+  * src/db.c: don't ignore the result of db_bootstrap()
+  * hlr_vty_subscr.c: fix subscriber creation command help
+  * Update .gitignore: add missing build products
+  * tests/Makefile.am: also remove temporary sqlite files
+  * hlr_ussd.h: add #pragma once include guard
+  * hlr_ussd.h: use proper libc headers
+  * Update .gitignore: ignore osmo-euse-demo
+  * hlr_ussd.h: drop meaningless forward declaration
+  * USSD/hlr_vty.c: print error if EUSE is not found
+  * hlr_ussd.c: fix: properly print a EUSE / IUSE name
+  * hlr_ussd.c: avoid using CR and NL in IUSE responses
+
+  [ Neels Hofmeyr ]
+  * fix build: adjust test_nodes.vty to logging change
+  * tweak example config
+  * make: always allow running python tests manually
+
+ -- Harald Welte <laforge@gnumonks.org>  Sun, 20 Jan 2019 19:29:58 +0100
+
 osmo-hlr (0.2.1) unstable; urgency=medium
 
   [ Neels Hofmeyr ]
