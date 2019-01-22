@@ -1,0 +1,3 @@
+-- Dummy entry with ID=100 gives all subscribers created in the VTY test an
+-- ID > 100, so we can pre-fill the database with IDs < 100.
+INSERT INTO subscriber (id, imsi) VALUES(100, '000000000000100');

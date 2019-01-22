@@ -56,6 +56,8 @@ VTY_TEST_DB = hlr_vty_test.db
 #   make vty-test U=-u
 vty-test:
 	-rm -f $(VTY_TEST_DB)
+	sqlite3 $(VTY_TEST_DB) < $(top_srcdir)/sql/hlr.sql
+	sqlite3 $(VTY_TEST_DB) < $(srcdir)/test_subscriber.vty.sql
 	osmo_verify_transcript_vty.py -v \
 		-n OsmoHLR -p 4258 \
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
