@@ -379,15 +379,9 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
 				enum osmo_gsup_message_type type_in, uint8_t err_cause)
 {
-	int type_err = osmo_gsup_get_err_msg_type(type_in);
+	int type_err = OSMO_GSUP_TO_MSGT_ERROR(type_in);
 	struct osmo_gsup_message gsup_reply = {0};
 	struct msgb *msg_out;
-
-	if (type_err < 0) {
-		LOGP(DMAIN, LOGL_ERROR, "unable to determine error response for %s\n",
-			osmo_gsup_message_type_name(type_in));
-		return type_err;
-	}
 
 	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, imsi);
 	gsup_reply.message_type = type_err;
