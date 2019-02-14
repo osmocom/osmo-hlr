@@ -61,7 +61,7 @@ int gsup_route_add(struct osmo_gsup_conn *conn, const uint8_t *addr, size_t addr
 	if (!gr)
 		return -ENOMEM;
 
-	LOGP(DMAIN, LOGL_INFO, "Adding GSUP route for %s\n", addr);
+	LOGP(DMAIN, LOGL_INFO, "Adding GSUP route for %s via %s:%u\n", addr, conn->conn->addr, conn->conn->port);
 
 	gr->addr = talloc_memdup(gr, addr, addrlen);
 	gr->conn = conn;
