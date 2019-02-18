@@ -16,6 +16,10 @@ OsmoHLR> list
   show talloc-context (application|all) (full|brief|DEPTH)
   show talloc-context (application|all) (full|brief|DEPTH) tree ADDRESS
   show talloc-context (application|all) (full|brief|DEPTH) filter REGEXP
+  show stats
+  show stats level (global|peer|subscriber)
+  show asciidoc counters
+  show rate-counters
   show gsup-connections
   subscriber (imsi|msisdn|id|imei) IDENT show
   show subscriber (imsi|msisdn|id|imei) IDENT

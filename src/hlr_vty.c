@@ -27,6 +27,7 @@
 
 #include <osmocom/core/talloc.h>
 #include <osmocom/vty/vty.h>
+#include <osmocom/vty/stats.h>
 #include <osmocom/vty/command.h>
 #include <osmocom/vty/logging.h>
 #include <osmocom/vty/misc.h>
@@ -367,6 +368,7 @@ void hlr_vty_init(const struct log_info *cat)
 {
 	logging_vty_add_cmds(cat);
 	osmo_talloc_vty_add_cmds();
+	osmo_stats_vty_add_cmds();
 
 	install_element_ve(&show_gsup_conn_cmd);
 

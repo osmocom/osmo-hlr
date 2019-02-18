@@ -23,6 +23,7 @@
 #include <getopt.h>
 
 #include <osmocom/core/msgb.h>
+#include <osmocom/core/stats.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
@@ -663,6 +664,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	osmo_stats_init(hlr_ctx);
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
