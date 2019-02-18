@@ -1,5 +1,6 @@
 [Unit]
 Description=Osmocom Home Location Register (OsmoHLR)
+Documentation=https://osmocom.org/projects/osmo-hlr/wiki/OsmoHLR
 
 [Service]
 Type=simple
