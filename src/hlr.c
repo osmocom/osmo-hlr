@@ -441,6 +441,82 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	return osmo_gsup_conn_send(conn, msg_out);
 }
 
+static char namebuf[255];
+#define LOGP_GSUP_FWD(gsup, level, fmt, args ...) \
+	LOGP(DMAIN, level, "Forward %s (class=%s, IMSI=%s, %s->%s): " fmt, \
+	     osmo_gsup_message_type_name(gsup->message_type), \
+	     osmo_gsup_message_class_name(gsup->message_class), \
+	     gsup->imsi, \
+	     osmo_quote_str((const char *)gsup->source_name, gsup->source_name_len), \
+	     osmo_quote_str_buf2(namebuf, sizeof(namebuf), (const char *)gsup->destination_name, gsup->destination_name_len), \
+	     ## args)
+
+static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const struct osmo_gsup_message *gsup)
+{
+	int ret = -EINVAL;
+	struct osmo_gsup_message *gsup_err;
+
+	/* FIXME: it would be better if the msgb never were deallocated immediately by osmo_gsup_addr_send(), which a
+	 * select-loop volatile talloc context could facilitate. Then we would still be able to access gsup-> members
+	 * (pointing into the msgb) even after sending failed, and we wouldn't need to copy this data before sending: */
+	/* Prepare error message (before IEs get deallocated) */
+	gsup_err = talloc_zero(hlr_ctx, struct osmo_gsup_message);
+	OSMO_STRLCPY_ARRAY(gsup_err->imsi, gsup->imsi);
+	gsup_err->message_class = gsup->message_class;
+	gsup_err->destination_name = talloc_memdup(gsup_err, gsup->destination_name, gsup->destination_name_len);
+	gsup_err->destination_name_len = gsup->destination_name_len;
+	gsup_err->message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR;
+	gsup_err->session_id = gsup->session_id;
+	gsup_err->source_name = talloc_memdup(gsup_err, gsup->source_name, gsup->source_name_len);
+	gsup_err->source_name_len = gsup->source_name_len;
+
+	/* Check for routing IEs */
+	if (!gsup->source_name || !gsup->source_name_len || !gsup->destination_name || !gsup->destination_name_len) {
+		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "missing routing IEs\n");
+		goto end;
+	}
+
+	/* Verify source name (e.g. "MSC-00-00-00-00-00-00") */
+	if (gsup_route_find(conn->server, gsup->source_name, gsup->source_name_len) != conn) {
+		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "mismatching source name\n");
+		goto end;
+	}
+
+	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
+		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "missing or empty l2 data\n");
+		goto end;
+	}
+
+	/* Forward message without re-encoding (so we don't remove unknown IEs) */
+	LOGP_GSUP_FWD(gsup, LOGL_INFO, "checks passed, forwarding\n");
+
+	/* Remove incoming IPA header to be able to prepend an outgoing IPA header */
+	msgb_pull_to_l2(msg);
+	ret = osmo_gsup_addr_send(g_hlr->gs, gsup->destination_name, gsup->destination_name_len, msg);
+	/* AT THIS POINT, THE msg MAY BE DEALLOCATED and the data like gsup->imsi, gsup->source_name etc may all be
+	 * invalid and cause segfaults. */
+	msg = NULL;
+	gsup = NULL;
+	if (ret == -ENODEV)
+		LOGP_GSUP_FWD(gsup_err, LOGL_ERROR, "destination not connected\n");
+	else if (ret)
+		LOGP_GSUP_FWD(gsup_err, LOGL_ERROR, "unknown error %i\n", ret);
+
+end:
+	/* Send error back to source */
+	if (ret) {
+		struct msgb *msg_err = msgb_alloc_headroom(1024+16, 16, "GSUP forward ERR response");
+		OSMO_ASSERT(msg_err);
+		osmo_gsup_encode(msg_err, gsup_err);
+		LOGP_GSUP_FWD(gsup_err, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(gsup_err->message_type));
+		osmo_gsup_conn_send(conn, msg_err);
+	}
+	talloc_free(gsup_err);
+	if (msg)
+		msgb_free(msg);
+	return ret;
+}
+
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
 	static struct osmo_gsup_message gsup;
@@ -458,6 +534,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		LOGP(DMAIN, LOGL_ERROR, "IMSI too short: %s\n", osmo_quote_str(gsup.imsi, -1));
 		return gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
 	}
+
+	if (gsup.destination_name_len)
+		return read_cb_forward(conn, msg, &gsup);
 
 	switch (gsup.message_type) {
 	/* requests sent to us */
