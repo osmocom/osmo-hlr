@@ -40,8 +40,14 @@ struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 	struct gsup_route *gr;
 
 	llist_for_each_entry(gr, &gs->routes, list) {
-		if (talloc_total_size(gr->addr) == addrlen &&
-		    !memcmp(gr->addr, addr, addrlen))
+		size_t gr_addrlen = talloc_total_size(gr->addr); /* gr->addr is a nul-terminated string */
+
+		/* FIXME: despite passing addrlen, a lot of code assumes that addr is also nul-terminated */
+		if (gr_addrlen == addrlen && !memcmp(gr->addr, addr, addrlen))
+			return gr->conn;
+
+		/* Compare addr as non-nul-terminated blob */
+		if (gr_addrlen - 1 == addrlen && !memcmp(gr->addr, addr, addrlen))
 			return gr->conn;
 	}
 	return NULL;
