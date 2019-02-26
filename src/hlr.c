@@ -47,6 +47,7 @@
 #include "hlr_ussd.h"
 
 struct hlr *g_hlr;
+static void *hlr_ctx = NULL;
 static int quit = 0;
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
@@ -607,8 +608,6 @@ static void handle_options(int argc, char **argv)
 		}
 	}
 }
-
-static void *hlr_ctx = NULL;
 
 static void signal_hdlr(int signal)
 {
