@@ -56,6 +56,11 @@ struct hlr {
 	struct llist_head ss_sessions;
 
 	bool store_imei;
+
+	bool subscr_create_on_demand;
+	/* Bitmask of DB_SUBSCR_FLAG_* */
+	uint8_t subscr_create_on_demand_flags;
+	unsigned int subscr_create_on_demand_rand_msisdn_len;
 };
 
 extern struct hlr *g_hlr;

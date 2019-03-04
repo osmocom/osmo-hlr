@@ -34,6 +34,8 @@
 #include <osmocom/ctrl/control_vty.h>
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
+#include <osmocom/gsm/gsm_utils.h>
+#include <osmocom/gsm/protocol/gsm_23_003.h>
 
 #include "db.h"
 #include "hlr.h"
@@ -148,6 +150,78 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 	}
 }
 
+static int generate_new_msisdn(char *msisdn, const char *imsi, unsigned int len)
+{
+	int i, j, rc;
+	uint8_t rand_buf[GSM23003_MSISDN_MAX_DIGITS];
+
+	OSMO_ASSERT(len <= sizeof(rand_buf));
+
+	/* Generate a random unique MSISDN (with retry) */
+	for (i = 0; i < 10; i++) {
+		/* Get a random number (with retry) */
+		for (j = 0; j < 10; j++) {
+			rc = osmo_get_rand_id(rand_buf, len);
+			if (!rc)
+				break;
+		}
+		if (rc) {
+			LOGP(DMAIN, LOGL_ERROR, "IMSI='%s': Failed to generate new MSISDN, random number generator"
+						" failed (rc=%d)\n", imsi, rc);
+			return rc;
+		}
+
+		/* Shift 0x00 ... 0xff range to 30 ... 39 (ASCII numbers) */
+		for (j = 0; j < len; j++)
+			msisdn[j] = 48 + (rand_buf[j] % 10);
+		msisdn[j] = '\0';
+
+		/* Ensure there is no subscriber with such MSISDN */
+		if (db_subscr_exists_by_msisdn(g_hlr->dbc, msisdn) == -ENOENT)
+			return 0;
+	}
+
+	/* Failure */
+	LOGP(DMAIN, LOGL_ERROR, "IMSI='%s': Failed to generate a new MSISDN, consider increasing "
+				"the length for the automatically assigned MSISDNs "
+				"(see 'subscriber-create-on-demand' command)\n", imsi);
+	return -1;
+}
+
+static int subscr_create_on_demand(const char *imsi)
+{
+	char msisdn[GSM23003_MSISDN_MAX_DIGITS + 1];
+	int rc;
+	unsigned int rand_msisdn_len = g_hlr->subscr_create_on_demand_rand_msisdn_len;
+
+	if (!g_hlr->subscr_create_on_demand)
+		return -1;
+	if (db_subscr_exists_by_imsi(g_hlr->dbc, imsi) == 0)
+		return -1;
+	if (rand_msisdn_len && generate_new_msisdn(msisdn, imsi, rand_msisdn_len) != 0)
+		return -1;
+
+	LOGP(DMAIN, LOGL_INFO, "IMSI='%s': Creating subscriber on demand\n", imsi);
+	rc = db_subscr_create(g_hlr->dbc, imsi, g_hlr->subscr_create_on_demand_flags);
+	if (rc) {
+		LOGP(DMAIN, LOGL_ERROR, "Failed to create subscriber on demand (rc=%d): IMSI='%s'\n", rc, imsi);
+		return rc;
+	}
+
+	if (!rand_msisdn_len)
+		return 0;
+
+	/* Update MSISDN of the new (just allocated) subscriber */
+	rc = db_subscr_update_msisdn_by_imsi(g_hlr->dbc, imsi, msisdn);
+	if (rc) {
+		LOGP(DMAIN, LOGL_ERROR, "IMSI='%s': Failed to assign MSISDN='%s' (rc=%d)\n", imsi, msisdn, rc);
+		return rc;
+	}
+	LOGP(DMAIN, LOGL_INFO, "IMSI='%s': Successfully assigned MSISDN='%s'\n", imsi, msisdn);
+
+	return 0;
+}
+
 /***********************************************************************
  * Send Auth Info handling
  ***********************************************************************/
@@ -160,6 +234,8 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	struct osmo_gsup_message gsup_out;
 	struct msgb *msg_out;
 	int rc;
+
+	subscr_create_on_demand(gsup->imsi);
 
 	/* initialize return message structure */
 	memset(&gsup_out, 0, sizeof(gsup_out));
@@ -291,6 +367,8 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	}
 	llist_add(&luop->list, &g_lu_ops);
 
+	subscr_create_on_demand(gsup->imsi);
+
 	/* Roughly follwing "Process Update_Location_HLR" of TS 09.02 */
 
 	/* check if subscriber is known at all */
@@ -414,6 +492,8 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
+
+	subscr_create_on_demand(gsup->imsi);
 
 	/* Save in DB if desired */
 	if (g_hlr->store_imei) {

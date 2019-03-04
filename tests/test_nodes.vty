@@ -86,6 +86,8 @@ OsmoHLR(config-hlr)# list
   ncss-guard-timeout <0-255>
   store-imei
   no store-imei
+  subscriber-create-on-demand (no-msisdn|<3-15>) (none|cs|ps|cs+ps)
+  no subscriber-create-on-demand
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# list
