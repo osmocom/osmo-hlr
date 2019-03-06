@@ -256,6 +256,10 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_SEL(imsi, short_imsi, 0);
 	id_short = g_subscr.id;
 
+	comment("Check if subscriber exists (by IMSI)");
+
+	ASSERT_RC(db_subscr_exists_by_imsi(dbc, imsi0), 0);
+	ASSERT_RC(db_subscr_exists_by_imsi(dbc, unknown_imsi), -ENOENT);
 
 	comment("Set valid / invalid MSISDN");
 

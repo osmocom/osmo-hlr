@@ -93,6 +93,13 @@ struct hlr_subscriber {
 }
 
 
+--- Check if subscriber exists (by IMSI)
+
+db_subscr_exists_by_imsi(dbc, imsi0) --> 0
+
+db_subscr_exists_by_imsi(dbc, unknown_imsi) --> -ENOENT
+
+
 --- Set valid / invalid MSISDN
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0

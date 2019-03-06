@@ -79,6 +79,7 @@ static const char *stmt_sql[] = {
 		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
 	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
 	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
+	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

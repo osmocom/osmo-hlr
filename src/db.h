@@ -28,6 +28,7 @@ enum stmt_idx {
 	DB_STMT_AUC_3G_INSERT,
 	DB_STMT_AUC_3G_DELETE,
 	DB_STMT_SET_LAST_LU_SEEN,
+	DB_STMT_EXISTS_BY_IMSI,
 	_NUM_DB_STMT
 };
 
@@ -129,6 +130,8 @@ int db_subscr_update_msisdn_by_imsi(struct db_context *dbc, const char *imsi,
 int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 			       const struct sub_auth_data_str *aud);
 int db_subscr_update_imei_by_imsi(struct db_context *dbc, const char* imsi, const char *imei);
+
+int db_subscr_exists_by_imsi(struct db_context *dbc, const char *imsi);
 
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);
