@@ -221,37 +221,38 @@ static void test_subscr_create_update_sel_delete()
 
 	comment("Create with valid / invalid IMSI");
 
-	ASSERT_RC(db_subscr_create(dbc, imsi0), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
 	id0 = g_subscr.id;
-	ASSERT_RC(db_subscr_create(dbc, imsi1), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi1, 0);
 	id1 = g_subscr.id;
-	ASSERT_RC(db_subscr_create(dbc, imsi2), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi2, 0);
 	id2 = g_subscr.id;
-	ASSERT_RC(db_subscr_create(dbc, imsi0), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
 	ASSERT_SEL(imsi, imsi0, 0);
-	ASSERT_RC(db_subscr_create(dbc, imsi1), -EIO);
-	ASSERT_RC(db_subscr_create(dbc, imsi1), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
 	ASSERT_SEL(imsi, imsi1, 0);
-	ASSERT_RC(db_subscr_create(dbc, imsi2), -EIO);
-	ASSERT_RC(db_subscr_create(dbc, imsi2), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
 	ASSERT_SEL(imsi, imsi2, 0);
 
-	ASSERT_RC(db_subscr_create(dbc, "123456789 000003"), -EINVAL);
+	ASSERT_RC(db_subscr_create(dbc, "123456789 000003", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EINVAL);
 	ASSERT_SEL(imsi, "123456789000003", -ENOENT);
 
-	ASSERT_RC(db_subscr_create(dbc, "123456789000002123456"), -EINVAL);
+	ASSERT_RC(db_subscr_create(dbc, "123456789000002123456", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS),
+		  -EINVAL);
 	ASSERT_SEL(imsi, "123456789000002123456", -ENOENT);
 
-	ASSERT_RC(db_subscr_create(dbc, "foobar123"), -EINVAL);
+	ASSERT_RC(db_subscr_create(dbc, "foobar123", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EINVAL);
 	ASSERT_SEL(imsi, "foobar123", -ENOENT);
 
-	ASSERT_RC(db_subscr_create(dbc, "123"), -EINVAL);
+	ASSERT_RC(db_subscr_create(dbc, "123", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EINVAL);
 	ASSERT_SEL(imsi, "123", -ENOENT);
 
-	ASSERT_RC(db_subscr_create(dbc, short_imsi), 0);
+	ASSERT_RC(db_subscr_create(dbc, short_imsi, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, short_imsi, 0);
 	id_short = g_subscr.id;
 
@@ -452,6 +453,22 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_RC(db_subscr_delete_by_id(dbc, id_short), 0);
 	ASSERT_SEL(imsi, short_imsi, -ENOENT);
 
+	comment("Create and delete subscribers with non-default nam_cs and nam_ps");
+
+	ASSERT_RC(db_subscr_create(dbc, imsi0, 0x00), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	id0 = g_subscr.id;
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS), 0);
+	ASSERT_SEL(imsi, imsi1, 0);
+	id1 = g_subscr.id;
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_PS), 0);
+	ASSERT_SEL(imsi, imsi2, 0);
+	id2 = g_subscr.id;
+
+	ASSERT_RC(db_subscr_delete_by_id(dbc, id0), 0);
+	ASSERT_RC(db_subscr_delete_by_id(dbc, id1), 0);
+	ASSERT_RC(db_subscr_delete_by_id(dbc, id2), 0);
+
 	comment_end();
 }
 
@@ -495,7 +512,7 @@ static void test_subscr_aud()
 
 	comment("Create subscriber");
 
-	ASSERT_RC(db_subscr_create(dbc, imsi0), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	id = g_subscr.id;
@@ -707,7 +724,7 @@ static void test_subscr_aud()
 
 	comment("Re-add subscriber and verify auth data didn't come back");
 
-	ASSERT_RC(db_subscr_create(dbc, imsi0), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	/* For this test to work, we want to get the same subscriber ID back,
@@ -739,7 +756,7 @@ static void test_subscr_sqn()
 
 	comment("Create subscriber");
 
-	ASSERT_RC(db_subscr_create(dbc, imsi0), 0);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi0, 0);
 
 	id = g_subscr.id;

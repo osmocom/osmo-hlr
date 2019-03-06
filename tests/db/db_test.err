@@ -3,7 +3,7 @@
 
 --- Create with valid / invalid IMSI
 
-db_subscr_create(dbc, imsi0) --> 0
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -11,7 +11,7 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_subscr_create(dbc, imsi1) --> 0
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -19,7 +19,7 @@ struct hlr_subscriber {
   .imsi = '123456789000001',
 }
 
-db_subscr_create(dbc, imsi2) --> 0
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -27,7 +27,7 @@ struct hlr_subscriber {
   .imsi = '123456789000002',
 }
 
-db_subscr_create(dbc, imsi0) --> -EIO
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
 DAUC IMSI='123456789000000': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
@@ -36,10 +36,10 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_subscr_create(dbc, imsi1) --> -EIO
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
-db_subscr_create(dbc, imsi1) --> -EIO
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
@@ -48,10 +48,10 @@ struct hlr_subscriber {
   .imsi = '123456789000001',
 }
 
-db_subscr_create(dbc, imsi2) --> -EIO
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
-db_subscr_create(dbc, imsi2) --> -EIO
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
@@ -60,31 +60,31 @@ struct hlr_subscriber {
   .imsi = '123456789000002',
 }
 
-db_subscr_create(dbc, "123456789 000003") --> -EINVAL
+db_subscr_create(dbc, "123456789 000003", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123456789 000003'
 
 db_subscr_get_by_imsi(dbc, "123456789000003", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='123456789000003': No such subscriber
 
-db_subscr_create(dbc, "123456789000002123456") --> -EINVAL
+db_subscr_create(dbc, "123456789000002123456", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123456789000002123456'
 
 db_subscr_get_by_imsi(dbc, "123456789000002123456", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='123456789000002123456': No such subscriber
 
-db_subscr_create(dbc, "foobar123") --> -EINVAL
+db_subscr_create(dbc, "foobar123", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: 'foobar123'
 
 db_subscr_get_by_imsi(dbc, "foobar123", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='foobar123': No such subscriber
 
-db_subscr_create(dbc, "123") --> -EINVAL
+db_subscr_create(dbc, "123", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EINVAL
 DAUC Cannot create subscriber: invalid IMSI: '123'
 
 db_subscr_get_by_imsi(dbc, "123", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='123': No such subscriber
 
-db_subscr_create(dbc, short_imsi) --> 0
+db_subscr_create(dbc, short_imsi, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -752,6 +752,43 @@ db_subscr_delete_by_id(dbc, id_short) --> 0
 db_subscr_get_by_imsi(dbc, short_imsi, &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: IMSI='123456': No such subscriber
 
+
+--- Create and delete subscribers with non-default nam_cs and nam_ps
+
+db_subscr_create(dbc, imsi0, 0x00) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+  .nam_cs = false,
+  .nam_ps = false,
+}
+
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 2,
+  .imsi = '123456789000001',
+  .nam_ps = false,
+}
+
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_PS) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 3,
+  .imsi = '123456789000002',
+  .nam_cs = false,
+}
+
+db_subscr_delete_by_id(dbc, id0) --> 0
+
+db_subscr_delete_by_id(dbc, id1) --> 0
+
+db_subscr_delete_by_id(dbc, id2) --> 0
+
 ===== test_subscr_create_update_sel_delete: SUCCESS
 
 
@@ -769,7 +806,7 @@ DAUC IMSI='123456789000000': No such subscriber
 
 --- Create subscriber
 
-db_subscr_create(dbc, imsi0) --> 0
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -1259,7 +1296,7 @@ DAUC Cannot read subscriber from db: IMSI='123456789000000': No such subscriber
 
 --- Re-add subscriber and verify auth data didn't come back
 
-db_subscr_create(dbc, imsi0) --> 0
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
 struct hlr_subscriber {
@@ -1306,7 +1343,7 @@ DAUC Cannot read subscriber from db: ID=9999: No such subscriber
 
 --- Create subscriber
 
-db_subscr_create(dbc, imsi0) --> 0
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
 struct hlr_subscriber {

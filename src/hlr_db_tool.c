@@ -302,7 +302,7 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 
 	snprintf(imsi_str, sizeof(imsi_str), "%" PRId64, imsi);
 
-	rc = db_subscr_create(dbc, imsi_str);
+	rc = db_subscr_create(dbc, imsi_str, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS);
 	if (rc < 0) {
 		LOGP(DDB, LOGL_ERROR, "OsmoNITB DB import to %s: failed to create IMSI %s: %d: %s\n",
 		     dbc->fname,

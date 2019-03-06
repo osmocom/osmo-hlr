@@ -220,7 +220,7 @@ DEFUN(subscriber_create,
 		return CMD_WARNING;
 	}
 
-	rc = db_subscr_create(g_hlr->dbc, imsi);
+	rc = db_subscr_create(g_hlr->dbc, imsi, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS);
 
 	if (rc) {
 		if (rc == -EEXIST)

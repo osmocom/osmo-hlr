@@ -66,7 +66,7 @@ static const char *stmt_sql[] = {
 	[DB_STMT_UPD_PURGE_PS_BY_IMSI] = "UPDATE subscriber SET ms_purged_ps = $val WHERE imsi = $imsi",
 	[DB_STMT_UPD_NAM_CS_BY_IMSI] = "UPDATE subscriber SET nam_cs = $val WHERE imsi = $imsi",
 	[DB_STMT_UPD_NAM_PS_BY_IMSI] = "UPDATE subscriber SET nam_ps = $val WHERE imsi = $imsi",
-	[DB_STMT_SUBSCR_CREATE] = "INSERT INTO subscriber (imsi) VALUES ($imsi)",
+	[DB_STMT_SUBSCR_CREATE] = "INSERT INTO subscriber (imsi, nam_cs, nam_ps) VALUES ($imsi, $nam_cs, $nam_ps)",
 	[DB_STMT_DEL_BY_ID] = "DELETE FROM subscriber WHERE id = $subscriber_id",
 	[DB_STMT_SET_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = $msisdn WHERE imsi = $imsi",
 	[DB_STMT_DELETE_MSISDN_BY_IMSI] = "UPDATE subscriber SET msisdn = NULL WHERE imsi = $imsi",
