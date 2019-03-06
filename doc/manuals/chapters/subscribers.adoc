@@ -67,3 +67,24 @@ transceiving only RAND and SRES, may be applicable. (See 3GPP TS 33.102, chapter
 |ms_purged_ps|1|3GPP TS 23.008 chapter 2.7.6
 |===
 
+=== Configuring the Subscribers Create on Demand Feature
+
+Usually a HLR will only allow mobile equipment (ME) on the network, if the HLR
+has a subscriber entry with the ME's IMSI. But OsmoHLR can also be configured to
+automatically create new entries for new IMSIs, with the
+subscriber-create-on-demand VTY option. The obvious use case is creating the
+new subscriber entry and then allowing the ME to use both the CS
+(Circuit Switched) and PS (Packet Switched) NAM (Network Access Mode).
+
+On the other hand, operators might only want to give network access to IMSIs, of
+which they know the owner. In order to do that, one can set the default NAM to
+"none" and manually approve new subscribers by enabling their nam_cs and nam_ps
+parameters (e.g. over the VTY).
+
+Oftentimes it is hard to know, which IMSI belongs to which ME, but the IMEI is
+readily available. If you configure your MSC to send IMEI checking requests to
+the HLR, before sending location update requests, the subscribers created on
+demand can also have the IMEI stored in the HLR database. With OsmoMSC, this
+is done by writing "check-imei-rqd early" in the "msc" section of osmo-msc.cfg.
+Then enable storing the IMEI when receiving check IMEI requests with
+"store-imei" in the OsmoHLR configuration.
