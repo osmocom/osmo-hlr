@@ -150,7 +150,7 @@ struct ss_session {
 	/* link us to hlr->ss_sessions */
 	struct llist_head list;
 	/* imsi of this session */
-	char imsi[GSM23003_IMSI_MAX_DIGITS+2];
+	char imsi[OSMO_IMSI_BUF_SIZE];
 	/* ID of this session (unique per IMSI) */
 	uint32_t session_id;
 	/* state of the session */
