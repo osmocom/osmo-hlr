@@ -612,8 +612,9 @@ static void handle_options(int argc, char **argv)
 static void signal_hdlr(int signal)
 {
 	switch (signal) {
+	case SIGTERM:
 	case SIGINT:
-		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to SIGINT\n");
+		LOGP(DMAIN, LOGL_NOTICE, "Terminating due to signal=%d\n", signal);
 		quit++;
 		break;
 	case SIGUSR1:
@@ -709,6 +710,7 @@ int main(int argc, char **argv)
 
 	osmo_init_ignore_signals();
 	signal(SIGINT, &signal_hdlr);
+	signal(SIGTERM, &signal_hdlr);
 	signal(SIGUSR1, &signal_hdlr);
 
 	if (cmdline_opts.daemonize) {
