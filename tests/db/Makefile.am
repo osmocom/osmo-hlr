@@ -10,6 +10,10 @@ AM_CFLAGS = \
 	$(SQLITE3_CFLAGS) \
 	$(NULL)
 
+AM_LDFLAGS = \
+	-no-install \
+	$(NULL)
+
 EXTRA_DIST = \
 	db_test.ok \
 	db_test.err \

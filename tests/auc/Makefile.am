@@ -13,6 +13,7 @@ AM_CFLAGS = \
 	$(NULL)
 
 AM_LDFLAGS = \
+	-no-install \
 	$(NULL)
 
 EXTRA_DIST = \
