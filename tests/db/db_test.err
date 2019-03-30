@@ -219,6 +219,13 @@ db_subscr_get_by_msisdn(dbc, "5432101234567891", &g_subscr) --> -ENOENT
 DAUC Cannot read subscriber from db: MSISDN='5432101234567891': No such subscriber
 
 
+--- Check if subscriber exists (by MSISDN)
+
+db_subscr_exists_by_msisdn(dbc, "543210123456789") --> 0
+
+db_subscr_exists_by_msisdn(dbc, "5432101234567891") --> -ENOENT
+
+
 --- Set MSISDN on non-existent / invalid IMSI
 
 db_subscr_update_msisdn_by_imsi(dbc, unknown_imsi, "99") --> -ENOENT

@@ -560,6 +560,33 @@ int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 	return rc;
 }
 
+/*! Check if a subscriber exists in the HLR database.
+ * \param[in, out] dbc  database context.
+ * \param[in] msisdn  ASCII string of MSISDN digits.
+ * \returns 0 if it exists, -ENOENT if it does not exist, -EIO on database error.
+ */
+int db_subscr_exists_by_msisdn(struct db_context *dbc, const char *msisdn)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_EXISTS_BY_MSISDN];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, NULL, msisdn))
+		return -EIO;
+
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	if (rc == SQLITE_ROW)
+		return 0; /* exists */
+	if (rc == SQLITE_DONE)
+		return -ENOENT; /* does not exist */
+
+	err = sqlite3_errmsg(dbc->db);
+	LOGP(DAUC, LOGL_ERROR, "Failed to check if subscriber exists "
+		"by MSISDN='%s': %s\n", msisdn, err);
+	return rc;
+}
+
 /*! Retrieve subscriber data from the HLR database.
  * \param[in,out] dbc  database context.
  * \param[in] msisdn  ASCII string of MSISDN digits.
