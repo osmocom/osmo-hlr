@@ -34,6 +34,7 @@
 #include "gsup_server.h"
 #include "gsup_router.h"
 #include "logging.h"
+#include "db.h"
 
 /***********************************************************************
  * core data structures expressing config from VTY
@@ -166,6 +167,9 @@ struct ss_session {
 		const struct hlr_iuse *iuse;
 	} u;
 
+	/* subscriber's vlr_number, will be looked up once per session and cached here */
+	char vlr_number[32];
+
 	/* we don't keep a pointer to the osmo_gsup_{route,conn} towards the MSC/VLR here,
 	 * as this might change during inter-VLR hand-over, and we simply look-up the serving MSC/VLR
 	 * every time we receive an USSD component from the EUSE */
@@ -222,6 +226,33 @@ struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t 
  * handling functions for encoding SS messages + wrapping them in GSUP
  ***********************************************************************/
 
+/* Resolve the target MSC by ss->imsi and send GSUP message. */
+static int ss_gsup_send(struct ss_session *ss, struct osmo_gsup_server *gs, struct msgb *msg)
+{
+	struct hlr_subscriber subscr = {};
+	int rc;
+
+	/* Use vlr_number as looked up by the caller, or look up now. */
+	if (!ss->vlr_number[0]) {
+		rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
+		if (rc < 0) {
+			LOGPSS(ss, LOGL_ERROR, "Cannot find subscriber, cannot route GSUP message\n");
+			msgb_free(msg);
+			return -EINVAL;
+		}
+		osmo_strlcpy(ss->vlr_number, subscr.vlr_number, sizeof(ss->vlr_number));
+	}
+
+	if (!ss->vlr_number[0]) {
+		LOGPSS(ss, LOGL_ERROR, "Cannot send GSUP message, no VLR number stored for subscriber\n");
+		msgb_free(msg);
+		return -EINVAL;
+	}
+
+	LOGPSS(ss, LOGL_DEBUG, "Tx SS/USSD to VLR '%s'\n", ss->vlr_number);
+	return osmo_gsup_addr_send(gs, (uint8_t *)ss->vlr_number, strlen(ss->vlr_number) + 1, msg);
+}
+
 static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_msg_type,
 			bool final, struct msgb *ss_msg)
 
@@ -246,8 +277,7 @@ static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_m
 	osmo_gsup_encode(resp_msg, &resp);
 	msgb_free(ss_msg);
 
-	/* FIXME: resolve this based on the database vlr_addr */
-	return osmo_gsup_addr_send(g_hlr->gs, (uint8_t *)"MSC-00-00-00-00-00-00", 22, resp_msg);
+	return ss_gsup_send(ss, g_hlr->gs, resp_msg);
 }
 
 #if 0
@@ -433,8 +463,7 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 		OSMO_ASSERT(msg_out);
 		/* Received from EUSE, Forward to VLR */
 		osmo_gsup_encode(msg_out, gsup);
-		/* FIXME: resolve this based on the database vlr_addr */
-		osmo_gsup_addr_send(conn->server, (uint8_t *)"MSC-00-00-00-00-00-00", 22, msg_out);
+		ss_gsup_send(ss, conn->server, msg_out);
 	} else {
 		/* Received from VLR (MS) */
 		if (ss->is_external) {
