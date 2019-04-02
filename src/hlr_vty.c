@@ -74,6 +74,8 @@ static int config_write_hlr(struct vty *vty)
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
 	if (g_hlr->store_imei)
 		vty_out(vty, " store-imei%s", VTY_NEWLINE);
+	if (g_hlr->db_file_path && strcmp(g_hlr->db_file_path, HLR_DEFAULT_DB_FILE_PATH))
+		vty_out(vty, " database %s%s", g_hlr->db_file_path, VTY_NEWLINE);
 	return CMD_SUCCESS;
 }
 
@@ -221,6 +223,15 @@ DEFUN(cfg_ussd_no_defaultroute, cfg_ussd_no_defaultroute_cmd,
 {
 	g_hlr->euse_default = NULL;
 
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_database, cfg_database_cmd,
+	"database PATH",
+	"Set the path to the HLR database file\n"
+	"Relative or absolute file system path to the database file (default is '" HLR_DEFAULT_DB_FILE_PATH "')\n")
+{
+	osmo_talloc_replace_string(g_hlr, &g_hlr->db_file_path, argv[0]);
 	return CMD_SUCCESS;
 }
 
@@ -379,6 +390,8 @@ void hlr_vty_init(const struct log_info *cat)
 	install_node(&gsup_node, config_write_hlr_gsup);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
+
+	install_element(HLR_NODE, &cfg_database_cmd);
 
 	install_element(HLR_NODE, &cfg_euse_cmd);
 	install_element(HLR_NODE, &cfg_no_euse_cmd);

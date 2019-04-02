@@ -25,6 +25,8 @@
 #include <stdbool.h>
 #include <osmocom/core/linuxlist.h>
 
+#define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
+
 struct hlr_euse;
 
 struct hlr {
@@ -32,6 +34,7 @@ struct hlr {
 	struct osmo_gsup_server *gs;
 
 	/* DB context */
+	char *db_file_path;
 	struct db_context *dbc;
 
 	/* Control Interface */

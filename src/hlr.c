@@ -626,7 +626,7 @@ static struct {
 	bool db_upgrade;
 } cmdline_opts = {
 	.config_file = "osmo-hlr.cfg",
-	.db_file = "hlr.db",
+	.db_file = NULL,
 	.daemonize = false,
 	.db_upgrade = false,
 };
@@ -741,6 +741,7 @@ int main(int argc, char **argv)
 	INIT_LLIST_HEAD(&g_hlr->iuse_list);
 	INIT_LLIST_HEAD(&g_hlr->ss_sessions);
 	INIT_LLIST_HEAD(&g_hlr->ussd_routes);
+	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
 
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
@@ -779,9 +780,12 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	g_hlr->dbc = db_open(hlr_ctx, cmdline_opts.db_file, true, cmdline_opts.db_upgrade);
+	if (cmdline_opts.db_file)
+		osmo_talloc_replace_string(g_hlr, &g_hlr->db_file_path, cmdline_opts.db_file);
+
+	g_hlr->dbc = db_open(hlr_ctx, g_hlr->db_file_path, true, cmdline_opts.db_upgrade);
 	if (!g_hlr->dbc) {
-		LOGP(DMAIN, LOGL_FATAL, "Error opening database\n");
+		LOGP(DMAIN, LOGL_FATAL, "Error opening database %s\n", osmo_quote_str(g_hlr->db_file_path, -1));
 		exit(1);
 	}
 
