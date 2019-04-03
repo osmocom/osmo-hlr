@@ -454,8 +454,10 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 
 	/* 3GPP TS 23.003 Section 2.2 clearly states that an IMSI with less than 5
 	 * digits is impossible.  Even 5 digits is a highly theoretical case */
-	if (strlen(gsup.imsi) < 5)
+	if (strlen(gsup.imsi) < 5) {
+		LOGP(DMAIN, LOGL_ERROR, "IMSI too short: %s\n", osmo_quote_str(gsup.imsi, -1));
 		return gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
+	}
 
 	switch (gsup.message_type) {
 	/* requests sent to us */
