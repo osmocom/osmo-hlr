@@ -25,13 +25,7 @@
 
 #include "logging.h"
 #include "gsup_server.h"
-
-struct gsup_route {
-	struct llist_head list;
-
-	uint8_t *addr;
-	struct osmo_gsup_conn *conn;
-};
+#include "gsup_router.h"
 
 /*! Find a route for the given address.
  * \param[in] gs gsup server
@@ -50,6 +44,22 @@ struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 		    !memcmp(gr->addr, addr, addrlen))
 			return gr->conn;
 	}
+	return NULL;
+}
+
+/*! Find a GSUP connection's route (to read the IPA address from the route).
+ * \param[in] conn GSUP connection
+ * \return GSUP route
+ */
+struct gsup_route *gsup_route_find_by_conn(const struct osmo_gsup_conn *conn)
+{
+	struct gsup_route *gr;
+
+	llist_for_each_entry(gr, &conn->server->routes, list) {
+		if (gr->conn == conn)
+			return gr;
+	}
+
 	return NULL;
 }
 

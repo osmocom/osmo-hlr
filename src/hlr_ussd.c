@@ -167,8 +167,11 @@ struct ss_session {
 		const struct hlr_iuse *iuse;
 	} u;
 
-	/* subscriber's vlr_number, will be looked up once per session and cached here */
-	char vlr_number[32];
+	/* subscriber's vlr_number
+	 * MO USSD: originating MSC's vlr_number
+	 * MT USSD: looked up once per session and cached here */
+	uint8_t *vlr_number;
+	size_t vlr_number_len;
 
 	/* we don't keep a pointer to the osmo_gsup_{route,conn} towards the MSC/VLR here,
 	 * as this might change during inter-VLR hand-over, and we simply look-up the serving MSC/VLR
@@ -233,24 +236,26 @@ static int ss_gsup_send(struct ss_session *ss, struct osmo_gsup_server *gs, stru
 	int rc;
 
 	/* Use vlr_number as looked up by the caller, or look up now. */
-	if (!ss->vlr_number[0]) {
+	if (!ss->vlr_number) {
 		rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 		if (rc < 0) {
 			LOGPSS(ss, LOGL_ERROR, "Cannot find subscriber, cannot route GSUP message\n");
 			msgb_free(msg);
 			return -EINVAL;
 		}
-		osmo_strlcpy(ss->vlr_number, subscr.vlr_number, sizeof(ss->vlr_number));
+		ss->vlr_number = (uint8_t *)talloc_strdup(ss, subscr.vlr_number);
+		ss->vlr_number_len = strlen(subscr.vlr_number) + 1;
 	}
 
-	if (!ss->vlr_number[0]) {
+	/* Check for empty string (all vlr_number strings end in "\0", because otherwise gsup_route_find() fails) */
+	if (ss->vlr_number_len == 1) {
 		LOGPSS(ss, LOGL_ERROR, "Cannot send GSUP message, no VLR number stored for subscriber\n");
 		msgb_free(msg);
 		return -EINVAL;
 	}
 
-	LOGPSS(ss, LOGL_DEBUG, "Tx SS/USSD to VLR '%s'\n", ss->vlr_number);
-	return osmo_gsup_addr_send(gs, (uint8_t *)ss->vlr_number, strlen(ss->vlr_number) + 1, msg);
+	LOGPSS(ss, LOGL_DEBUG, "Tx SS/USSD to VLR %s\n", osmo_quote_str((char *)ss->vlr_number, ss->vlr_number_len));
+	return osmo_gsup_addr_send(gs, ss->vlr_number, ss->vlr_number_len, msg);
 }
 
 static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_msg_type,
@@ -500,6 +505,7 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	struct hlr *hlr = conn->server->priv;
 	struct ss_session *ss;
 	struct ss_request req = {0};
+	struct gsup_route *gsup_rt;
 
 	LOGP(DSS, LOGL_DEBUG, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
@@ -528,6 +534,20 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: Unable to allocate SS session\n",
 				gsup->imsi, gsup->session_id);
 			goto out_err;
+		}
+		/* Get IPA name from VLR conn and save as ss->vlr_number */
+		if (!conn_is_euse(conn)) {
+			gsup_rt = gsup_route_find_by_conn(conn);
+			if (gsup_rt) {
+				ss->vlr_number = (uint8_t *)talloc_strdup(ss, (const char *)gsup_rt->addr);
+				ss->vlr_number_len = strlen((const char *)gsup_rt->addr) + 1;
+				LOGPSS(ss, LOGL_DEBUG, "Destination IPA name retrieved from GSUP route: %s\n",
+				       osmo_quote_str((const char *)ss->vlr_number, ss->vlr_number_len));
+			} else {
+				LOGPSS(ss, LOGL_NOTICE, "Could not find GSUP route, therefore can't set the destination"
+							" IPA name. We'll try to look it up later, but this should not"
+							" have happened.\n");
+			}
 		}
 		if (ss_op_is_ussd(req.opcode)) {
 			if (conn_is_euse(conn)) {
