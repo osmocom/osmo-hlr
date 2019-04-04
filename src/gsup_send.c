@@ -42,7 +42,7 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 
 	conn = gsup_route_find(gs, addr, addrlen);
 	if (!conn) {
-		DEBUGP(DLGSUP, "Cannot find route for addr %s\n", addr);
+		DEBUGP(DLGSUP, "Cannot find route for addr %s\n", osmo_quote_str((const char*)addr, addrlen));
 		msgb_free(msg);
 		return -ENODEV;
 	}
