@@ -26,7 +26,14 @@
 
 #include <osmocom/core/logging.h>
 
-/* Send a msgb to a given address using routing */
+/*! Send a msgb to a given address using routing.
+ * \param[in] gs gsup server
+ * \param[in] addr IPA name of the client (SGSN, MSC/VLR). Although this is passed like a blob, together with the
+ *                 length, it must be nul-terminated! This is for legacy reasons, see the discussion here:
+ *                 https://gerrit.osmocom.org/#/c/osmo-hlr/+/13048/
+ * \param[in] addrlen length of addr, *including the nul-byte* (strlen(addr) + 1).
+ * \param[in] msg message buffer
+ */
 int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 			const uint8_t *addr, size_t addrlen,
 			struct msgb *msg)

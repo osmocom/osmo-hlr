@@ -33,7 +33,13 @@ struct gsup_route {
 	struct osmo_gsup_conn *conn;
 };
 
-/* find a route for the given address */
+/*! Find a route for the given address.
+ * \param[in] gs gsup server
+ * \param[in] addr IPA name of the client (SGSN, MSC/VLR). Although this is passed like a blob, together with the
+ *                 length, it must be nul-terminated! This is for legacy reasons, see the discussion here:
+ *                 https://gerrit.osmocom.org/#/c/osmo-hlr/+/13048/
+ * \param[in] addrlen length of addr, *including the nul-byte* (strlen(addr) + 1).
+ */
 struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 					const uint8_t *addr, size_t addrlen)
 {
