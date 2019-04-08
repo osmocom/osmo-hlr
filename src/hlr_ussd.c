@@ -277,7 +277,7 @@ static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_m
 		resp.ss_info_len = msgb_length(ss_msg);
 	}
 
-	resp_msg = gsm0480_msgb_alloc_name(__func__);
+	resp_msg = msgb_alloc_headroom(4000, 64, __func__);
 	OSMO_ASSERT(resp_msg);
 	osmo_gsup_encode(resp_msg, &resp);
 	msgb_free(ss_msg);
