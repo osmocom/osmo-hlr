@@ -483,11 +483,6 @@ static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const 
 		goto end;
 	}
 
-	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
-		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "missing or empty l2 data\n");
-		goto end;
-	}
-
 	/* Forward message without re-encoding (so we don't remove unknown IEs) */
 	LOGP_GSUP_FWD(gsup, LOGL_INFO, "checks passed, forwarding\n");
 
@@ -524,10 +519,15 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	static struct osmo_gsup_message gsup;
 	int rc;
 
+	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
+		LOGP(DMAIN, LOGL_ERROR, "missing or empty L2 data\n");
+		return -EINVAL; /* FIXME: msgb_free(msg); */
+	}
+
 	rc = osmo_gsup_decode(msgb_l2(msg), msgb_l2len(msg), &gsup);
 	if (rc < 0) {
 		LOGP(DMAIN, LOGL_ERROR, "error in GSUP decode: %d\n", rc);
-		return rc;
+		return rc; /* FIXME: msgb_free(msg); */
 	}
 
 	/* 3GPP TS 23.003 Section 2.2 clearly states that an IMSI with less than 5
