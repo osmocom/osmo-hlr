@@ -465,7 +465,7 @@ static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const 
 	gsup_err->message_class = gsup->message_class;
 	gsup_err->destination_name = talloc_memdup(gsup_err, gsup->destination_name, gsup->destination_name_len);
 	gsup_err->destination_name_len = gsup->destination_name_len;
-	gsup_err->message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR;
+	gsup_err->message_type = gsup->message_type;
 	gsup_err->session_state = gsup->session_state;
 	gsup_err->session_id = gsup->session_id;
 	gsup_err->source_name = talloc_memdup(gsup_err, gsup->source_name, gsup->source_name_len);
@@ -508,6 +508,7 @@ end:
 	if (ret) {
 		struct msgb *msg_err = msgb_alloc_headroom(1024+16, 16, "GSUP forward ERR response");
 		OSMO_ASSERT(msg_err);
+		gsup_err->message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR;
 		osmo_gsup_encode(msg_err, gsup_err);
 		LOGP_GSUP_FWD(gsup_err, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(gsup_err->message_type));
 		osmo_gsup_conn_send(conn, msg_err);
