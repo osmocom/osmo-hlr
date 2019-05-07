@@ -521,20 +521,24 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 
 	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
 		LOGP(DMAIN, LOGL_ERROR, "missing or empty L2 data\n");
-		return -EINVAL; /* FIXME: msgb_free(msg); */
+		msgb_free(msg);
+		return -EINVAL;
 	}
 
 	rc = osmo_gsup_decode(msgb_l2(msg), msgb_l2len(msg), &gsup);
 	if (rc < 0) {
 		LOGP(DMAIN, LOGL_ERROR, "error in GSUP decode: %d\n", rc);
-		return rc; /* FIXME: msgb_free(msg); */
+		msgb_free(msg);
+		return rc;
 	}
 
 	/* 3GPP TS 23.003 Section 2.2 clearly states that an IMSI with less than 5
 	 * digits is impossible.  Even 5 digits is a highly theoretical case */
-	if (strlen(gsup.imsi) < 5) {
+	if (strlen(gsup.imsi) < 5) { /* TODO: move this check to libosmogsm/gsup.c? */
 		LOGP(DMAIN, LOGL_ERROR, "IMSI too short: %s\n", osmo_quote_str(gsup.imsi, -1));
-		return gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
+		gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
+		msgb_free(msg);
+		return -EINVAL;
 	}
 
 	if (gsup.destination_name_len)
