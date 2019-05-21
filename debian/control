@@ -12,7 +12,8 @@ Build-Depends: debhelper (>= 9),
                libosmo-abis-dev,
                libosmo-netif-dev,
                libsqlite3-dev,
-               sqlite3
+               sqlite3,
+               osmo-gsm-manuals-dev
 Standards-Version: 3.9.6
 Vcs-Browser: http://cgit.osmocom.org/osmo-hlr
 Vcs-Git: git://git.osmocom.org/osmo-hlr
@@ -57,3 +58,12 @@ Description: Development headers of Osmocom GSUP client library
   and External USSD Entities (EUSEs) using this library to implement clients.
   .
   This package contains the development headers.
+
+Package: osmo-hlr-doc
+Architecture: all
+Section: doc
+Priority: optional
+Depends: ${misc:Depends}
+Description: ${misc:Package} PDF documentation
+ Various manuals: user manual, VTY reference manual and/or
+ protocol/interface manuals.
