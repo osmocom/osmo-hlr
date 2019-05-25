@@ -73,7 +73,7 @@ struct hlr_subscriber {
 
 	int64_t		id;
 	char		imsi[GSM23003_IMSI_MAX_DIGITS+1];
-	char		msisdn[GT_MAX_DIGITS+1];
+	char		msisdn[GSM23003_MSISDN_MAX_DIGITS+1];
 	/* imeisv? */
 	char		imei[GSM23003_IMEI_NUM_DIGITS+1];
 	char		vlr_number[32];
