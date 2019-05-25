@@ -487,7 +487,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	}
 
 	/* Decode IMEI */
-	if (gsm48_decode_bcd_number(imei, sizeof(imei), gsup->imei_enc, 0) < 0) {
+	if (gsm48_decode_bcd_number2(imei, sizeof(imei), gsup->imei_enc, gsup->imei_enc_len, 0) < 0) {
 		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI\n", gsup->imsi);
 		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
