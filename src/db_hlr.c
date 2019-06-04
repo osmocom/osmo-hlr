@@ -445,7 +445,7 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	int rc;
 	int ret = 0;
 	const char *last_lu_seen_str;
-	struct tm tm;
+	struct tm tm = {0};
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);

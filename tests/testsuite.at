@@ -29,12 +29,10 @@ cat $abs_srcdir/gsup_server/gsup_server_test.err > experr
 AT_CHECK([$abs_top_builddir/tests/gsup_server/gsup_server_test], [], [expout], [experr])
 AT_CLEANUP
 
-# TZ=CET: workaround for glibc bug in mktime() (https://osmocom.org/issues/4026):
-# "Cannot convert LU timestamp '2019-05-26 03:05:03' to time_t: Value too large for defined data type"
 AT_SETUP([db])
 AT_KEYWORDS([db])
 cat $abs_srcdir/db/db_test.ok > expout
 cat $abs_srcdir/db/db_test.err > experr
 sqlite3 db_test.db < $abs_top_srcdir/sql/hlr.sql
-AT_CHECK([TZ=CET $abs_top_builddir/tests/db/db_test], [], [expout], [experr])
+AT_CHECK([$abs_top_builddir/tests/db/db_test], [], [expout], [experr])
 AT_CLEANUP
