@@ -477,18 +477,28 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 {
 	struct osmo_gsup_message gsup_reply = {0};
 	struct msgb *msg_out;
-	char imei[GSM23003_IMEI_NUM_DIGITS+1] = {0};
+	char imei[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1] = {0};
+	int rc;
 
-	/* Encoded IMEI length check */
-	if (!gsup->imei_enc || gsup->imei_enc_len < 1 || gsup->imei_enc[0] >= sizeof(imei)) {
-		LOGP(DMAIN, LOGL_ERROR, "%s: wrong encoded IMEI length\n", gsup->imsi);
+	/* Require IMEI */
+	if (!gsup->imei_enc) {
+		LOGP(DMAIN, LOGL_ERROR, "%s: missing IMEI\n", gsup->imsi);
 		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
 
-	/* Decode IMEI */
-	if (gsm48_decode_bcd_number2(imei, sizeof(imei), gsup->imei_enc, gsup->imei_enc_len, 0) < 0) {
-		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI\n", gsup->imsi);
+	/* Decode IMEI (fails if IMEI is too long) */
+	rc = gsm48_decode_bcd_number2(imei, sizeof(imei), gsup->imei_enc, gsup->imei_enc_len, 0);
+	if (rc < 0) {
+		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI (rc: %i)\n", gsup->imsi, rc);
+		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		return -1;
+	}
+
+	/* Check if IMEI is too short */
+	if (strlen(imei) != GSM23003_IMEI_NUM_DIGITS_NO_CHK) {
+		LOGP(DMAIN, LOGL_ERROR, "%s: wrong encoded IMEI length (IMEI: '%s', %lu, %i)\n", gsup->imsi, imei,
+		     strlen(imei), GSM23003_IMEI_NUM_DIGITS_NO_CHK);
 		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
