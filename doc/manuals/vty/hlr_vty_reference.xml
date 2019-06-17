@@ -187,7 +187,7 @@
         <param name='MASK' doc='List of logging categories to log, e.g. &apos;abc:mno:xyz&apos;. Available log categories depend on the specific application, refer to the &apos;logging level&apos; command. Optionally add individual log levels like &apos;abc,1:mno,3:xyz,5&apos;, where the level numbers are LOGL_DEBUG=1 LOGL_INFO=3 LOGL_NOTICE=5 LOGL_ERROR=7 LOGL_FATAL=8' />
       </params>
     </command>
-    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf) (debug|info|notice|error|fatal)'>
+    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf|lrspro) (debug|info|notice|error|fatal)'>
       <params>
         <param name='logging' doc='Configure logging' />
         <param name='level' doc='Set the log level for a specified category' />
@@ -213,6 +213,7 @@
         <param name='lm3ua' doc='libosmo-sigtran MTP3 User Adaptation' />
         <param name='lmgcp' doc='libosmo-mgcp Media Gateway Control Protocol' />
         <param name='ljibuf' doc='libosmo-netif Jitter Buffer' />
+        <param name='lrspro' doc='Remote SIM protocol' />
         <param name='debug' doc='Log debug messages and higher levels' />
         <param name='info' doc='Log informational messages and higher levels' />
         <param name='notice' doc='Log noticeable messages and higher levels' />
@@ -302,20 +303,61 @@
         <param name='REGEXP' doc='Regular expression' />
       </params>
     </command>
+    <command id='show stats'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='stats' doc='Show statistical values' />
+      </params>
+    </command>
+    <command id='show stats level (global|peer|subscriber)'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='stats' doc='Show statistical values' />
+        <param name='level' doc='Set the maximum group level' />
+        <param name='global' doc='Show global groups only' />
+        <param name='peer' doc='Show global and network peer related groups' />
+        <param name='subscriber' doc='Show global, peer, and subscriber groups' />
+      </params>
+    </command>
+    <command id='show asciidoc counters'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='asciidoc' doc='Asciidoc generation' />
+        <param name='counters' doc='Generate table of all registered counters' />
+      </params>
+    </command>
+    <command id='show rate-counters'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='rate-counters' doc='Show all rate counters' />
+      </params>
+    </command>
     <command id='show gsup-connections'>
       <params>
         <param name='show' doc='Show running system information' />
         <param name='gsup-connections' doc='GSUP Connections from VLRs, SGSNs, EUSEs' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT show'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT show'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='show' doc='Show subscriber information' />
+      </params>
+    </command>
+    <command id='show subscriber (imsi|msisdn|id|imei) IDENT'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='subscriber' doc='Subscriber management commands' />
+        <param name='imsi' doc='Identify subscriber by IMSI' />
+        <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
+        <param name='id' doc='Identify subscriber by database ID' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
       </params>
     </command>
   </node>
@@ -486,7 +528,7 @@
         <param name='MASK' doc='List of logging categories to log, e.g. &apos;abc:mno:xyz&apos;. Available log categories depend on the specific application, refer to the &apos;logging level&apos; command. Optionally add individual log levels like &apos;abc,1:mno,3:xyz,5&apos;, where the level numbers are LOGL_DEBUG=1 LOGL_INFO=3 LOGL_NOTICE=5 LOGL_ERROR=7 LOGL_FATAL=8' />
       </params>
     </command>
-    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf) (debug|info|notice|error|fatal)'>
+    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf|lrspro) (debug|info|notice|error|fatal)'>
       <params>
         <param name='logging' doc='Configure logging' />
         <param name='level' doc='Set the log level for a specified category' />
@@ -512,6 +554,7 @@
         <param name='lm3ua' doc='libosmo-sigtran MTP3 User Adaptation' />
         <param name='lmgcp' doc='libosmo-mgcp Media Gateway Control Protocol' />
         <param name='ljibuf' doc='libosmo-netif Jitter Buffer' />
+        <param name='lrspro' doc='Remote SIM protocol' />
         <param name='debug' doc='Log debug messages and higher levels' />
         <param name='info' doc='Log informational messages and higher levels' />
         <param name='notice' doc='Log noticeable messages and higher levels' />
@@ -521,8 +564,7 @@
     </command>
     <command id='logging level set-all (debug|info|notice|error|fatal)'>
       <params>
-        <param name='logging' doc='Configure logging' />
-        <param name='level' doc='Set the log level for a specified category' />
+        <param name='logging' doc='Configure logging' />        <param name='level' doc='Set the log level for a specified category' />
         <param name='set-all' doc='Once-off set all categories to the given log level. There is no single command to take back these changes -- each category is set to the given level, period.' />
         <param name='debug' doc='Log debug messages and higher levels' />
         <param name='info' doc='Log informational messages and higher levels' />
@@ -601,20 +643,61 @@
         <param name='REGEXP' doc='Regular expression' />
       </params>
     </command>
+    <command id='show stats'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='stats' doc='Show statistical values' />
+      </params>
+    </command>
+    <command id='show stats level (global|peer|subscriber)'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='stats' doc='Show statistical values' />
+        <param name='level' doc='Set the maximum group level' />
+        <param name='global' doc='Show global groups only' />
+        <param name='peer' doc='Show global and network peer related groups' />
+        <param name='subscriber' doc='Show global, peer, and subscriber groups' />
+      </params>
+    </command>
+    <command id='show asciidoc counters'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='asciidoc' doc='Asciidoc generation' />
+        <param name='counters' doc='Generate table of all registered counters' />
+      </params>
+    </command>
+    <command id='show rate-counters'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='rate-counters' doc='Show all rate counters' />
+      </params>
+    </command>
     <command id='show gsup-connections'>
       <params>
         <param name='show' doc='Show running system information' />
         <param name='gsup-connections' doc='GSUP Connections from VLRs, SGSNs, EUSEs' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT show'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT show'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='show' doc='Show subscriber information' />
+      </params>
+    </command>
+    <command id='show subscriber (imsi|msisdn|id|imei) IDENT'>
+      <params>
+        <param name='show' doc='Show running system information' />
+        <param name='subscriber' doc='Subscriber management commands' />
+        <param name='imsi' doc='Identify subscriber by IMSI' />
+        <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
+        <param name='id' doc='Identify subscriber by database ID' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
       </params>
     </command>
     <command id='subscriber imsi IDENT create'>
@@ -625,47 +708,52 @@
         <param name='create' doc='Create subscriber by IMSI' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT delete'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT delete'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='delete' doc='Delete subscriber from database' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT update msisdn MSISDN'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update msisdn (none|MSISDN)'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='update' doc='Set or update subscriber data' />
         <param name='msisdn' doc='Set MSISDN (phone number) of the subscriber' />
+        <param name='none' doc='Remove MSISDN (phone number)' />
         <param name='MSISDN' doc='New MSISDN (phone number)' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT update aud2g none'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update aud2g none'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='update' doc='Set or update subscriber data' />
         <param name='aud2g' doc='Set 2G authentication data' />
         <param name='none' doc='Delete 2G authentication data' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='update' doc='Set or update subscriber data' />
         <param name='aud2g' doc='Set 2G authentication data' />
         <param name='comp128v1' doc='Use COMP128v1 algorithm' />
@@ -676,25 +764,27 @@
         <param name='KI' doc='Ki as 32 hexadecimal characters' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT update aud3g none'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update aud3g none'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='update' doc='Set or update subscriber data' />
         <param name='aud3g' doc='Set UMTS authentication data (3G, and 2G with UMTS AKA)' />
         <param name='none' doc='Delete 3G authentication data' />
       </params>
     </command>
-    <command id='subscriber (imsi|msisdn|id) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [&lt;0-28&gt;]'>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [&lt;0-28&gt;]'>
       <params>
         <param name='subscriber' doc='Subscriber management commands' />
         <param name='imsi' doc='Identify subscriber by IMSI' />
         <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
         <param name='id' doc='Identify subscriber by database ID' />
-        <param name='IDENT' doc='IMSI/MSISDN/ID of the subscriber' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
         <param name='update' doc='Set or update subscriber data' />
         <param name='aud3g' doc='Set UMTS authentication data (3G, and 2G with UMTS AKA)' />
         <param name='milenage' doc='Use Milenage algorithm' />
@@ -705,6 +795,20 @@
         <param name='OP_C' doc='OP or OPC as 32 hexadecimal characters' />
         <param name='[ind-bitlen]' doc='Set IND bit length' />
         <param name='[&lt;0-28&gt;]' doc='IND bit length value (default: 5)' />
+      </params>
+    </command>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)'>
+      <params>
+        <param name='subscriber' doc='Subscriber management commands' />
+        <param name='imsi' doc='Identify subscriber by IMSI' />
+        <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
+        <param name='id' doc='Identify subscriber by database ID' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
+        <param name='update' doc='Set or update subscriber data' />
+        <param name='imei' doc='Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)' />
+        <param name='none' doc='Forget IMEI' />
+        <param name='IMEI' doc='Set IMEI (use for debug only!)' />
       </params>
     </command>
   </node>
@@ -883,7 +987,8 @@
         <param name='user' doc='Generic facility' />
         <param name='uucp' doc='UUCP facility' />
       </params>
-    </command>    <command id='log syslog local &lt;0-7&gt;'>
+    </command>
+    <command id='log syslog local &lt;0-7&gt;'>
       <params>
         <param name='log' doc='Configure logging sub-system' />
         <param name='syslog' doc='Logging via syslog' />
@@ -903,6 +1008,43 @@
         <param name='log' doc='Configure logging sub-system' />
         <param name='gsmtap' doc='Logging via GSMTAP' />
         <param name='[HOSTNAME]' doc='Host name to send the GSMTAP logging to (UDP port 4729)' />
+      </params>
+    </command>
+    <command id='stats reporter statsd'>
+      <params>
+        <param name='stats' doc='Configure stats sub-system' />
+        <param name='reporter' doc='Configure a stats reporter' />
+        <param name='statsd' doc='Report to a STATSD server' />
+      </params>
+    </command>
+    <command id='no stats reporter statsd'>
+      <params>
+        <param name='no' doc='Negate a command or set its defaults' />
+        <param name='stats' doc='Configure stats sub-system' />
+        <param name='reporter' doc='Configure a stats reporter' />
+        <param name='statsd' doc='Report to a STATSD server' />
+      </params>
+    </command>
+    <command id='stats reporter log'>
+      <params>
+        <param name='stats' doc='Configure stats sub-system' />
+        <param name='reporter' doc='Configure a stats reporter' />
+        <param name='log' doc='Report to the logger' />
+      </params>
+    </command>
+    <command id='no stats reporter log'>
+      <params>
+        <param name='no' doc='Negate a command or set its defaults' />
+        <param name='stats' doc='Configure stats sub-system' />
+        <param name='reporter' doc='Configure a stats reporter' />
+        <param name='log' doc='Report to the logger' />
+      </params>
+    </command>
+    <command id='stats interval &lt;1-65535&gt;'>
+      <params>
+        <param name='stats' doc='Configure stats sub-system' />
+        <param name='interval' doc='Set the reporting interval' />
+        <param name='&lt;1-65535&gt;' doc='Interval in seconds' />
       </params>
     </command>
     <command id='hlr'>
@@ -985,7 +1127,7 @@
         <param name='[last]' doc='Log source file info at the end of a log line. If omitted, log source file info just before the log text.' />
       </params>
     </command>
-    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf) (debug|info|notice|error|fatal)'>
+    <command id='logging level (main|db|auc|ss|lglobal|llapd|linp|lmux|lmi|lmib|lsms|lctrl|lgtp|lstats|lgsup|loap|lss7|lsccp|lsua|lm3ua|lmgcp|ljibuf|lrspro) (debug|info|notice|error|fatal)'>
       <params>
         <param name='logging' doc='Configure logging' />
         <param name='level' doc='Set the log level for a specified category' />
@@ -1011,6 +1153,7 @@
         <param name='lm3ua' doc='libosmo-sigtran MTP3 User Adaptation' />
         <param name='lmgcp' doc='libosmo-mgcp Media Gateway Control Protocol' />
         <param name='ljibuf' doc='libosmo-netif Jitter Buffer' />
+        <param name='lrspro' doc='Remote SIM protocol' />
         <param name='debug' doc='Log debug messages and higher levels' />
         <param name='info' doc='Log informational messages and higher levels' />
         <param name='notice' doc='Log noticeable messages and higher levels' />
@@ -1051,6 +1194,75 @@
       </params>
     </command>
   </node>
+  <node id='config-stats'>
+    <name>config-stats</name>
+    <command id='local-ip ADDR'>
+      <params>
+        <param name='local-ip' doc='Set the IP address to which we bind locally' />
+        <param name='ADDR' doc='IP Address' />
+      </params>
+    </command>
+    <command id='no local-ip'>
+      <params>
+        <param name='no' doc='Negate a command or set its defaults' />
+        <param name='local-ip' doc='Set the IP address to which we bind locally' />
+      </params>
+    </command>
+    <command id='remote-ip ADDR'>
+      <params>
+        <param name='remote-ip' doc='Set the remote IP address to which we connect' />
+        <param name='ADDR' doc='IP Address' />
+      </params>
+    </command>
+    <command id='remote-port &lt;1-65535&gt;'>
+      <params>
+        <param name='remote-port' doc='Set the remote port to which we connect' />
+        <param name='&lt;1-65535&gt;' doc='Remote port number' />
+      </params>
+    </command>
+    <command id='mtu &lt;100-65535&gt;'>
+      <params>
+        <param name='mtu' doc='Set the maximum packet size' />
+        <param name='&lt;100-65535&gt;' doc='Size in byte' />
+      </params>
+    </command>
+    <command id='no mtu'>
+      <params>
+        <param name='no' doc='Negate a command or set its defaults' />
+        <param name='mtu' doc='Set the maximum packet size' />
+      </params>
+    </command>
+    <command id='prefix PREFIX'>
+      <params>
+        <param name='prefix' doc='Set the item name prefix' />
+        <param name='PREFIX' doc='The prefix string' />
+      </params>
+    </command>
+    <command id='no prefix'>
+      <params>
+        <param name='no' doc='Negate a command or set its defaults' />
+        <param name='prefix' doc='Set the item name prefix' />
+      </params>
+    </command>
+    <command id='level (global|peer|subscriber)'>
+      <params>
+        <param name='level' doc='Set the maximum group level' />
+        <param name='global' doc='Report global groups only' />
+        <param name='peer' doc='Report global and network peer related groups' />
+        <param name='subscriber' doc='Report global, peer, and subscriber groups' />
+      </params>
+    </command>
+    <command id='enable'>
+      <params>
+        <param name='enable' doc='Enable the reporter' />
+      </params>
+    </command>
+    <command id='disable'>
+      <params>
+        <param name='disable' doc='Disable the reporter' />
+      </params>
+    </command>
+  </node>
   <node id='config-line'>
     <name>config-line</name>
     <command id='login'>
@@ -1064,10 +1276,11 @@
         <param name='login' doc='Enable password checking' />
       </params>
     </command>
-    <command id='bind A.B.C.D'>
+    <command id='bind A.B.C.D [&lt;0-65535&gt;]'>
       <params>
         <param name='bind' doc='Accept VTY telnet connections on local interface' />
         <param name='A.B.C.D' doc='Local interface IP address (default: 127.0.0.1)' />
+        <param name='[&lt;0-65535&gt;]' doc='Local TCP port number' />
       </params>
     </command>
   </node>
@@ -1085,6 +1298,12 @@
     <command id='gsup'>
       <params>
         <param name='gsup' doc='Configure GSUP options' />
+      </params>
+    </command>
+    <command id='database PATH'>
+      <params>
+        <param name='database' doc='Set the path to the HLR database file' />
+        <param name='PATH' doc='Relative or absolute file system path to the database file (default is &apos;hlr.db&apos;)' />
       </params>
     </command>
     <command id='euse NAME'>
@@ -1143,6 +1362,40 @@
         <param name='no' doc='Negate a command or set its defaults' />
         <param name='ussd' doc='USSD Configuration' />
         <param name='default-route' doc='Remove the default-route for all USSD to unknown destinations' />
+      </params>
+    </command>
+    <command id='ncss-guard-timeout &lt;0-255&gt;'>
+      <params>
+        <param name='ncss-guard-timeout' doc='Set guard timer for NCSS (call independent SS) session activity' />
+        <param name='&lt;0-255&gt;' doc='Guard timer value (sec.), or 0 to disable' />
+      </params>
+    </command>
+    <command id='store-imei'>
+      <params>
+        <param name='store-imei' doc='Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send Check IMEI requests (for OsmoMSC, you may want to set &apos;check-imei-rqd 1&apos;).' />
+      </params>
+    </command>
+    <command id='no store-imei'>
+      <params>
+        <param name='no' doc='Do not save the IMEI in the database, when receiving Check IMEI requests.' />
+        <param name='store-imei' doc='(null)' />
+      </params>
+    </command>
+    <command id='subscriber-create-on-demand (no-msisdn|&lt;3-15&gt;) (none|cs|ps|cs+ps)'>
+      <params>
+        <param name='subscriber-create-on-demand' doc='Make a new record when a subscriber is first seen.' />
+        <param name='no-msisdn' doc='Do not automatically assign MSISDN.' />
+        <param name='&lt;3-15&gt;' doc='Length of an automatically assigned MSISDN.' />
+        <param name='none' doc='Do not allow any NAM (Network Access Mode) by default.' />
+        <param name='cs' doc='Allow access to circuit switched NAM by default.' />
+        <param name='ps' doc='Allow access to packet switched NAM by default.' />
+        <param name='cs+ps' doc='Allow access to circuit and packet switched NAM by default.' />
+      </params>
+    </command>
+    <command id='no subscriber-create-on-demand'>
+      <params>
+        <param name='no' doc='Do not make a new record when a subscriber is first seen.' />
+        <param name='subscriber-create-on-demand' doc='(null)' />
       </params>
     </command>
   </node>
