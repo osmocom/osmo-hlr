@@ -4,6 +4,7 @@ EXTRA_DIST = example_subscriber_add_update_delete.vty \
     osmohlr-usermanual.adoc \
     osmohlr-usermanual-docinfo.xml \
     osmohlr-vty-reference.xml \
+    regen_doc.sh \
     chapters \
     vty
 
