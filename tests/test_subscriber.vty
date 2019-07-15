@@ -12,6 +12,7 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g none
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
+  subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
 
 OsmoHLR# subscriber?
   subscriber  Subscriber management commands
@@ -125,10 +126,11 @@ OsmoHLR# subscriber msisdn 423 show
     MSISDN: 423
 
 OsmoHLR# subscriber imsi 123456789023000 update ?
-  msisdn  Set MSISDN (phone number) of the subscriber
-  aud2g   Set 2G authentication data
-  aud3g   Set UMTS authentication data (3G, and 2G with UMTS AKA)
-  imei    Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)
+  msisdn               Set MSISDN (phone number) of the subscriber
+  aud2g                Set 2G authentication data
+  aud3g                Set UMTS authentication data (3G, and 2G with UMTS AKA)
+  imei                 Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)
+  network-access-mode  Set Network Access Mode (NAM) of the subscriber
 
 OsmoHLR# subscriber imsi 123456789023000 update msisdn ?
   none    Remove MSISDN (phone number)
@@ -437,3 +439,35 @@ OsmoHLR# show subscriber id 99
     IMSI: 000000000000099
     MSISDN: none
     IMEI: 12345 (INVALID LENGTH!)
+
+OsmoHLR# subscriber imsi 123456789023000 create
+% Created subscriber 123456789023000
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+OsmoHLR# subscriber imsi 123456789023000 update network-access-mode none
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+    CS disabled
+    PS disabled
+OsmoHLR# subscriber imsi 123456789023000 update network-access-mode cs
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+    PS disabled
+OsmoHLR# subscriber imsi 123456789023000 update network-access-mode ps
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+    CS disabled
+OsmoHLR# subscriber imsi 123456789023000 update network-access-mode cs+ps
+OsmoHLR# subscriber imsi 123456789023000 show
+    ID: 101
+    IMSI: 123456789023000
+    MSISDN: none
+OsmoHLR# subscriber imsi 123456789023000 delete
+% Deleted subscriber for IMSI '123456789023000'

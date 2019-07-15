@@ -577,6 +577,33 @@ DEFUN(subscriber_imei,
 	return CMD_SUCCESS;
 }
 
+DEFUN(subscriber_nam,
+      subscriber_nam_cmd,
+      SUBSCR_UPDATE "network-access-mode (none|cs|ps|cs+ps)",
+      SUBSCR_UPDATE_HELP
+      "Set Network Access Mode (NAM) of the subscriber\n"
+      "Do not allow access to circuit switched or packet switched services\n"
+      "Allow access to circuit switched services only\n"
+      "Allow access to packet switched services only\n"
+      "Allow access to both circuit and packet switched services\n")
+{
+	struct hlr_subscriber subscr;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	bool nam_cs = strstr(argv[2], "cs");
+	bool nam_ps = strstr(argv[2], "ps");
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	if (nam_cs != subscr.nam_cs)
+		hlr_subscr_nam(g_hlr, &subscr, nam_cs, 0);
+	if (nam_ps != subscr.nam_ps)
+		hlr_subscr_nam(g_hlr, &subscr, nam_ps, 1);
+
+	return CMD_SUCCESS;
+}
+
 
 void hlr_vty_subscriber_init(void)
 {
@@ -590,4 +617,5 @@ void hlr_vty_subscriber_init(void)
 	install_element(ENABLE_NODE, &subscriber_no_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_imei_cmd);
+	install_element(ENABLE_NODE, &subscriber_nam_cmd);
 }

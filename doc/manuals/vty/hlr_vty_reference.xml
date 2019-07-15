@@ -811,6 +811,22 @@
         <param name='IMEI' doc='Set IMEI (use for debug only!)' />
       </params>
     </command>
+    <command id='subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)'>
+      <params>
+        <param name='subscriber' doc='Subscriber management commands' />
+        <param name='imsi' doc='Identify subscriber by IMSI' />
+        <param name='msisdn' doc='Identify subscriber by MSISDN (phone number)' />
+        <param name='id' doc='Identify subscriber by database ID' />
+        <param name='imei' doc='Identify subscriber by IMEI' />
+        <param name='IDENT' doc='IMSI/MSISDN/ID/IMEI of the subscriber' />
+        <param name='update' doc='Set or update subscriber data' />
+        <param name='network-access-mode' doc='Set Network Access Mode (NAM) of the subscriber' />
+        <param name='none' doc='Do not allow access to circuit switched or packet switched services' />
+        <param name='cs' doc='Allow access to circuit switched services only' />
+        <param name='ps' doc='Allow access to packet switched services only' />
+        <param name='cs+ps' doc='Allow access to both circuit and packet switched services' />
+      </params>
+    </command>
   </node>
   <node id='config'>
     <name>config</name>
