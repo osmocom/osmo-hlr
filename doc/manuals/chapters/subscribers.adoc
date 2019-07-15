@@ -72,19 +72,58 @@ transceiving only RAND and SRES, may be applicable. (See 3GPP TS 33.102, chapter
 Usually a HLR will only allow mobile equipment (ME) on the network, if the HLR
 has a subscriber entry with the ME's IMSI. But OsmoHLR can also be configured to
 automatically create new entries for new IMSIs, with the
-subscriber-create-on-demand VTY option. The obvious use case is creating the
+`subscriber-create-on-demand` VTY option. The obvious use case is creating the
 new subscriber entry and then allowing the ME to use both the CS
 (Circuit Switched) and PS (Packet Switched) NAM (Network Access Mode).
 
+.osmo-hlr.cfg
+----
+hlr
+ subscriber-create-on-demand 5 cs+ps
+----
+
 On the other hand, operators might only want to give network access to IMSIs, of
 which they know the owner. In order to do that, one can set the default NAM to
-"none" and manually approve new subscribers by enabling their nam_cs and nam_ps
-parameters (e.g. over the VTY).
+`none` and manually approve new subscribers by changing the NAM (e.g. over the
+VTY, see the example below).
 
 Oftentimes it is hard to know, which IMSI belongs to which ME, but the IMEI is
 readily available. If you configure your MSC to send IMEI checking requests to
 the HLR, before sending location update requests, the subscribers created on
 demand can also have the IMEI stored in the HLR database. With OsmoMSC, this
-is done by writing "check-imei-rqd early" in the "msc" section of osmo-msc.cfg.
+is done by writing `check-imei-rqd early` in the `msc` section of osmo-msc.cfg.
 Then enable storing the IMEI when receiving check IMEI requests with
-"store-imei" in the OsmoHLR configuration.
+`store-imei` in the OsmoHLR configuration.
+
+.osmo-msc.cfg
+----
+msc
+ check-imei-rqd early
+----
+
+.osmo-hlr.cfg
+----
+hlr
+ subscriber-create-on-demand 5 none
+ store-imei
+----
+
+.Example: Enabling CS and PS NAM via VTY for a known IMEI
+----
+OsmoHLR> enable
+OsmoHLR# subscriber imei 35761300444848 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 58192 <1>
+    IMEI: 35761300444848
+    CS disabled <2>
+    PS disabled <2>
+OsmoHLR# subscriber imei 35761300444848 update network-access-mode cs+ps
+OsmoHLR# subscriber imei 35761300444848 show
+    ID: 1
+    IMSI: 123456789023000
+    MSISDN: 58192
+    IMEI: 35761300444848
+----
+<1> Randomly generated 5 digit MSISDN
+<2> Disabled CS and PS NAM prevent the subscriber from accessing the network
