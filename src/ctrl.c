@@ -95,7 +95,7 @@ static bool get_subscriber(struct db_context *dbc,
 		cmd->reply = "No such subscriber.";
 		return false;
 	default:
-		cmd->reply = "An unknown error has occured during get_subscriber().";
+		cmd->reply = "An unknown error has occurred during get_subscriber().";
 		return false;
 	}
 }
