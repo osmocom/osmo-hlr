@@ -336,11 +336,11 @@ static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session
 		ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
 		break;
 	case -ENOENT:
-		ss_tx_error(ss, true, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
 		break;
 	case -EIO:
 	default:
-		ss_tx_error(ss, true, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
 		break;
 	}
 	return 0;
