@@ -1338,6 +1338,91 @@ DAUC IMSI='123456789000000': No such subscriber
 ===== test_subscr_aud: SUCCESS
 
 
+===== test_subscr_aud_invalid_len
+
+--- Create subscriber
+
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> 0
+
+db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
+struct hlr_subscriber {
+  .id = 1,
+  .imsi = '123456789000000',
+}
+
+
+--- Set auth data, 2G only, with invalid Ki length
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")) --> 0
+
+raw SQL: UPDATE auc_2g SET ki = '0123456789abcdef0123456789abcde'
+sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
+
+sqlite3_step(stmt) --> SQLITE_DONE
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+DAUC IMSI='123456789000000': Error reading Ki, expected length 16 but has length 15
+DAUC IMSI='123456789000000': No 3G Auth Data
+
+
+
+--- Remove 2G auth data
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> 0
+
+
+--- Set auth data, 3G only, with invalid K length
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
+
+raw SQL: UPDATE auc_3g SET k = 'C01ffedC1cadaeAc1d1f1edAcac1aB0'
+sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
+
+sqlite3_step(stmt) --> SQLITE_DONE
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': Error reading K, expected length 16 but has length 15
+
+
+
+--- Set auth data, 3G only, with invalid OP length
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", true, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
+
+raw SQL: UPDATE auc_3g SET op = 'BeefedCafeFaceAcedAddedDecadeFe'
+sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
+
+sqlite3_step(stmt) --> SQLITE_DONE
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': Error reading OP, expected length 16 but has length 15
+
+
+
+--- Set auth data, 3G only, with invalid OPC length
+
+db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCafeFaceAcedAddedDecadeFee", false, "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)) --> 0
+
+raw SQL: UPDATE auc_3g SET opc = 'BeefedCafeFaceAcedAddedDecadeFe'
+sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
+
+sqlite3_step(stmt) --> SQLITE_DONE
+
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
+DAUC IMSI='123456789000000': No 2G Auth Data
+DAUC IMSI='123456789000000': Error reading OPC, expected length 16 but has length 15
+
+
+
+--- Delete subscriber
+
+db_subscr_delete_by_id(dbc, id) --> 0
+
+===== test_subscr_aud_invalid_len: SUCCESS
+
+
 ===== test_subscr_sqn
 
 --- Set SQN for unknown subscriber

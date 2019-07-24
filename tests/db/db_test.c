@@ -208,6 +208,17 @@ void dump_aud(const char *label, struct osmo_sub_auth_data *aud)
 #undef Phex
 }
 
+void db_raw_sql(struct db_context *dbc, const char *sql)
+{
+	sqlite3_stmt *stmt;
+
+	fprintf(stderr, "raw SQL: %s\n", sql);
+	ASSERT_RC(sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL), SQLITE_OK);
+	ASSERT_RC(sqlite3_step(stmt), SQLITE_DONE);
+	db_remove_reset(stmt);
+	sqlite3_finalize(stmt);
+}
+
 static const char *imsi0 = "123456789000000";
 static const char *imsi1 = "123456789000001";
 static const char *imsi2 = "123456789000002";
@@ -749,6 +760,70 @@ static void test_subscr_aud()
 	comment_end();
 }
 
+/* Make each key too short in this test. Note that we can't set them longer than the allowed size without changing the
+ * table structure. */
+static void test_subscr_aud_invalid_len()
+{
+	int64_t id;
+
+	comment_start();
+	comment("Create subscriber");
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
+	ASSERT_SEL(imsi, imsi0, 0);
+	id = g_subscr.id;
+
+
+	/* Invalid Ki length */
+	comment("Set auth data, 2G only, with invalid Ki length");
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		  mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "0123456789abcdef0123456789abcdef")),
+		  0);
+	/* Use raw SQL to avoid length check in db_subscr_update_aud_by_id(). This changes all rows in the table, which
+         * is fine for this test (implicit WHERE 1). */
+	db_raw_sql(dbc, "UPDATE auc_2g SET ki = '0123456789abcdef0123456789abcde'");
+	ASSERT_SEL_AUD(imsi0, -ENOKEY, id);
+
+	comment("Remove 2G auth data");
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		  mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)),
+		  0);
+
+	/* Invalid K length */
+	comment("Set auth data, 3G only, with invalid K length");
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
+			  "BeefedCafeFaceAcedAddedDecadeFee", true,
+			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
+		0);
+	db_raw_sql(dbc, "UPDATE auc_3g SET k = 'C01ffedC1cadaeAc1d1f1edAcac1aB0'");
+	ASSERT_SEL_AUD(imsi0, -EIO, id);
+
+	/* Invalid OP length */
+	comment("Set auth data, 3G only, with invalid OP length");
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
+			  "BeefedCafeFaceAcedAddedDecadeFee", true,
+			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
+		0);
+	db_raw_sql(dbc, "UPDATE auc_3g SET op = 'BeefedCafeFaceAcedAddedDecadeFe'");
+	ASSERT_SEL_AUD(imsi0, -EIO, id);
+
+	/* Invalid OPC length */
+	comment("Set auth data, 3G only, with invalid OPC length");
+	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
+		mk_aud_3g(OSMO_AUTH_ALG_MILENAGE,
+			  "BeefedCafeFaceAcedAddedDecadeFee", false,
+			  "C01ffedC1cadaeAc1d1f1edAcac1aB0a", 5)),
+		0);
+	db_raw_sql(dbc, "UPDATE auc_3g SET opc = 'BeefedCafeFaceAcedAddedDecadeFe'");
+	ASSERT_SEL_AUD(imsi0, -EIO, id);
+
+
+	comment("Delete subscriber");
+	ASSERT_RC(db_subscr_delete_by_id(dbc, id), 0);
+	comment_end();
+}
+
 static void test_subscr_sqn()
 {
 	int64_t id;
@@ -900,6 +975,7 @@ int main(int argc, char **argv)
 
 	test_subscr_create_update_sel_delete();
 	test_subscr_aud();
+	test_subscr_aud_invalid_len();
 	test_subscr_sqn();
 
 	printf("Done\n");

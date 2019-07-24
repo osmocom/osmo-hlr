@@ -73,6 +73,32 @@ out:
 	return ret;
 }
 
+/* hexparse a specific column of a sqlite prepared statement into dst (with length check)
+ * returns 0 for success, -EIO on error */
+static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int col, const char *col_name,
+			 const char *imsi)
+{
+	const uint8_t *text;
+	size_t col_len;
+
+	/* Bytes are stored as hex strings in database, hence divide length by two */
+	col_len = sqlite3_column_bytes(stmt, col) / 2;
+
+	if (col_len != dst_len) {
+		LOGAUC(imsi, LOGL_ERROR, "Error reading %s, expected length %lu but has length %lu\n", col_name,
+		       dst_len, col_len);
+		return -EIO;
+	}
+
+	text = sqlite3_column_text(stmt, col);
+	if (!text) {
+		LOGAUC(imsi, LOGL_ERROR, "Error reading %s\n", col_name);
+		return -EIO;
+	}
+	osmo_hexparse((void *)text, dst, dst_len);
+	return 0;
+}
+
 /* obtain the authentication data for a given imsi
  * returns 0 for success, negative value on error:
  * -ENOENT if the IMSI is not known, -ENOKEY if the IMSI is known but has no auth data,
@@ -113,49 +139,34 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	/* obtain result values using sqlite3_column_*() */
 	if (sqlite3_column_type(stmt, 1) == SQLITE_INTEGER) {
 		/* we do have some 2G authentication data */
-		const uint8_t *ki;
-
-		aud2g->algo = sqlite3_column_int(stmt, 1);
-		ki = sqlite3_column_text(stmt, 2);
-#if 0
-		if (sqlite3_column_bytes(stmt, 2) != sizeof(aud2g->u.gsm.ki)) {
-			LOGAUC(imsi, LOGL_ERROR, "Error reading Ki: %d\n", rc);
+		if (hexparse_stmt(aud2g->u.gsm.ki, sizeof(aud2g->u.gsm.ki), stmt, 2, "Ki", imsi))
 			goto end_2g;
-		}
-#endif
-		osmo_hexparse((void*)ki, (void*)&aud2g->u.gsm.ki, sizeof(aud2g->u.gsm.ki));
+		aud2g->algo = sqlite3_column_int(stmt, 1);
 		aud2g->type = OSMO_AUTH_TYPE_GSM;
 	} else
 		LOGAUC(imsi, LOGL_DEBUG, "No 2G Auth Data\n");
-//end_2g:
+end_2g:
 	if (sqlite3_column_type(stmt, 3) == SQLITE_INTEGER) {
 		/* we do have some 3G authentication data */
-		const uint8_t *k, *op, *opc;
-
-		aud3g->algo = sqlite3_column_int(stmt, 3);
-		k = sqlite3_column_text(stmt, 4);
-		if (!k) {
-			LOGAUC(imsi, LOGL_ERROR, "Error reading K: %d\n", rc);
+		if (hexparse_stmt(aud3g->u.umts.k, sizeof(aud3g->u.umts.k), stmt, 4, "K", imsi)) {
 			ret = -EIO;
 			goto out;
 		}
-		osmo_hexparse((void*)k, (void*)&aud3g->u.umts.k, sizeof(aud3g->u.umts.k));
+		aud3g->algo = sqlite3_column_int(stmt, 3);
+
 		/* UMTS Subscribers can have either OP or OPC */
-		op = sqlite3_column_text(stmt, 5);
-		if (!op) {
-			opc = sqlite3_column_text(stmt, 6);
-			if (!opc) {
-				LOGAUC(imsi, LOGL_ERROR, "Error reading OPC: %d\n", rc);
+		if (sqlite3_column_text(stmt, 5)) {
+			if (hexparse_stmt(aud3g->u.umts.opc, sizeof(aud3g->u.umts.opc), stmt, 5, "OP", imsi)) {
 				ret = -EIO;
 				goto out;
 			}
-			osmo_hexparse((void*)opc, (void*)&aud3g->u.umts.opc,
-					sizeof(aud3g->u.umts.opc));
-			aud3g->u.umts.opc_is_op = 0;
-		} else {
-			osmo_hexparse((void*)op, (void*)&aud3g->u.umts.opc,
-					sizeof(aud3g->u.umts.opc));
 			aud3g->u.umts.opc_is_op = 1;
+		} else {
+			if (hexparse_stmt(aud3g->u.umts.opc, sizeof(aud3g->u.umts.opc), stmt, 6, "OPC", imsi)) {
+				ret = -EIO;
+				goto out;
+			}
+			aud3g->u.umts.opc_is_op = 0;
 		}
 		aud3g->u.umts.sqn = sqlite3_column_int64(stmt, 7);
 		aud3g->u.umts.ind_bitlen = sqlite3_column_int(stmt, 8);
