@@ -519,6 +519,11 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 			/* FIXME: Send a Reject component? */
 			goto out_err;
 		}
+	} else if (gsup->session_state != OSMO_GSUP_SESSION_STATE_END) {
+		LOGP(DSS, LOGL_ERROR, "%s/0x%082x: Missing SS payload for '%s'\n",
+		     gsup->imsi, gsup->session_id,
+		     osmo_gsup_session_state_name(gsup->session_state));
+		goto out_err;
 	}
 
 	switch (gsup->session_state) {
@@ -606,13 +611,18 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 				gsup->imsi, gsup->session_id);
 			goto out_err;
 		}
-		if (ss_op_is_ussd(req.opcode)) {
-			/* dispatch unstructured SS to routing */
-			handle_ussd(conn, ss, gsup, &req);
-		} else {
-			/* dispatch non-call SS to internal code */
-			handle_ss(ss, gsup, &req);
+
+		/* SS payload is optional for END */
+		if (gsup->ss_info && gsup->ss_info_len) {
+			if (ss_op_is_ussd(req.opcode)) {
+				/* dispatch unstructured SS to routing */
+				handle_ussd(conn, ss, gsup, &req);
+			} else {
+				/* dispatch non-call SS to internal code */
+				handle_ss(ss, gsup, &req);
+			}
 		}
+
 		ss_session_free(ss);
 		break;
 	default:
