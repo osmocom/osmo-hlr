@@ -50,6 +50,7 @@ osmo_hlr_SOURCES = \
 	hlr_vty_subscr.c \
 	gsup_send.c \
 	hlr_ussd.c \
+	hlr_sms.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \

@@ -38,6 +38,7 @@
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_vty_subscr.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/hlr_sms.h>
 #include <osmocom/hlr/gsup_server.h>
 
 struct cmd_node hlr_node = {
@@ -159,8 +160,8 @@ DEFUN(cfg_hlr_gsup_bind_ip,
 		"Respond with subscribers' own MSISDN\n" \
 		"Respond with subscribers' own IMSI\n"
 
-#define EXT_STR "External USSD Handler\n" \
-		"Name of External USSD Handler (IPA CCM ID)\n"
+#define EXT_STR "External USSD/SMS Handler\n" \
+		"Name of External USSD/SMS Handler (IPA CCM ID)\n"
 
 DEFUN(cfg_ussd_route_pfx_int, cfg_ussd_route_pfx_int_cmd,
 	"ussd route prefix PREFIX internal " INT_CHOICE,
@@ -223,11 +224,11 @@ DEFUN(cfg_ussd_defaultroute, cfg_ussd_defaultroute_cmd,
 		return CMD_WARNING;
 	}
 
-	if (g_hlr->euse_default != euse) {
-		vty_out(vty, "Switching default route from %s to %s%s",
-			g_hlr->euse_default ? g_hlr->euse_default->name : "<none>",
+	if (g_hlr->ussd_euse_default != euse) {
+		vty_out(vty, "Switching default USSD route from '%s' to '%s'%s",
+			g_hlr->ussd_euse_default ? g_hlr->ussd_euse_default->name : "<none>",
 			euse->name, VTY_NEWLINE);
-		g_hlr->euse_default = euse;
+		g_hlr->ussd_euse_default = euse;
 	}
 
 	return CMD_SUCCESS;
@@ -237,7 +238,164 @@ DEFUN(cfg_ussd_no_defaultroute, cfg_ussd_no_defaultroute_cmd,
 	"no ussd default-route",
 	NO_STR USSD_STR "Remove the default-route for all USSD to unknown destinations\n")
 {
-	g_hlr->euse_default = NULL;
+	g_hlr->ussd_euse_default = NULL;
+
+	return CMD_SUCCESS;
+}
+
+/***********************************************************************
+ * SMS forwarding entity
+ ***********************************************************************/
+
+#define SMS_STR "SMS Routing Configuration\n"
+
+DEFUN(cfg_sms_route_smsc_addr, cfg_sms_route_smsc_addr_cmd,
+	"sms route smsc-address ADDRESS external EUSE",
+	SMS_STR "Add a new route\n" "Match by address of SMS Center\n"
+	"Address of SMS Center\n" EXT_STR)
+{
+	const struct hlr_sms_route *rt;
+	const struct hlr_euse *euse;
+
+	rt = sms_route_find(g_hlr, HLR_SMS_RT_SMSC_ADDR, argv[0]);
+	if (rt) {
+		vty_out(vty, "%% Cannot add duplicate route for smsc-address '%s'%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	euse = euse_find(g_hlr, argv[1]);
+	if (!euse) {
+		vty_out(vty, "%% Cannot find EUSE '%s'%s", argv[1], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	rt = sms_route_alloc(g_hlr, HLR_SMS_RT_SMSC_ADDR, argv[0], euse);
+	if (!rt) {
+		vty_out(vty, "%% Failed to add a new route for smsc-address '%s'%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_sms_no_route_smsc_addr, cfg_sms_no_route_smsc_addr_cmd,
+	"no sms route smsc-address ADDRESS",
+	SMS_STR "Delete a route\n" "Match by address of SMS Center\n"
+	"Address of SMS Center\n")
+{
+	struct hlr_sms_route *rt;
+
+	rt = sms_route_find(g_hlr, HLR_SMS_RT_SMSC_ADDR, argv[0]);
+	if (!rt) {
+		vty_out(vty, "%% Cannot find route for smsc-address '%s'%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	sms_route_del(rt);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_sms_route_sender, cfg_sms_route_sender_cmd,
+	"sms route sender (msisdn|imsi) IDENT external EUSE",
+	SMS_STR "Add a new route\n" "Match by sender of SMS message\n"
+	"Identify subscriber by IMSI\n"
+	"Identify subscriber by MSISDN (phone number)\n" EXT_STR)
+{
+	const struct hlr_sms_route *rt;
+	enum hlr_sms_route_type type;
+	const struct hlr_euse *euse;
+
+	if (argv[0][0] == 'm')
+		type = HLR_SMS_RT_SENDER_MSISDN;
+	else if (argv[0][0] == 'i')
+		type = HLR_SMS_RT_SENDER_IMSI;
+	else /* Shall not happen */
+		OSMO_ASSERT(0);
+
+	rt = sms_route_find(g_hlr, type, argv[1]);
+	if (rt) {
+		vty_out(vty, "%% Cannot add duplicate route for %s '%s'%s",
+			argv[0], argv[1], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	euse = euse_find(g_hlr, argv[2]);
+	if (!euse) {
+		vty_out(vty, "%% Cannot find EUSE '%s'%s", argv[2], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	rt = sms_route_alloc(g_hlr, type, argv[1], euse);
+	if (!rt) {
+		vty_out(vty, "%% Failed to add a new route for %s '%s'%s",
+			argv[0], argv[1], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_sms_no_route_sender, cfg_sms_no_route_sender_cmd,
+	"no sms route sender (msisdn|imsi) IDENT",
+	SMS_STR "Delete a route\n" "Match by sender of SMS message\n"
+	"Identify subscriber by IMSI\n"
+	"Identify subscriber by MSISDN (phone number)\n")
+{
+	struct hlr_sms_route *rt;
+	enum hlr_sms_route_type type;
+
+	if (argv[0][0] == 'm')
+		type = HLR_SMS_RT_SENDER_MSISDN;
+	else if (argv[0][0] == 'i')
+		type = HLR_SMS_RT_SENDER_IMSI;
+	else /* Shall not happen */
+		OSMO_ASSERT(0);
+
+	rt = sms_route_find(g_hlr, type, argv[1]);
+	if (!rt) {
+		vty_out(vty, "%% Cannot find route for %s '%s'%s",
+			argv[0], argv[1], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	sms_route_del(rt);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_sms_defaultroute, cfg_sms_defaultroute_cmd,
+	"sms default-route external EUSE",
+	SMS_STR "Configure default-route for all "
+	"SMS to unknown destinations\n" EXT_STR)
+{
+	struct hlr_euse *euse;
+
+	euse = euse_find(g_hlr, argv[0]);
+	if (!euse) {
+		vty_out(vty, "%% Cannot find EUSE %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (g_hlr->sms_euse_default != euse) {
+		vty_out(vty, "Switching default SMS route from '%s' to '%s'%s",
+			g_hlr->sms_euse_default ? g_hlr->sms_euse_default->name : "<none>",
+			euse->name, VTY_NEWLINE);
+		g_hlr->sms_euse_default = euse;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_sms_no_defaultroute, cfg_sms_no_defaultroute_cmd,
+	"no sms default-route",
+	NO_STR SMS_STR "Remove the default-route "
+	"for all SMS to unknown destinations\n")
+{
+	g_hlr->sms_euse_default = NULL;
 
 	return CMD_SUCCESS;
 }
@@ -288,7 +446,7 @@ DEFUN(cfg_no_euse, cfg_no_euse_cmd,
 		vty_out(vty, "%% Cannot remove non-existant EUSE %s%s", argv[0], VTY_NEWLINE);
 		return CMD_WARNING;
 	}
-	if (g_hlr->euse_default == euse) {
+	if (g_hlr->ussd_euse_default == euse || g_hlr->sms_euse_default == euse) {
 		vty_out(vty, "%% Cannot remove EUSE %s, it is the default route%s", argv[0], VTY_NEWLINE);
 		return CMD_WARNING;
 	}
@@ -301,23 +459,53 @@ static void dump_one_euse(struct vty *vty, struct hlr_euse *euse)
 	vty_out(vty, " euse %s%s", euse->name, VTY_NEWLINE);
 }
 
+static const char *sms_route_type_to_str(enum hlr_sms_route_type type)
+{
+	switch (type) {
+	case HLR_SMS_RT_SMSC_ADDR:
+		return "smsc-address";
+	case HLR_SMS_RT_SENDER_MSISDN:
+		return "sender msisdn";
+	case HLR_SMS_RT_SENDER_IMSI:
+		return "sender imsi";
+	}
+
+	return NULL;
+}
+
 static int config_write_euse(struct vty *vty)
 {
+	struct hlr_ussd_route *ussd_rt;
+	struct hlr_sms_route *sms_rt;
 	struct hlr_euse *euse;
-	struct hlr_ussd_route *rt;
 
 	llist_for_each_entry(euse, &g_hlr->euse_list, list)
 		dump_one_euse(vty, euse);
 
-	llist_for_each_entry(rt, &g_hlr->ussd_routes, list) {
-		vty_out(vty, " ussd route prefix %s %s %s%s", rt->prefix,
-			rt->is_external ? "external" : "internal",
-			rt->is_external ? rt->u.euse->name : rt->u.iuse->name,
+	llist_for_each_entry(ussd_rt, &g_hlr->ussd_routes, list) {
+		vty_out(vty, " ussd route prefix %s %s %s%s", ussd_rt->prefix,
+			ussd_rt->is_external ? "external" : "internal",
+			ussd_rt->is_external ? ussd_rt->u.euse->name : ussd_rt->u.iuse->name,
 			VTY_NEWLINE);
 	}
 
-	if (g_hlr->euse_default)
-		vty_out(vty, " ussd default-route external %s%s", g_hlr->euse_default->name, VTY_NEWLINE);
+	llist_for_each_entry(sms_rt, &g_hlr->sms_routes, list) {
+		vty_out(vty, " sms route %s %s external %s%s",
+			sms_route_type_to_str(sms_rt->type),
+			sms_rt->match_pattern,
+			sms_rt->euse->name,
+			VTY_NEWLINE);
+	}
+
+	if (g_hlr->ussd_euse_default) {
+		vty_out(vty, " ussd default-route external %s%s",
+			g_hlr->ussd_euse_default->name, VTY_NEWLINE);
+	}
+
+	if (g_hlr->sms_euse_default) {
+		vty_out(vty, " sms default-route external %s%s",
+			g_hlr->sms_euse_default->name, VTY_NEWLINE);
+	}
 
 	if (g_hlr->ncss_guard_timeout != NCSS_GUARD_TIMEOUT_DEFAULT)
 		vty_out(vty, " ncss-guard-timeout %i%s",
@@ -453,6 +641,14 @@ void hlr_vty_init(void)
 	install_element(HLR_NODE, &cfg_ussd_no_route_pfx_cmd);
 	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
+
+	install_element(HLR_NODE, &cfg_sms_route_smsc_addr_cmd);
+	install_element(HLR_NODE, &cfg_sms_no_route_smsc_addr_cmd);
+	install_element(HLR_NODE, &cfg_sms_route_sender_cmd);
+	install_element(HLR_NODE, &cfg_sms_no_route_sender_cmd);
+	install_element(HLR_NODE, &cfg_sms_defaultroute_cmd);
+	install_element(HLR_NODE, &cfg_sms_no_defaultroute_cmd);
+
 	install_element(HLR_NODE, &cfg_ncss_guard_timeout_cmd);
 	install_element(HLR_NODE, &cfg_store_imei_cmd);
 	install_element(HLR_NODE, &cfg_no_store_imei_cmd);

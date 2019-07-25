@@ -45,13 +45,16 @@ struct hlr {
 	char *gsup_bind_addr;
 
 	struct llist_head euse_list;
-	struct hlr_euse *euse_default;
 	struct llist_head iuse_list;
 
 	/* NCSS (call independent) session guard timeout value */
 	int ncss_guard_timeout;
 
 	struct llist_head ussd_routes;
+	struct llist_head sms_routes;
+
+	struct hlr_euse *ussd_euse_default;
+	struct hlr_euse *sms_euse_default;
 
 	struct llist_head ss_sessions;
 

@@ -569,9 +569,9 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 						ss->u.iuse = rt->u.iuse;
 					}
 				} else {
-					if (hlr->euse_default) {
+					if (hlr->ussd_euse_default) {
 						ss->is_external = true;
-						ss->u.euse = hlr->euse_default;
+						ss->u.euse = hlr->ussd_euse_default;
 					}
 				}
 			}
