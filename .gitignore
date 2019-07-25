@@ -2,6 +2,8 @@
 *.lo
 *.la
 *.db
+*.db-shm
+*.db-wal
 *.pyc
 .*.sw?
 .version
@@ -38,6 +40,7 @@ src/gsupclient/gsup-test-client
 tests/atconfig
 tests/testsuite
 tests/testsuite.log
+tests/testsuite.dir
 
 tests/auc/auc_3g_test
 tests/auc/auc_ts_55_205_test_sets.c
