@@ -47,6 +47,7 @@
 #include <osmocom/hlr/luop.h>
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/hlr_sms.h>
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;
@@ -663,6 +664,28 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	case OSMO_GSUP_MSGT_PROC_SS_ERROR:
 		rx_proc_ss_error(conn, &gsup);
 		break;
+
+	/* Short Message from MSC/VLR towards SMSC */
+	case OSMO_GSUP_MSGT_MO_FORWARD_SM_REQUEST:
+	case OSMO_GSUP_MSGT_READY_FOR_SM_REQUEST:
+		forward_mo_sms(conn, &gsup, msg);
+		return 0; /* Do not free msgb */
+
+	/* Short Message from SMSC towards MSC/VLR */
+	case OSMO_GSUP_MSGT_MT_FORWARD_SM_REQUEST:
+		forward_mt_sms(conn, &gsup, msg);
+		return 0; /* Do not free msgb */
+
+	/* Short Message delivery status, to be forwarded 'as-is' */
+	case OSMO_GSUP_MSGT_MO_FORWARD_SM_RESULT:
+	case OSMO_GSUP_MSGT_MT_FORWARD_SM_RESULT:
+	case OSMO_GSUP_MSGT_MO_FORWARD_SM_ERROR:
+	case OSMO_GSUP_MSGT_MT_FORWARD_SM_ERROR:
+	case OSMO_GSUP_MSGT_READY_FOR_SM_RESULT:
+	case OSMO_GSUP_MSGT_READY_FOR_SM_ERROR:
+		forward_sm_res_or_err(conn, &gsup, msg);
+		return 0; /* Do not free msgb */
+
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
 	case OSMO_GSUP_MSGT_INSERT_DATA_RESULT:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
