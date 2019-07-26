@@ -979,6 +979,7 @@ int main(int argc, char **argv)
 	test_subscr_sqn();
 
 	printf("Done\n");
+	db_close(dbc);
 	return 0;
 }
 
