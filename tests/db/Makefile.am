@@ -26,10 +26,10 @@ db_test_SOURCES = \
 	$(NULL)
 
 db_test_LDADD = \
-	$(top_srcdir)/src/db.c \
-	$(top_srcdir)/src/db_hlr.c \
-	$(top_srcdir)/src/db_auc.c \
-	$(top_srcdir)/src/logging.c \
+	$(top_builddir)/src/logging.o \
+	$(top_builddir)/src/db_auc.o \
+	$(top_builddir)/src/db_hlr.o \
+	$(top_builddir)/src/db.o \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOABIS_LIBS) \

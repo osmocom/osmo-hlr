@@ -87,21 +87,6 @@ osmo_hlr_db_tool_LDADD = \
 	$(SQLITE3_LIBS) \
 	$(NULL)
 
-db_test_SOURCES = \
-	auc.c \
-	db.c \
-	db_auc.c \
-	db_test.c \
-	logging.c \
-	rand_fake.c \
-	$(NULL)
-
-db_test_LDADD = \
-	$(LIBOSMOCORE_LIBS) \
-	$(LIBOSMOGSM_LIBS) \
-	$(SQLITE3_LIBS) \
-	$(NULL)
-
 osmo_euse_demo_SOURCES = \
 	osmo-euse-demo.c \
 	$(NULL)
