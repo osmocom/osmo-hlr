@@ -846,7 +846,7 @@ int main(int argc, char **argv)
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
-	hlr_vty_init(&hlr_log_info);
+	hlr_vty_init();
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {

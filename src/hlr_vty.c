@@ -429,9 +429,9 @@ int hlr_vty_is_config_node(struct vty *vty, int node)
 	}
 }
 
-void hlr_vty_init(const struct log_info *cat)
+void hlr_vty_init(void)
 {
-	logging_vty_add_cmds(cat);
+	logging_vty_add_cmds();
 	osmo_talloc_vty_add_cmds();
 	osmo_stats_vty_add_cmds();
 

@@ -35,4 +35,4 @@ enum hlr_vty_node {
 
 int hlr_vty_is_config_node(struct vty *vty, int node);
 int hlr_vty_go_parent(struct vty *vty);
-void hlr_vty_init(const struct log_info *cat);
+void hlr_vty_init(void);
