@@ -1,3 +1,69 @@
+osmo-hlr (1.1.0) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * docs: running: document --db-upgrade
+  * Add IMEI column to subscriber table
+  * Optionally store IMEI in subscriber table
+  * VTY tests: fill DB before running test
+  * VTY: integrate IMEI
+  * hlr.c: replace deprecated osmo_gsup_get_err_msg_type()
+  * hlr.c: move hlr_ctx to the top
+  * tests: use -no-install libtool flag to avoid ./lt-* scripts
+  * Cosmetic: gsup_route_find: comment addr, addrlen
+  * USSD: save MO USSD's originating MSC's vlr_number
+  * USSD: don't use gsm0480_msgb_alloc_name()
+  * hlr.c: forward GSUP messages between clients
+  * db_hlr.c: db_subscr_create(): add flags argument
+  * db_hlr.c: add db_subscr_exists_by_imsi()
+  * Create subscribers on demand
+  * Document subscribers create on demand feature
+  * debian: create -doc subpackage with pdf manuals
+  * db_test: set timezone to work around mktime bug
+  * db_hlr: zero-initialize "struct tm"
+  * rx_check_imei_req(): fix IMEI bounds checking
+  * contrib/jenkins.sh: run "make maintainer-clean"
+  * VTY: add subscriber update network-access-mode
+  * manuals: improve subscribers create on demand
+  * gitignore: ignore everything generated in db_test
+  * db_auc.c: verify hex key sizes read from DB
+
+  [ Max ]
+  * Log ip:port when adding GSUP routes
+  * Add link to project wiki to .service file
+  * Enable statsd support
+
+  [ Vadim Yanitskiy ]
+  * hlr.c: properly terminate the process on SIGTERM
+  * hlr.c: fix: also store the session state in read_cb_forward()
+  * hlr.c: fix: properly print the original message type in read_cb_forward()
+  * hlr.c: check the presence of msgb->l2h in read_cb()
+  * hlr.c: fix possible msgb memleaks in read_cb()
+  * db_hlr.c: add db_subscr_exists_by_msisdn()
+  * src/db.h: use GSM23003_MSISDN_MAX_DIGITS for MSISDN buffer size
+  * src/hlr.c: fix deprecation warning: use gsm48_decode_bcd_number2()
+  * hlr_ussd.c: fix: properly pass invokeID in handle_ussd_own_msisdn()
+  * hlr_ussd.c: rx_proc_ss_req(): fix NULL pointer dereference
+  * build: fix mess with 'db_test_SOURCES' and 'db_test_LDADD'
+  * tests/db_test: close the database when test is finished
+  * src/db.c: integrate SQLite3 with talloc allocator
+
+  [ Neels Hofmeyr ]
+  * USSD: fix routing to multiple MSC
+  * fix error logging for GSUP route
+  * add missing error log: invalid IMSI
+  * osmo-hlr: allow configuring db path from cfg file
+  * use new OSMO_IMSI_BUF_SIZE
+
+  [ Daniel Willmann ]
+  * manuals: Add script to update vty/counter documentation from docker
+  * manuals: Update vty documentation
+
+  [ Pau Espin Pedrol ]
+  * Remove undefined param passed to logging_vty_add_cmds
+  * configure.ac: Require libosmocore 1.2.0
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Wed, 07 Aug 2019 16:14:23 +0200
+
 osmo-hlr (1.0.0) unstable; urgency=medium
 
   [ Stefan Sperling ]
