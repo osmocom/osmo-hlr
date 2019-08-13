@@ -1360,7 +1360,7 @@ sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
 
 sqlite3_step(stmt) --> SQLITE_DONE
 
-db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -126
+db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
 DAUC IMSI='123456789000000': Error reading Ki, expected length 16 but has length 15
 DAUC IMSI='123456789000000': No 3G Auth Data
 
