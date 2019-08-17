@@ -259,7 +259,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 			break;
 		case -ENOENT:
 			LOGP(DAUC, LOGL_NOTICE, "%s: IMSI not known\n", gsup->imsi);
-			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
+			gsup_out.cause = GMM_CAUSE_ROAMING_NOTALLOWED;
 			break;
 		default:
 			LOGP(DAUC, LOGL_ERROR, "%s: failure to look up IMSI in db\n", gsup->imsi);
@@ -378,7 +378,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	if (!lu_op_fill_subscr(luop, g_hlr->dbc, gsup->imsi)) {
 		/* Send Error back: Subscriber Unknown in HLR */
 		osmo_strlcpy(luop->subscr.imsi, gsup->imsi, sizeof(luop->subscr.imsi));
-		lu_op_tx_error(luop, GMM_CAUSE_IMSI_UNKNOWN);
+		lu_op_tx_error(luop, GMM_CAUSE_ROAMING_NOTALLOWED);
 		return 0;
 	}
 
