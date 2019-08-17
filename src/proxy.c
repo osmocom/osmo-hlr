@@ -80,7 +80,7 @@ static void proxy_deferred_gsup_req_add(struct proxy *proxy, struct osmo_gsup_re
 static void proxy_pending_req_remote_hlr_connect_result(struct osmo_gsup_req *req, struct remote_hlr *remote_hlr)
 {
 	if (!remote_hlr || !remote_hlr_is_up(remote_hlr)) {
-		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "Proxy: Failed to connect to home HLR");
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_ROAMING_NOTALLOWED, "Proxy: Failed to connect to home HLR");
 		return;
 	}
 
