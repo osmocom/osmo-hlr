@@ -320,7 +320,7 @@ static int rx_send_auth_info(struct osmo_gsup_req *req)
 						  " Returning slightly inaccurate cause 'IMSI Unknown' via GSUP");
 			return rc;
 		case -ENOENT:
-			osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "IMSI unknown");
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_ROAMING_NOTALLOWED, "IMSI unknown");
 			return rc;
 		default:
 			osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "failure to look up IMSI in db");
@@ -372,7 +372,7 @@ static int rx_purge_ms_req(struct osmo_gsup_req *req)
 	if (rc == 0)
 		osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_PURGE_MS_RESULT, true);
 	else if (rc == -ENOENT)
-		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "IMSI unknown");
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_ROAMING_NOTALLOWED, "IMSI unknown");
 	else
 		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "db error");
 	return rc;
