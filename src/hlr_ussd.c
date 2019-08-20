@@ -377,7 +377,8 @@ static int handle_ussd_get_ran(struct osmo_gsup_conn *conn, struct ss_session *s
 			rat = subscr.last_lu_rat;
 
 		snprintf(response, sizeof(response),
-			 "Now on %s. Available:%s%s.",
+			 "Now on %s. Available:%s%s."
+			 " (2G on: *#201# off: *#200# -- 3G on: *#301# off: *#300#)",
 			 rat,
 			 subscr.rat_types[OSMO_RAT_GERAN_A]? " 2G" : "",
 			 subscr.rat_types[OSMO_RAT_UTRAN_IU]? " 3G" : "");
