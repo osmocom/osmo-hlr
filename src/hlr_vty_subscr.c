@@ -827,7 +827,7 @@ DEFUN(subscriber_rat,
 	const char *id = argv[1];
 	const char *rat_str = argv[2];
 	const char *allowed_forbidden = argv[3];
-	enum osmo_rat_type rat;
+	enum osmo_rat_type rat = OSMO_RAT_UNKNOWN;
 	bool allowed;
 	int rc;
 
@@ -835,8 +835,8 @@ DEFUN(subscriber_rat,
 		rat = OSMO_RAT_GERAN_A;
 	else if (strcmp(rat_str, "utran-iu") == 0)
 		rat = OSMO_RAT_UTRAN_IU;
-	else
-		rat = OSMO_RAT_UNKNOWN;
+	else if (strcmp(rat_str, "eutran") == 0)
+		rat = OSMO_RAT_EUTRAN_SGS;
 
 	allowed = (strcmp(allowed_forbidden, "allowed") == 0);
 
