@@ -115,7 +115,7 @@ static void _fill_invalid(void *dest, size_t size)
 #define ASSERT_DB_GET_AUC(imsi, expect_rc) \
 	do { \
 		struct osmo_auth_vector vec[N_VECTORS]; \
-		ASSERT_RC(db_get_auc(dbc, imsi, 3, vec, N_VECTORS, NULL, NULL), expect_rc); \
+		ASSERT_RC(db_get_auc(dbc, imsi, 3, vec, N_VECTORS, NULL, NULL, false), expect_rc); \
 	} while (0)
 
 /* Not linking the real auc_compute_vectors(), just returning num_vec.

@@ -189,7 +189,7 @@ out:
 int db_get_auc(struct db_context *dbc, const char *imsi,
 	       unsigned int auc_3g_ind, struct osmo_auth_vector *vec,
 	       unsigned int num_vec, const uint8_t *rand_auts,
-	       const uint8_t *auts)
+	       const uint8_t *auts, bool separation_bit)
 {
 	struct osmo_sub_auth_data aud2g, aud3g;
 	int64_t subscr_id;
@@ -209,6 +209,12 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 		       aud3g.u.umts.ind_bitlen, aud3g.u.umts.ind);
 		aud3g.u.umts.ind &= (1U << aud3g.u.umts.ind_bitlen) - 1;
 	}
+	/* the first bit (bit0) cannot be used as AMF anymore, but has been
+	 * re-appropriated as the separation bit.  See 3GPP TS 33.102 Annex H
+	 * together with 3GPP TS 33.401 / 33.402 / 33.501 */
+	aud3g.u.umts.amf[0] = aud3g.u.umts.amf[0] & 0x7f;
+	if (separation_bit)
+		aud3g.u.umts.amf[0] |= 0x80;
 
 	LOGAUC(imsi, LOGL_DEBUG, "Calling to generate %u vectors\n", num_vec);
 	rc = auc_compute_vectors(vec, num_vec, &aud2g, &aud3g, rand_auts, auts);
