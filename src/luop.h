@@ -54,7 +54,7 @@ struct lu_operation {
 	enum lu_state state;
 	/*! CS (false) or PS (true) Location Update? */
 	bool is_ps;
-	/*! RAT type indicator: coming in on GERAN-A? UTRAN-Iu? */
+	/*! RAT type indicator: coming in on GERAN-A? UTRAN-Iu? E-UTRAN?*/
 	enum osmo_rat_type via_rat;
 
 	/*! currently running timer */

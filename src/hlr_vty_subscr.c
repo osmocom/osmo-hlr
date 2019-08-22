@@ -615,11 +615,12 @@ DEFUN(subscriber_nam,
 
 DEFUN(subscriber_rat,
       subscriber_rat_cmd,
-      SUBSCR_UPDATE "rat (geran-a|utran-iu) (allowed|forbidden)",
+      SUBSCR_UPDATE "rat (geran-a|utran-iu|eutran-sgs) (allowed|forbidden)",
       SUBSCR_UPDATE_HELP
       "Allow or forbid specific Radio Access Types\n"
       "Set access to GERAN-A\n"
       "Set access to UTRAN-Iu\n"
+      "Set access to EUTRAN-SGs\n"
       "Allow access\n"
       "Forbid access\n")
 {
@@ -636,7 +637,7 @@ DEFUN(subscriber_rat,
 		rat = OSMO_RAT_GERAN_A;
 	else if (strcmp(rat_str, "utran-iu") == 0)
 		rat = OSMO_RAT_UTRAN_IU;
-	else if (strcmp(rat_str, "eutran") == 0)
+	else if (strcmp(rat_str, "eutran-sgs") == 0)
 		rat = OSMO_RAT_EUTRAN_SGS;
 
 	allowed = (strcmp(allowed_forbidden, "allowed") == 0);
