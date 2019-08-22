@@ -97,7 +97,7 @@ CREATE TABLE ind (
 -- If a subscriber has no entry, that means that all RATs are allowed (backwards compat).
 CREATE TABLE subscriber_rat (
 	subscriber_id	INTEGER,		-- subscriber.id
-	rat		TEXT CHECK(rat in ('GERAN-A', 'UTRAN-Iu')) NOT NULL,	-- Radio Access Technology, see enum ran_type
+	rat		TEXT CHECK(rat in ('GERAN-A', 'UTRAN-Iu','EUTRAN-SGs')) NOT NULL,	-- Radio Access Technology, see enum ran_type
 	allowed		BOOLEAN CHECK(allowed in (0, 1)) NOT NULL DEFAULT 0
 );
 
