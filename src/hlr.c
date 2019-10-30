@@ -36,6 +36,7 @@
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/gsm_utils.h>
 #include <osmocom/gsm/protocol/gsm_23_003.h>
+#include <osmocom/mslookup/mslookup_client.h>
 
 #include "db.h"
 #include "hlr.h"
@@ -47,6 +48,7 @@
 #include "luop.h"
 #include "hlr_vty.h"
 #include "hlr_ussd.h"
+#include "dgsm.h"
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;
@@ -617,6 +619,13 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	if (gsup.destination_name_len)
 		return read_cb_forward(conn, msg, &gsup);
 
+	/* Distributed GSM: check whether to proxy for / lookup a remote HLR.
+	 * It would require less database hits to do this only if a local-only operation fails with "unknown IMSI", but
+	 * it becomes semantically easier if we do this once-off ahead of time. */
+	if (osmo_mslookup_client_active(g_hlr->mslookup.client.client)
+	    && dgsm_check_forward_gsup_msg(conn, &gsup))
+		goto cleanup_and_exit;
+
 	switch (gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:
@@ -669,6 +678,8 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		     osmo_gsup_message_type_name(gsup.message_type));
 		break;
 	}
+
+cleanup_and_exit:
 	msgb_free(msg);
 	return 0;
 }
@@ -831,6 +842,9 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	/* Set up llists and objects, startup is happening from VTY commands. */
+	dgsm_init(hlr_ctx);
+
 	osmo_stats_init(hlr_ctx);
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
@@ -903,7 +917,7 @@ int main(int argc, char **argv)
 	}
 
 	while (!quit)
-		osmo_select_main(0);
+		osmo_select_main_ctx(0);
 
 	osmo_gsup_server_destroy(g_hlr->gs);
 	db_close(g_hlr->dbc);

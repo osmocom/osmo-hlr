@@ -31,6 +31,10 @@ enum hlr_vty_node {
 	HLR_NODE = _LAST_OSMOVTY_NODE + 1,
 	GSUP_NODE,
 	EUSE_NODE,
+	MSLOOKUP_NODE,
+	MSLOOKUP_SERVER_NODE,
+	MSLOOKUP_SERVER_MSC_NODE,
+	MSLOOKUP_CLIENT_NODE,
 };
 
 int hlr_vty_is_config_node(struct vty *vty, int node);

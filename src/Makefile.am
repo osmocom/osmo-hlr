@@ -6,6 +6,7 @@ AM_CFLAGS = \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(LIBOSMOVTY_CFLAGS) \
 	$(LIBOSMOCTRL_CFLAGS) \
+	$(LIBOSMOMSLOOKUP_CFLAGS) \
 	$(LIBOSMOABIS_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(NULL)
@@ -37,6 +38,9 @@ noinst_HEADERS = \
 	hlr_vty_subscr.h \
 	hlr_ussd.h \
 	db_bootstrap.h \
+	proxy.h \
+	dgsm.h \
+	remote_hlr.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -61,13 +65,20 @@ osmo_hlr_SOURCES = \
 	hlr_vty_subscr.c \
 	gsup_send.c \
 	hlr_ussd.c \
+	proxy.c \
+	dgsm.c \
+	dgsm_vty.c \
+	remote_hlr.c \
+	mslookup_server.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
+	$(top_builddir)/src/gsupclient/libosmo-gsup-client.la \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOVTY_LIBS) \
 	$(LIBOSMOCTRL_LIBS) \
+	$(LIBOSMOMSLOOKUP_LIBS) \
 	$(LIBOSMOABIS_LIBS) \
 	$(SQLITE3_LIBS) \
 	$(NULL)

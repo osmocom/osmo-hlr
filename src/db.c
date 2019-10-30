@@ -81,6 +81,13 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
+
+#if 0
+	[DB_STMT_PROXY_UPDATE] = "INSERT OR REPLACE INTO"
+		" proxy (imsi, remote_ip, remote_port)"
+		" VALUES ($imsi, $remote_ip, $remote_port)",
+	[DB_STMT_PROXY_GET_BY_IMSI] = "SELECT imsi, remote_ip, remote_port FROM proxy WHERE imsi = $imsi",
+#endif
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

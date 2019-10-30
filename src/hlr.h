@@ -24,10 +24,13 @@
 
 #include <stdbool.h>
 #include <osmocom/core/linuxlist.h>
+#include <osmocom/gsm/ipa.h>
 
 #define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
 
 struct hlr_euse;
+struct osmo_gsup_conn;
+enum osmo_gsup_message_type;
 
 struct hlr {
 	/* GSUP server pointer */
@@ -61,6 +64,22 @@ struct hlr {
 	/* Bitmask of DB_SUBSCR_FLAG_* */
 	uint8_t subscr_create_on_demand_flags;
 	unsigned int subscr_create_on_demand_rand_msisdn_len;
+
+	struct {
+		struct {
+			struct osmo_mslookup_server_dns *dns;
+		} server;
+
+		struct {
+			struct osmo_mslookup_client *client;
+
+			struct osmo_mslookup_client_method *dns;
+		} client;
+	} mslookup;
+
+	struct {
+		struct ipaccess_unit gsup_client_name;
+	} gsup_proxy;
 };
 
 extern struct hlr *g_hlr;

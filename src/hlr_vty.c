@@ -39,6 +39,7 @@
 #include "hlr_vty_subscr.h"
 #include "hlr_ussd.h"
 #include "gsup_server.h"
+#include "dgsm.h"
 
 struct cmd_node hlr_node = {
 	HLR_NODE,
@@ -396,10 +397,22 @@ DEFUN(cfg_no_subscr_create_on_demand, cfg_no_subscr_create_on_demand_cmd,
 
 int hlr_vty_go_parent(struct vty *vty)
 {
+	dgsm_vty_go_parent_action(vty);
 	switch (vty->node) {
 	case GSUP_NODE:
 	case EUSE_NODE:
 		vty->node = HLR_NODE;
+		vty->index = NULL;
+		vty->index_sub = NULL;
+		break;
+	case MSLOOKUP_CLIENT_NODE:
+	case MSLOOKUP_SERVER_NODE:
+		vty->node = CONFIG_NODE;
+		vty->index = NULL;
+		vty->index_sub = NULL;
+		break;
+	case MSLOOKUP_SERVER_MSC_NODE:
+		vty->node = CONFIG_NODE;
 		vty->index = NULL;
 		vty->index_sub = NULL;
 		break;
@@ -462,4 +475,5 @@ void hlr_vty_init(void)
 	install_element(HLR_NODE, &cfg_no_subscr_create_on_demand_cmd);
 
 	hlr_vty_subscriber_init();
+	dgsm_vty_init();
 }

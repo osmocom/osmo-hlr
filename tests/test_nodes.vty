@@ -52,6 +52,7 @@ OsmoHLR(config)# list
   end
 ...
   hlr
+  mslookup
 
 OsmoHLR(config)# hlr
 OsmoHLR(config-hlr)# list
@@ -113,3 +114,41 @@ hlr
  ussd route prefix *#100# internal own-msisdn
  ussd route prefix *#101# internal own-imsi
 end
+
+OsmoHLR# configure terminal
+OsmoHLR(config)# mslookup
+OsmoHLR(config-mslookup)# list
+...
+  dns
+  no dns
+  server
+  no server
+  client
+  no client
+
+OsmoHLR(config-mslookup)# server
+OsmoHLR(config-mslookup-server)# list
+...
+  dns bind multicast IP <1-65535>
+  no dns
+  service NAME at IP <1-65535>
+  no service NAME
+  no service NAME at IP <1-65535>
+  msc .UNIT_NAME
+
+OsmoHLR(config-mslookup-server)# msc MSC-1
+OsmoHLR(config-mslookup-server-msc)# list
+...
+  service NAME at IP <1-65535>
+  no service NAME
+  no service NAME at IP <1-65535>
+
+OsmoHLR(config-mslookup-server-msc)# exit
+OsmoHLR(config-mslookup-server)# exit
+OsmoHLR(config-mslookup)# client
+OsmoHLR(config-mslookup-client)# list
+...
+  timeout <1-255>
+  dns to multicast IP <1-65535>
+  no dns
+
