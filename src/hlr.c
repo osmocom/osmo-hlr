@@ -128,7 +128,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		}
 
 		/* Send ISD to MSC/SGSN */
-		msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP ISD UPDATE");
+		msg_out = osmo_gsup_msgb_alloc("GSUP ISD UPDATE");
 		if (msg_out == NULL) {
 			LOGP(DLGSUP, LOGL_ERROR,
 			       "IMSI='%s': Cannot notify GSUP client; could not allocate msg buffer "
@@ -271,7 +271,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 		gsup_out.num_auth_vectors = rc;
 	}
 
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP AUC response");
+	msg_out = osmo_gsup_msgb_alloc("GSUP AUC response");
 	osmo_gsup_encode(msg_out, &gsup_out);
 	return osmo_gsup_conn_send(conn, msg_out);
 }
@@ -451,7 +451,7 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 		gsup_reply.cause = GMM_CAUSE_NET_FAIL;
 	}
 
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP AUC response");
+	msg_out = osmo_gsup_msgb_alloc("GSUP AUC response");
 	osmo_gsup_encode(msg_out, &gsup_reply);
 	return osmo_gsup_conn_send(conn, msg_out);
 }
@@ -466,7 +466,7 @@ static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
 	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, imsi);
 	gsup_reply.message_type = type_err;
 	gsup_reply.cause = err_cause;
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP ERR response");
+	msg_out = osmo_gsup_msgb_alloc("GSUP ERR response");
 	OSMO_ASSERT(msg_out);
 	osmo_gsup_encode(msg_out, &gsup_reply);
 	LOGP(DMAIN, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(type_err));
@@ -525,7 +525,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	/* Accept all IMEIs */
 	gsup_reply.imei_result = OSMO_GSUP_IMEI_RESULT_ACK;
 	gsup_reply.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_RESULT;
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP Check_IMEI response");
+	msg_out = osmo_gsup_msgb_alloc("GSUP Check_IMEI response");
 	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
 	osmo_gsup_encode(msg_out, &gsup_reply);
 	return osmo_gsup_conn_send(conn, msg_out);
@@ -591,7 +591,7 @@ static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const 
 end:
 	/* Send error back to source */
 	if (ret) {
-		struct msgb *msg_err = msgb_alloc_headroom(1024+16, 16, "GSUP forward ERR response");
+		struct msgb *msg_err = osmo_gsup_msgb_alloc("GSUP forward ERR response");
 		OSMO_ASSERT(msg_err);
 		gsup_err->message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR;
 		osmo_gsup_encode(msg_err, gsup_err);
