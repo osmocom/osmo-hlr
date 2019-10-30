@@ -456,23 +456,6 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	return osmo_gsup_conn_send(conn, msg_out);
 }
 
-static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
-				enum osmo_gsup_message_type type_in, uint8_t err_cause)
-{
-	int type_err = OSMO_GSUP_TO_MSGT_ERROR(type_in);
-	struct osmo_gsup_message gsup_reply = {0};
-	struct msgb *msg_out;
-
-	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, imsi);
-	gsup_reply.message_type = type_err;
-	gsup_reply.cause = err_cause;
-	msg_out = osmo_gsup_msgb_alloc("GSUP ERR response");
-	OSMO_ASSERT(msg_out);
-	osmo_gsup_encode(msg_out, &gsup_reply);
-	LOGP(DMAIN, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(type_err));
-	return osmo_gsup_conn_send(conn, msg_out);
-}
-
 static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
 {
 	struct osmo_gsup_message gsup_reply = {0};
@@ -483,7 +466,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	/* Require IMEI */
 	if (!gsup->imei_enc) {
 		LOGP(DMAIN, LOGL_ERROR, "%s: missing IMEI\n", gsup->imsi);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
 
@@ -491,7 +474,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	rc = gsm48_decode_bcd_number2(imei, sizeof(imei), gsup->imei_enc, gsup->imei_enc_len, 0);
 	if (rc < 0) {
 		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI (rc: %i)\n", gsup->imsi, rc);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
 
@@ -499,7 +482,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	if (strlen(imei) != GSM23003_IMEI_NUM_DIGITS_NO_CHK) {
 		LOGP(DMAIN, LOGL_ERROR, "%s: wrong encoded IMEI length (IMEI: '%s', %lu, %i)\n", gsup->imsi, imei,
 		     strlen(imei), GSM23003_IMEI_NUM_DIGITS_NO_CHK);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -1;
 	}
 
@@ -509,7 +492,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	if (g_hlr->store_imei) {
 		LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing IMEI = %s\n", gsup->imsi, imei);
 		if (db_subscr_update_imei_by_imsi(g_hlr->dbc, gsup->imsi, imei) < 0) {
-			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
 			return -1;
 		}
 	} else {
@@ -517,7 +500,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 		LOGP(DMAIN, LOGL_INFO, "IMSI='%s': has IMEI = %s (consider setting 'store-imei')\n", gsup->imsi, imei);
 		struct hlr_subscriber subscr;
 		if (db_subscr_get_by_imsi(g_hlr->dbc, gsup->imsi, &subscr) < 0) {
-			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
 			return -1;
 		}
 	}
@@ -626,7 +609,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	 * digits is impossible.  Even 5 digits is a highly theoretical case */
 	if (strlen(gsup.imsi) < 5) { /* TODO: move this check to libosmogsm/gsup.c? */
 		LOGP(DMAIN, LOGL_ERROR, "IMSI too short: %s\n", osmo_quote_str(gsup.imsi, -1));
-		gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_conn_send_err_reply(conn, &gsup, GMM_CAUSE_INV_MAND_INFO);
 		msgb_free(msg);
 		return -EINVAL;
 	}

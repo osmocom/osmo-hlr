@@ -57,6 +57,56 @@ int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg)
 	return 0;
 }
 
+/* Encode an error reponse to the given GSUP message with the given cause.
+ * Determine the error message type via OSMO_GSUP_TO_MSGT_ERROR(gsup_orig->message_type).
+ * Only send an error response if the original message is a Request message.
+ * On failure, log an error, but don't return anything: if an error occurs while trying to report an earlier error,
+ * there is nothing we can do really except log the error (there are no callers that would use the return code).
+ */
+void osmo_gsup_conn_send_err_reply(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup_orig,
+				   enum gsm48_gmm_cause cause)
+{
+	struct osmo_gsup_message gsup_reply;
+	struct msgb *msg_out;
+	int rc;
+
+	/* No need to answer if we couldn't parse an ERROR message type, only REQUESTs need an error reply. */
+	if (!OSMO_GSUP_IS_MSGT_REQUEST(gsup_orig->message_type))
+		return;
+
+	gsup_reply = (struct osmo_gsup_message){
+		.cause = cause,
+		.message_type = OSMO_GSUP_TO_MSGT_ERROR(gsup_orig->message_type),
+		.message_class = gsup_orig->message_class,
+
+		/* RP-Message-Reference is mandatory for SM Service */
+		.sm_rp_mr = gsup_orig->sm_rp_mr,
+	};
+
+	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, gsup_orig->imsi);
+
+	/* For SS/USSD, it's important to keep both session state and ID IEs */
+	if (gsup_orig->session_state != OSMO_GSUP_SESSION_STATE_NONE) {
+		gsup_reply.session_state = OSMO_GSUP_SESSION_STATE_END;
+		gsup_reply.session_id = gsup_orig->session_id;
+	}
+
+	msg_out = osmo_gsup_msgb_alloc("GSUP ERR response");
+	rc = osmo_gsup_encode(msg_out, &gsup_reply);
+	if (rc) {
+		LOGP(DLGSUP, LOGL_ERROR, "%s: Unable to encode error response %s (rc=%d)\n",
+		     osmo_quote_str(gsup_orig->imsi, -1), osmo_gsup_message_type_name(gsup_reply.message_type),
+		     rc);
+		return;
+	}
+
+	rc = osmo_gsup_conn_send(conn, msg_out);
+	if (rc)
+		LOGP(DLGSUP, LOGL_ERROR, "%s: Unable to send error response %s (rc=%d)\n",
+		     osmo_quote_str(gsup_orig->imsi, -1), osmo_gsup_message_type_name(gsup_reply.message_type),
+		     rc);
+}
+
 static int osmo_gsup_conn_oap_handle(struct osmo_gsup_conn *conn,
 				struct msgb *msg_rx)
 {

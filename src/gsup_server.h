@@ -50,6 +50,8 @@ struct osmo_gsup_conn {
 struct msgb *osmo_gsup_msgb_alloc(const char *label);
 
 int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg);
+void osmo_gsup_conn_send_err_reply(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup_orig,
+				   enum gsm48_gmm_cause cause);
 int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
 			   uint8_t tag);
 
