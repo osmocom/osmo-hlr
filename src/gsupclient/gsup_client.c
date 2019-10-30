@@ -386,7 +386,8 @@ int osmo_gsup_client_enc_send(struct osmo_gsup_client *gsupc,
 	rc = osmo_gsup_client_send(gsupc, gsup_msgb);
 	if (rc) {
 		LOGP(DLGSUP, LOGL_ERROR, "Couldn't send GSUP message\n");
-		goto error;
+		/* Do not free, osmo_gsup_client_send() already has. */
+		return rc;
 	}
 
 	return 0;
