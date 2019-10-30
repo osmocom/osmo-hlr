@@ -464,8 +464,7 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 	}
 
 	if (is_euse_originated) {
-		msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
-		OSMO_ASSERT(msg_out);
+		msg_out = osmo_gsup_msgb_alloc("GSUP USSD FW");
 		/* Received from EUSE, Forward to VLR */
 		osmo_gsup_encode(msg_out, gsup);
 		ss_gsup_send(ss, conn->server, msg_out);
@@ -481,8 +480,7 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 				LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
 				ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
 			} else {
-				msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP USSD FW");
-				OSMO_ASSERT(msg_out);
+				msg_out = osmo_gsup_msgb_alloc("GSUP USSD FW");
 				osmo_gsup_encode(msg_out, gsup);
 				osmo_gsup_conn_send(conn, msg_out);
 			}

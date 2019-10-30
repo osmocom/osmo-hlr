@@ -50,8 +50,7 @@ static void _luop_tx_gsup(struct lu_operation *luop,
 {
 	struct msgb *msg_out;
 
-	msg_out = msgb_alloc_headroom(1024+16, 16, "GSUP LUOP");
-	OSMO_ASSERT(msg_out);
+	msg_out = osmo_gsup_msgb_alloc("GSUP LUOP");
 	osmo_gsup_encode(msg_out, gsup);
 
 	osmo_gsup_addr_send(luop->gsup_server, luop->peer,

@@ -47,6 +47,7 @@ struct osmo_gsup_conn {
 	bool supports_ps; /* client supports OSMO_GSUP_CN_DOMAIN_PS */
 };
 
+struct msgb *osmo_gsup_msgb_alloc(const char *label);
 
 int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg);
 int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
