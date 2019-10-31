@@ -3,6 +3,7 @@ SUBDIRS = \
 	gsup_server \
 	db \
 	gsup \
+	db_upgrade \
 	$(NULL)
 
 # The `:;' works around a Bash 3.2 bug when the output is not writeable.
@@ -44,6 +45,7 @@ python-tests:
 # don't run vty and ctrl tests concurrently so that the ports don't conflict
 	$(MAKE) vty-test
 	$(MAKE) ctrl-test
+	$(MAKE) db-upgrade-equivalence-test
 else
 python-tests:
 	echo "Not running python-based external tests (determined at configure-time)"
@@ -80,6 +82,9 @@ ctrl-test:
 		$(U) $(srcdir)/*.ctrl
 	-rm -f $(CTRL_TEST_DB)
 	-rm $(CTRL_TEST_DB)-*
+
+db-upgrade-equivalence-test:
+	$(MAKE) -C db_upgrade upgrade-equivalence-test
 
 check-local: atconfig $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)

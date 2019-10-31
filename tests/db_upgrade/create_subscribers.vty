@@ -1,0 +1,47 @@
+OsmoHLR> enable
+OsmoHLR# subscriber imsi 123456789012345 create
+% Created subscriber 123456789012345
+    ID: 1
+    IMSI: 123456789012345
+    MSISDN: none
+OsmoHLR# subscriber imsi 123456789012345 update msisdn 098765432109876
+% Updated subscriber IMSI='123456789012345' to MSISDN='098765432109876'
+OsmoHLR# subscriber imsi 123456789012345 update aud2g comp128v1 ki BeefedCafeFaceAcedAddedDecadeFee
+OsmoHLR# subscriber imsi 123456789012345 update aud3g milenage k C01ffedC1cadaeAc1d1f1edAcac1aB0a opc CededEffacedAceFacedBadFadedBeef
+OsmoHLR# subscriber imsi 111111111 create
+% Created subscriber 111111111
+    ID: 2
+    IMSI: 111111111
+    MSISDN: none
+OsmoHLR# subscriber imsi 222222222 create
+% Created subscriber 222222222
+    ID: 3
+    IMSI: 222222222
+    MSISDN: none
+OsmoHLR# subscriber imsi 222222222 update msisdn 22222
+% Updated subscriber IMSI='222222222' to MSISDN='22222'
+OsmoHLR# subscriber imsi 333333 create
+% Created subscriber 333333
+    ID: 4
+    IMSI: 333333
+    MSISDN: none
+OsmoHLR# subscriber imsi 333333 update msisdn 3
+% Updated subscriber IMSI='333333' to MSISDN='3'
+OsmoHLR# subscriber imsi 333333 update aud2g comp128v2 ki 33333333333333333333333333333333
+OsmoHLR# subscriber imsi 444444444444444 create
+% Created subscriber 444444444444444
+    ID: 5
+    IMSI: 444444444444444
+    MSISDN: none
+OsmoHLR# subscriber imsi 444444444444444 update msisdn 4444
+% Updated subscriber IMSI='444444444444444' to MSISDN='4444'
+OsmoHLR# subscriber imsi 444444444444444 update aud3g milenage k 44444444444444444444444444444444 op 44444444444444444444444444444444
+OsmoHLR# subscriber imsi 5555555 create
+% Created subscriber 5555555
+    ID: 6
+    IMSI: 5555555
+    MSISDN: none
+OsmoHLR# subscriber imsi 5555555 update msisdn 55555555555555
+% Updated subscriber IMSI='5555555' to MSISDN='55555555555555'
+OsmoHLR# subscriber imsi 5555555 update aud2g xor ki 55555555555555555555555555555555
+OsmoHLR# subscriber imsi 5555555 update aud3g milenage k 55555555555555555555555555555555 opc 55555555555555555555555555555555

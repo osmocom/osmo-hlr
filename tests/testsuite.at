@@ -36,3 +36,10 @@ cat $abs_srcdir/db/db_test.err > experr
 sqlite3 db_test.db < $abs_top_srcdir/sql/hlr.sql
 AT_CHECK([$abs_top_builddir/tests/db/db_test], [], [expout], [experr])
 AT_CLEANUP
+
+AT_SETUP([db_upgrade])
+AT_KEYWORDS([db_upgrade])
+cat $abs_srcdir/db_upgrade/db_upgrade_test.ok > expout
+cat $abs_srcdir/db_upgrade/db_upgrade_test.err > experr
+AT_CHECK([$abs_srcdir/db_upgrade/db_upgrade_test.sh $abs_srcdir/db_upgrade $abs_builddir/db_upgrade], [], [expout], [experr])
+AT_CLEANUP

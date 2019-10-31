@@ -186,4 +186,5 @@ AC_OUTPUT(
 	tests/gsup_server/Makefile
 	tests/gsup/Makefile
 	tests/db/Makefile
+	tests/db_upgrade/Makefile
 	)
