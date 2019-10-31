@@ -69,7 +69,8 @@ CREATE TABLE auc_3g (
 	op		VARCHAR(32),		-- hex string: operator's secret key (128bit)
 	opc		VARCHAR(32),		-- hex string: derived from OP and K (128bit)
 	sqn		INTEGER NOT NULL DEFAULT 0,	-- sequence number of key usage
-	ind_bitlen	INTEGER NOT NULL DEFAULT 5	-- nr of index bits at lower SQN end
+	-- nr of index bits at lower SQN end
+	ind_bitlen	INTEGER NOT NULL DEFAULT 5
 );
 
 CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
