@@ -299,7 +299,7 @@ static int db_upgrade_v2(struct db_context *dbc)
 {
 	sqlite3_stmt *stmt;
 	int rc;
-	const char *update_stmt_sql = "ALTER TABLE subscriber ADD COLUMN imei VARCHAR(14) default NULL";
+	const char *update_stmt_sql = "ALTER TABLE subscriber ADD COLUMN imei VARCHAR(14)";
 	const char *set_schema_version_sql = "PRAGMA user_version = 2";
 
 	rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
