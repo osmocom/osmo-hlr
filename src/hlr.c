@@ -706,6 +706,7 @@ static void print_help()
 	printf("  -T --timestamp             Prefix every log line with a timestamp.\n");
 	printf("  -e --log-level number      Set a global loglevel.\n");
 	printf("  -U --db-upgrade            Allow HLR database schema upgrades.\n");
+	printf("  -C --db-check              Quit after opening (and upgrading) the database.\n");
 	printf("  -V --version               Print the version of OsmoHLR.\n");
 }
 
@@ -714,6 +715,7 @@ static struct {
 	const char *db_file;
 	bool daemonize;
 	bool db_upgrade;
+	bool db_check;
 } cmdline_opts = {
 	.config_file = "osmo-hlr.cfg",
 	.db_file = NULL,
@@ -735,6 +737,7 @@ static void handle_options(int argc, char **argv)
 			{"log-level", 1, 0, 'e'},
 			{"timestamp", 0, 0, 'T'},
 			{"db-upgrade", 0, 0, 'U' },
+			{"db-check", 0, 0, 'C' },
 			{"version", 0, 0, 'V' },
 			{0, 0, 0, 0}
 		};
@@ -772,6 +775,9 @@ static void handle_options(int argc, char **argv)
 			break;
 		case 'U':
 			cmdline_opts.db_upgrade = true;
+			break;
+		case 'C':
+			cmdline_opts.db_check = true;
 			break;
 		case 'V':
 			print_version(1);
@@ -856,12 +862,6 @@ int main(int argc, char **argv)
 		return rc;
 	}
 
-	/* start telnet after reading config for vty_get_bind_addr() */
-	rc = telnet_init_dynif(hlr_ctx, NULL, vty_get_bind_addr(),
-			       OSMO_VTY_PORT_HLR);
-	if (rc < 0)
-		return rc;
-
 	LOGP(DMAIN, LOGL_NOTICE, "hlr starting\n");
 
 	rc = rand_init();
@@ -878,6 +878,23 @@ int main(int argc, char **argv)
 		LOGP(DMAIN, LOGL_FATAL, "Error opening database %s\n", osmo_quote_str(g_hlr->db_file_path, -1));
 		exit(1);
 	}
+
+	if (cmdline_opts.db_check) {
+		LOGP(DMAIN, LOGL_NOTICE, "Cmdline option --db-check: Database was opened successfully, quitting.\n");
+		db_close(g_hlr->dbc);
+		log_fini();
+		talloc_free(hlr_ctx);
+		talloc_free(tall_vty_ctx);
+		talloc_disable_null_tracking();
+		exit(0);
+	}
+
+	/* start telnet after reading config for vty_get_bind_addr() */
+	rc = telnet_init_dynif(hlr_ctx, NULL, vty_get_bind_addr(),
+			       OSMO_VTY_PORT_HLR);
+	if (rc < 0)
+		return rc;
+
 
 	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, g_hlr->gsup_bind_addr, OSMO_GSUP_PORT,
 					    read_cb, &g_lu_ops, g_hlr);
