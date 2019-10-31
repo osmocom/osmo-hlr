@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	2
+#define CURRENT_SCHEMA_VERSION	3
 
 #define SEL_COLUMNS \
 	"id," \
@@ -329,6 +329,140 @@ static int db_upgrade_v2(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v3(struct db_context *dbc)
+{
+	sqlite3_stmt *stmt;
+	int rc;
+
+	/* A newer SQLite version would allow simply 'ATLER TABLE subscriber RENAME COLUMN hlr_number TO msc_number'.
+	 * This is a really expensive workaround for that in order to cover earlier SQLite versions as well:
+	 * Create a new table with the new column name and copy the data over (https://www.sqlite.org/faq.html#q11).
+	 */
+#define SUBSCR_V3_CREATE  \
+"(\n" \
+"-- OsmoHLR's DB scheme is modelled roughly after TS 23.008 version 13.3.0\n" \
+"	id		INTEGER PRIMARY KEY,\n" \
+"	-- Chapter 2.1.1.1\n" \
+"	imsi		VARCHAR(15) UNIQUE NOT NULL,\n" \
+"	-- Chapter 2.1.2\n" \
+"	msisdn		VARCHAR(15) UNIQUE,\n" \
+"	-- Chapter 2.2.3: Most recent / current IMEISV\n" \
+"	imeisv		VARCHAR,\n" \
+"	-- Chapter 2.1.9: Most recent / current IMEI\n" \
+"	imei		VARCHAR(14),\n" \
+"	-- Chapter 2.4.5\n" \
+"	vlr_number	VARCHAR(15),\n" \
+"	-- Chapter 2.4.6\n" \
+"	msc_number	VARCHAR(15),\n" \
+"	-- Chapter 2.4.8.1\n" \
+"	sgsn_number	VARCHAR(15),\n" \
+"	-- Chapter 2.13.10\n" \
+"	sgsn_address	VARCHAR,\n" \
+"	-- Chapter 2.4.8.2\n" \
+"	ggsn_number	VARCHAR(15),\n" \
+"	-- Chapter 2.4.9.2\n" \
+"	gmlc_number	VARCHAR(15),\n" \
+"	-- Chapter 2.4.23\n" \
+"	smsc_number	VARCHAR(15),\n" \
+"	-- Chapter 2.4.24\n" \
+"	periodic_lu_tmr	INTEGER,\n" \
+"	-- Chapter 2.13.115\n" \
+"	periodic_rau_tau_tmr INTEGER,\n" \
+"	-- Chapter 2.1.1.2: network access mode\n" \
+"	nam_cs		BOOLEAN NOT NULL DEFAULT 1,\n" \
+"	nam_ps		BOOLEAN NOT NULL DEFAULT 1,\n" \
+"	-- Chapter 2.1.8\n" \
+"	lmsi		INTEGER,\n" \
+ \
+"	-- The below purged flags might not even be stored non-volatile,\n" \
+"	-- refer to TS 23.012 Chapter 3.6.1.4\n" \
+"	-- Chapter 2.7.5\n" \
+"	ms_purged_cs	BOOLEAN NOT NULL DEFAULT 0,\n" \
+"	-- Chapter 2.7.6\n" \
+"	ms_purged_ps	BOOLEAN NOT NULL DEFAULT 0,\n" \
+ \
+"	-- Timestamp of last location update seen from subscriber\n" \
+"	-- The value is a string which encodes a UTC timestamp in granularity of seconds.\n" \
+"	last_lu_seen TIMESTAMP default NULL\n" \
+")\n"
+
+#define SUBSCR_V2_COLUMN_NAMES \
+	"id," \
+	"imsi," \
+	"msisdn," \
+	"imeisv," \
+	"imei," \
+	"vlr_number," \
+	"hlr_number," \
+	"sgsn_number," \
+	"sgsn_address," \
+	"ggsn_number," \
+	"gmlc_number," \
+	"smsc_number," \
+	"periodic_lu_tmr," \
+	"periodic_rau_tau_tmr," \
+	"nam_cs," \
+	"nam_ps," \
+	"lmsi," \
+	"ms_purged_cs," \
+	"ms_purged_ps," \
+	"last_lu_seen"
+
+#define SUBSCR_V3_COLUMN_NAMES \
+	"id," \
+	"imsi," \
+	"msisdn," \
+	"imeisv," \
+	"imei," \
+	"vlr_number," \
+	"msc_number," \
+	"sgsn_number," \
+	"sgsn_address," \
+	"ggsn_number," \
+	"gmlc_number," \
+	"smsc_number," \
+	"periodic_lu_tmr," \
+	"periodic_rau_tau_tmr," \
+	"nam_cs," \
+	"nam_ps," \
+	"lmsi," \
+	"ms_purged_cs," \
+	"ms_purged_ps," \
+	"last_lu_seen"
+
+	const char *statements[] = {
+		"BEGIN TRANSACTION",
+		"CREATE TEMPORARY TABLE subscriber_backup" SUBSCR_V3_CREATE,
+		"INSERT INTO subscriber_backup SELECT " SUBSCR_V2_COLUMN_NAMES " FROM subscriber",
+		"DROP TABLE subscriber",
+		"CREATE TABLE subscriber" SUBSCR_V3_CREATE,
+		"INSERT INTO subscriber SELECT " SUBSCR_V3_COLUMN_NAMES " FROM subscriber_backup",
+		"DROP TABLE subscriber_backup",
+		"COMMIT",
+		"PRAGMA user_version = 3",
+	};
+
+	int i;
+	for (i = 0; i < ARRAY_SIZE(statements); i++) {
+		const char *update_stmt_sql = statements[i];
+
+		rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", update_stmt_sql);
+			return rc;
+		}
+		rc = sqlite3_step(stmt);
+		db_remove_reset(stmt);
+		sqlite3_finalize(stmt);
+		if (rc != SQLITE_DONE) {
+			LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 3\n");
+			return rc;
+		}
+
+	}
+	return rc;
+}
+
 static int db_get_user_version(struct db_context *dbc)
 {
 	const char *user_version_sql = "PRAGMA user_version";
@@ -458,6 +592,15 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 				goto out_free;
 			}
 			version = 2;
+			/* fall through */
+		case 2:
+			rc = db_upgrade_v3(dbc);
+			if (rc != SQLITE_DONE) {
+				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 3: (rc=%d) %s\n",
+				     rc, sqlite3_errmsg(dbc->db));
+				goto out_free;
+			}
+			version = 3;
 			/* fall through */
 		/* case N: ... */
 		default:

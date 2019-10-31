@@ -12,7 +12,7 @@ CREATE TABLE subscriber (
 	-- Chapter 2.4.5
 	vlr_number	VARCHAR(15),
 	-- Chapter 2.4.6
-	hlr_number	VARCHAR(15),
+	msc_number	VARCHAR(15),
 	-- Chapter 2.4.8.1
 	sgsn_number	VARCHAR(15),
 	-- Chapter 2.13.10
@@ -77,4 +77,4 @@ CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;

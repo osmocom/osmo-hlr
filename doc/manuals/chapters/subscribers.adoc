@@ -52,7 +52,7 @@ transceiving only RAND and SRES, may be applicable. (See 3GPP TS 33.102, chapter
 |aud3g.ind_bitlen|5|Nr of index bits at lower SQN end
 |apn||
 |vlr_number||3GPP TS 23.008 chapter 2.4.5
-|hlr_number||3GPP TS 23.008 chapter 2.4.6
+|msc_number||3GPP TS 23.008 chapter 2.4.6
 |sgsn_number||3GPP TS 23.008 chapter 2.4.8.1
 |sgsn_address||3GPP TS 23.008 chapter 2.13.10
 |ggsn_number||3GPP TS 23.008 chapter 2.4.8.2
