@@ -201,27 +201,37 @@ void db_close(struct db_context *dbc)
 	talloc_free(dbc);
 }
 
-static int db_bootstrap(struct db_context *dbc)
+static int db_run_statements(struct db_context *dbc, const char **statements, size_t statements_count)
 {
+	int rc;
 	int i;
-	for (i = 0; i < ARRAY_SIZE(stmt_bootstrap_sql); i++) {
-		int rc;
+	for (i = 0; i < statements_count; i++) {
+		const char *stmt_str = statements[i];
 		sqlite3_stmt *stmt;
-		rc = sqlite3_prepare_v2(dbc->db, stmt_bootstrap_sql[i], -1, &stmt, NULL);
+
+		rc = sqlite3_prepare_v2(dbc->db, stmt_str, -1, &stmt, NULL);
 		if (rc != SQLITE_OK) {
-			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", stmt_bootstrap_sql[i]);
+			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", stmt_str);
 			return rc;
 		}
-
 		rc = sqlite3_step(stmt);
 		db_remove_reset(stmt);
 		sqlite3_finalize(stmt);
 		if (rc != SQLITE_DONE) {
-			LOGP(DDB, LOGL_ERROR, "Cannot bootstrap database: SQL error: (%d) %s,"
-			     " during stmt '%s'",
-			     rc, sqlite3_errmsg(dbc->db), stmt_bootstrap_sql[i]);
+			LOGP(DDB, LOGL_ERROR, "SQL error: (%d) %s, during stmt '%s'",
+			     rc, sqlite3_errmsg(dbc->db), stmt_str);
 			return rc;
 		}
+	}
+	return rc;
+}
+
+static int db_bootstrap(struct db_context *dbc)
+{
+	int rc = db_run_statements(dbc, stmt_bootstrap_sql, ARRAY_SIZE(stmt_bootstrap_sql));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Cannot bootstrap database\n");
+		return rc;
 	}
 	return SQLITE_OK;
 }
@@ -263,75 +273,38 @@ static bool db_is_bootstrapped_v0(struct db_context *dbc)
 static int
 db_upgrade_v1(struct db_context *dbc)
 {
-	sqlite3_stmt *stmt;
 	int rc;
-	const char *update_stmt_sql = "ALTER TABLE subscriber ADD COLUMN last_lu_seen TIMESTAMP default NULL";
-	const char *set_schema_version_sql = "PRAGMA user_version = 1";
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN last_lu_seen TIMESTAMP default NULL",
+		"PRAGMA user_version = 1",
+	};
 
-	rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", update_stmt_sql);
-		return rc;
-	}
-	rc = sqlite3_step(stmt);
-	db_remove_reset(stmt);
-	sqlite3_finalize(stmt);
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
 	if (rc != SQLITE_DONE) {
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 1\n");
 		return rc;
 	}
-
-	rc = sqlite3_prepare_v2(dbc->db, set_schema_version_sql, -1, &stmt, NULL);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", set_schema_version_sql);
-		return rc;
-	}
-	rc = sqlite3_step(stmt);
-	if (rc != SQLITE_DONE)
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
-
-	db_remove_reset(stmt);
-	sqlite3_finalize(stmt);
 	return rc;
 }
 
 static int db_upgrade_v2(struct db_context *dbc)
 {
-	sqlite3_stmt *stmt;
 	int rc;
-	const char *update_stmt_sql = "ALTER TABLE subscriber ADD COLUMN imei VARCHAR(14)";
-	const char *set_schema_version_sql = "PRAGMA user_version = 2";
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN imei VARCHAR(14)",
+		"PRAGMA user_version = 2",
+	};
 
-	rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", update_stmt_sql);
-		return rc;
-	}
-	rc = sqlite3_step(stmt);
-	db_remove_reset(stmt);
-	sqlite3_finalize(stmt);
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
 	if (rc != SQLITE_DONE) {
 		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 2\n");
 		return rc;
 	}
-
-	rc = sqlite3_prepare_v2(dbc->db, set_schema_version_sql, -1, &stmt, NULL);
-	if (rc != SQLITE_OK) {
-		LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", set_schema_version_sql);
-		return rc;
-	}
-	rc = sqlite3_step(stmt);
-	if (rc != SQLITE_DONE)
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 2\n");
-
-	db_remove_reset(stmt);
-	sqlite3_finalize(stmt);
 	return rc;
 }
 
 static int db_upgrade_v3(struct db_context *dbc)
 {
-	sqlite3_stmt *stmt;
 	int rc;
 
 	/* A newer SQLite version would allow simply 'ATLER TABLE subscriber RENAME COLUMN hlr_number TO msc_number'.
@@ -442,23 +415,10 @@ static int db_upgrade_v3(struct db_context *dbc)
 		"PRAGMA user_version = 3",
 	};
 
-	int i;
-	for (i = 0; i < ARRAY_SIZE(statements); i++) {
-		const char *update_stmt_sql = statements[i];
-
-		rc = sqlite3_prepare_v2(dbc->db, update_stmt_sql, -1, &stmt, NULL);
-		if (rc != SQLITE_OK) {
-			LOGP(DDB, LOGL_ERROR, "Unable to prepare SQL statement '%s'\n", update_stmt_sql);
-			return rc;
-		}
-		rc = sqlite3_step(stmt);
-		db_remove_reset(stmt);
-		sqlite3_finalize(stmt);
-		if (rc != SQLITE_DONE) {
-			LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 3\n");
-			return rc;
-		}
-
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 3\n");
+		return rc;
 	}
 	return rc;
 }
