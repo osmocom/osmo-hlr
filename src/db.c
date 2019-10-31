@@ -311,7 +311,7 @@ static int db_upgrade_v2(struct db_context *dbc)
 	db_remove_reset(stmt);
 	sqlite3_finalize(stmt);
 	if (rc != SQLITE_DONE) {
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 2\n");
 		return rc;
 	}
 
@@ -322,7 +322,7 @@ static int db_upgrade_v2(struct db_context *dbc)
 	}
 	rc = sqlite3_step(stmt);
 	if (rc != SQLITE_DONE)
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version %d\n", 1);
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 2\n");
 
 	db_remove_reset(stmt);
 	sqlite3_finalize(stmt);
