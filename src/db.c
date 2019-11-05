@@ -423,6 +423,13 @@ static int db_upgrade_v3(struct db_context *dbc)
 	return rc;
 }
 
+typedef int (*db_upgrade_func_t)(struct db_context *dbc);
+static db_upgrade_func_t db_upgrade_path[] = {
+	db_upgrade_v1,
+	db_upgrade_v2,
+	db_upgrade_v3,
+};
+
 static int db_get_user_version(struct db_context *dbc)
 {
 	const char *user_version_sql = "PRAGMA user_version";
@@ -533,41 +540,16 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 
 	LOGP(DDB, LOGL_NOTICE, "Database '%s' has HLR DB schema version %d\n", dbc->fname, version);
 
-	if (version < CURRENT_SCHEMA_VERSION && allow_upgrade) {
-		switch (version) {
-		case 0:
-			rc = db_upgrade_v1(dbc);
-			if (rc != SQLITE_DONE) {
-				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 1: (rc=%d) %s\n",
-				     rc, sqlite3_errmsg(dbc->db));
-				goto out_free;
-			}
-			version = 1;
-			/* fall through */
-		case 1:
-			rc = db_upgrade_v2(dbc);
-			if (rc != SQLITE_DONE) {
-				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 2: (rc=%d) %s\n",
-				     rc, sqlite3_errmsg(dbc->db));
-				goto out_free;
-			}
-			version = 2;
-			/* fall through */
-		case 2:
-			rc = db_upgrade_v3(dbc);
-			if (rc != SQLITE_DONE) {
-				LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version 3: (rc=%d) %s\n",
-				     rc, sqlite3_errmsg(dbc->db));
-				goto out_free;
-			}
-			version = 3;
-			/* fall through */
-		/* case N: ... */
-		default:
-			break;
+	for (; allow_upgrade && (version < ARRAY_SIZE(db_upgrade_path)); version++) {
+		db_upgrade_func_t upgrade_func = db_upgrade_path[version];
+		rc = upgrade_func(dbc);
+		if (rc != SQLITE_DONE) {
+			LOGP(DDB, LOGL_ERROR, "Failed to upgrade HLR DB schema to version %d: (rc=%d) %s\n",
+			     version+1, rc, sqlite3_errmsg(dbc->db));
+			goto out_free;
 		}
 		LOGP(DDB, LOGL_NOTICE, "Database '%s' has been upgraded to HLR DB schema version %d\n",
-		     dbc->fname, version);
+		     dbc->fname, version+1);
 	}
 
 	if (version != CURRENT_SCHEMA_VERSION) {

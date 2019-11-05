@@ -80,6 +80,8 @@ rc = 0
 DMAIN hlr starting
 DDB using database: <PATH>test.db
 DDB Database <PATH>test.db' has HLR DB schema version 0
+DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 1
+DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 2
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 3
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.
 
