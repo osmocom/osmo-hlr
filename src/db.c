@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	3
+#define CURRENT_SCHEMA_VERSION	4
 
 #define SEL_COLUMNS \
 	"id," \
@@ -430,11 +430,28 @@ static int db_upgrade_v3(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v4(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN vlr_via_proxy VARCHAR",
+		"PRAGMA user_version = 4",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 4\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
 	db_upgrade_v2,
 	db_upgrade_v3,
+	db_upgrade_v4,
 };
 
 static int db_get_user_version(struct db_context *dbc)
