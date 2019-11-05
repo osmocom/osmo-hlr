@@ -49,6 +49,7 @@
 #include "hlr_vty.h"
 #include "hlr_ussd.h"
 #include "dgsm.h"
+#include "proxy.h"
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;
@@ -429,13 +430,13 @@ static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 	bool is_ps = false;
 	int rc;
 
-	LOGP(DAUC, LOGL_INFO, "%s: Purge MS (%s)\n", gsup->imsi,
-		is_ps ? "PS" : "CS");
-
 	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
 
 	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
 		is_ps = true;
+
+	LOGP(DAUC, LOGL_INFO, "%s: Purge MS (%s)\n", gsup->imsi,
+		is_ps ? "PS" : "CS");
 
 	/* FIXME: check if the VLR that sends the purge is the same that
 	 * we have on record. Only update if yes */
@@ -836,6 +837,9 @@ int main(int argc, char **argv)
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
 
+	g_hlr->gsup_proxy.cs = proxy_init(g_hlr);
+	g_hlr->gsup_proxy.ps = proxy_init(g_hlr);
+
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {
 		fprintf(stderr, "Error initializing logging\n");
@@ -902,6 +906,8 @@ int main(int argc, char **argv)
 
 	g_hlr->ctrl_bind_addr = ctrl_vty_get_bind_addr();
 	g_hlr->ctrl = hlr_controlif_setup(g_hlr);
+
+	dgsm_start(hlr_ctx);
 
 	osmo_init_ignore_signals();
 	signal(SIGINT, &signal_hdlr);

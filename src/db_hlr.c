@@ -739,15 +739,14 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	if (!db_bind_text(stmt, "$number", (char*)vlr_or_sgsn_number->val))
 		return -EIO;
 
-	if (!is_ps) {
-		if (gsup_peer && gsup_peer->len
-		    && global_title_cmp(gsup_peer, vlr_or_sgsn_number)) {
-			if (!db_bind_text(stmt, "$proxy", (char*)gsup_peer->val))
-				return -EIO;
-		} else {
-			if (!db_bind_null(stmt, "$proxy"))
-				return -EIO;
-		}
+	/* If the VLR/SGSN is not the direct GSUP peer, the gsup_peer is a proxy towards the actual VLR/SGSN.
+	 * -> store the gsup_peer as proxy only when it differs from the vlr_or_sgsn_number. */
+	if (global_title_cmp(gsup_peer, vlr_or_sgsn_number)) {
+		if (!db_bind_text(stmt, "$proxy", (char*)gsup_peer->val))
+			return -EIO;
+	} else {
+		if (!db_bind_null(stmt, "$proxy"))
+			return -EIO;
 	}
 
 	/* execute the statement */

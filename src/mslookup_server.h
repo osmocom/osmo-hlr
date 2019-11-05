@@ -1,9 +1,7 @@
 #pragma once
 
-struct osmo_mslookup_server_dns {
-	bool running;
-	struct osmo_sockaddr_str multicast_bind_addr;
-};
+struct osmo_mslookup_query;
+struct osmo_mslookup_result;
 
-struct osmo_mslookup_server_dns *osmo_mslookup_server_dns_start(const struct osmo_sockaddr_str *multicast_bind_addr);
-void osmo_mslookup_server_dns_stop(struct osmo_mslookup_server_dns *server);
+void osmo_mslookup_server_rx(const struct osmo_mslookup_query *query,
+			     struct osmo_mslookup_result *result);

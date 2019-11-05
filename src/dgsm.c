@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/mslookup/mslookup_client.h>
-#include <osmocom/mslookup/mslookup_client_dns.h>
+#include <osmocom/mslookup/mslookup_client_mdns.h>
 #include <osmocom/gsupclient/gsup_client.h>
 #include "logging.h"
 #include "hlr.h"
@@ -10,36 +10,25 @@
 #include "dgsm.h"
 #include "proxy.h"
 #include "remote_hlr.h"
-#include "mslookup_server.h"
+#include "mslookup_server_mdns.h"
+#include "global_title.h"
 
 #define LOG_DGSM(imsi, level, fmt, args...) \
 	LOGP(DDGSM, level, "(IMSI-%s) " fmt, imsi, ##args)
 
 void *dgsm_ctx = NULL;
-struct dgsm_config dgsm_config = {
-	.server = {
-		.dns = {
-			.multicast_bind_addr = {
-				.ip = OSMO_MSLOOKUP_MDNS_IP4,
-				.port = OSMO_MSLOOKUP_MDNS_PORT,
-			},
-		},
-	},
-};
 
+const struct global_title dgsm_config_msc_wildcard = {};
 
-struct dgsm_msc_config *dgsm_config_msc_get(const uint8_t *ipa_unit_name, size_t ipa_unit_name_len,
-					    bool create)
+struct dgsm_msc_config *dgsm_config_msc_get(const struct global_title *msc_name, bool create)
 {
 	struct dgsm_msc_config *msc;
 
-	if (!ipa_unit_name)
+	if (!msc_name)
 		return NULL;
 
-	llist_for_each_entry(msc, &dgsm_config.server.msc_configs, entry) {
-		if (ipa_unit_name_len != msc->unit_name_len)
-			continue;
-		if (memcmp(ipa_unit_name, msc->unit_name, ipa_unit_name_len))
+	llist_for_each_entry(msc, &g_hlr->mslookup.vty.server.msc_configs, entry) {
+		if (global_title_cmp(&msc->name, msc_name))
 			continue;
 		return msc;
 	}
@@ -48,18 +37,18 @@ struct dgsm_msc_config *dgsm_config_msc_get(const uint8_t *ipa_unit_name, size_t
 
 	msc = talloc_zero(dgsm_ctx, struct dgsm_msc_config);
 	OSMO_ASSERT(msc);
-	INIT_LLIST_HEAD(&msc->service_addrs);
-	msc->unit_name = talloc_memdup(msc, ipa_unit_name, ipa_unit_name_len);
-	OSMO_ASSERT(msc->unit_name);
-	msc->unit_name_len = ipa_unit_name_len;
+	INIT_LLIST_HEAD(&msc->service_hosts);
+	msc->name = *msc_name;
 	return msc;
 }
 
-static struct dgsm_service_addr *dgsm_config_msc_service_get(struct dgsm_msc_config *msc, const char *service,
-							     bool create)
+struct dgsm_service_host *dgsm_config_msc_service_get(struct dgsm_msc_config *msc, const char *service, bool create)
 {
-	struct dgsm_service_addr *e;
-	llist_for_each_entry(e, &msc->service_addrs, entry) {
+	struct dgsm_service_host *e;
+	if (!msc)
+		return NULL;
+
+	llist_for_each_entry(e, &msc->service_hosts, entry) {
 		if (!strcmp(e->service, service))
 			return e;
 	}
@@ -67,36 +56,29 @@ static struct dgsm_service_addr *dgsm_config_msc_service_get(struct dgsm_msc_con
 	if (!create)
 		return NULL;
 
-	e = talloc_zero(msc, struct dgsm_service_addr);
+	e = talloc_zero(msc, struct dgsm_service_host);
 	OSMO_ASSERT(e);
 	OSMO_STRLCPY_ARRAY(e->service, service);
-	llist_add_tail(&e->entry, &msc->service_addrs);
+	llist_add_tail(&e->entry, &msc->service_hosts);
 	return e;
 }
 
-struct dgsm_service_addr *dgsm_config_service_get(const uint8_t *ipa_unit_name, size_t ipa_unit_name_len,
-						  const char *service)
+struct dgsm_service_host *dgsm_config_service_get(const struct global_title *msc_name, const char *service)
 {
-	struct dgsm_msc_config *msc = dgsm_config_msc_get(ipa_unit_name, ipa_unit_name_len, false);
+	struct dgsm_msc_config *msc = dgsm_config_msc_get(msc_name, false);
 	if (!msc)
 		return NULL;
 	return dgsm_config_msc_service_get(msc, service, false);
 }
 
-int dgsm_config_service_set(const uint8_t *ipa_unit_name, size_t ipa_unit_name_len,
-			    const char *service, const struct osmo_sockaddr_str *addr)
+int dgsm_config_msc_service_set(struct dgsm_msc_config *msc, const char *service, const struct osmo_sockaddr_str *addr)
 {
-	struct dgsm_msc_config *msc;
-	struct dgsm_service_addr *e;
+	struct dgsm_service_host *e;
 
 	if (!service || !service[0]
 	    || strlen(service) > OSMO_MSLOOKUP_SERVICE_MAXLEN)
 		return -EINVAL;
 	if (!addr || !osmo_sockaddr_str_is_nonzero(addr))
-		return -EINVAL;
-
-	msc = dgsm_config_msc_get(ipa_unit_name, ipa_unit_name_len, true);
-	if (!msc)
 		return -EINVAL;
 
 	e = dgsm_config_msc_service_get(msc, service, true);
@@ -105,10 +87,10 @@ int dgsm_config_service_set(const uint8_t *ipa_unit_name, size_t ipa_unit_name_l
 
 	switch (addr->af) {
 	case AF_INET:
-		e->addr_v4 = *addr;
+		e->host_v4 = *addr;
 		break;
 	case AF_INET6:
-		e->addr_v6 = *addr;
+		e->host_v6 = *addr;
 		break;
 	default:
 		return -EINVAL;
@@ -116,30 +98,38 @@ int dgsm_config_service_set(const uint8_t *ipa_unit_name, size_t ipa_unit_name_l
 	return 0;
 }
 
-int dgsm_config_service_del(const uint8_t *ipa_unit_name, size_t ipa_unit_name_len,
-			    const char *service, const struct osmo_sockaddr_str *addr)
+int dgsm_config_service_set(const struct global_title *msc_name, const char *service, const struct osmo_sockaddr_str *addr)
 {
 	struct dgsm_msc_config *msc;
-	struct dgsm_service_addr *e, *n;
 
-	msc = dgsm_config_msc_get(ipa_unit_name, ipa_unit_name_len, false);
+	msc = dgsm_config_msc_get(msc_name, true);
+	if (!msc)
+		return -EINVAL;
+
+	return dgsm_config_msc_service_set(msc, service, addr);
+}
+
+int dgsm_config_msc_service_del(struct dgsm_msc_config *msc, const char *service, const struct osmo_sockaddr_str *addr)
+{
+	struct dgsm_service_host *e, *n;
+
 	if (!msc)
 		return -ENOENT;
 
-	llist_for_each_entry_safe(e, n, &msc->service_addrs, entry) {
+	llist_for_each_entry_safe(e, n, &msc->service_hosts, entry) {
 		if (service && strcmp(service, e->service))
 			continue;
 
 		if (addr) {
-			if (!osmo_sockaddr_str_cmp(addr, &e->addr_v4)) {
-				e->addr_v4 = (struct osmo_sockaddr_str){};
+			if (!osmo_sockaddr_str_cmp(addr, &e->host_v4)) {
+				e->host_v4 = (struct osmo_sockaddr_str){};
 				/* Removed one addr. If the other is still there, keep the entry. */
-				if (osmo_sockaddr_str_is_nonzero(&e->addr_v6))
+				if (osmo_sockaddr_str_is_nonzero(&e->host_v6))
 					continue;
-			} else if (!osmo_sockaddr_str_cmp(addr, &e->addr_v6)) {
-				e->addr_v6 = (struct osmo_sockaddr_str){};
+			} else if (!osmo_sockaddr_str_cmp(addr, &e->host_v6)) {
+				e->host_v6 = (struct osmo_sockaddr_str){};
 				/* Removed one addr. If the other is still there, keep the entry. */
-				if (osmo_sockaddr_str_is_nonzero(&e->addr_v4))
+				if (osmo_sockaddr_str_is_nonzero(&e->host_v4))
 					continue;
 			} else
 				/* No addr match, keep the entry. */
@@ -152,8 +142,14 @@ int dgsm_config_service_del(const uint8_t *ipa_unit_name, size_t ipa_unit_name_l
 	return 0;
 }
 
+int dgsm_config_service_del(const struct global_title *msc_name,
+			    const char *service, const struct osmo_sockaddr_str *addr)
+{
+	return dgsm_config_msc_service_del(dgsm_config_msc_get(msc_name, false),
+					   service, addr);
+}
+
 static void *dgsm_pending_messages_ctx = NULL;
-static struct osmo_mslookup_client *mslookup_client = NULL;
 
 struct pending_gsup_message {
 	struct llist_head entry;
@@ -212,13 +208,16 @@ void dgsm_send_to_remote_hlr(const struct proxy_subscr *ps, const struct osmo_gs
 /* Return true when the message has been handled by D-GSM. */
 bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
 {
-	const struct proxy_subscr *ps;
+	const struct proxy_subscr *proxy_subscr;
 	struct proxy_subscr ps_new;
 	struct gsup_route *r;
 	struct osmo_gsup_message gsup_copy;
+	struct proxy *proxy = g_hlr->gsup_proxy.cs;
+	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
+		proxy = g_hlr->gsup_proxy.ps;
 
-	ps = proxy_subscr_get(gsup->imsi);
-	if (ps)
+	proxy_subscr = proxy_subscr_get_by_imsi(proxy, gsup->imsi);
+	if (proxy_subscr)
 		goto yes_we_are_proxying;
 
 	/* No proxy entry exists. If the IMSI is known in the local HLR, then we won't proxy. */
@@ -232,11 +231,11 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 	/* Add a proxy entry without a remote address to indicate that we are busy querying for a remote HLR. */
 	ps_new = (struct proxy_subscr){};
 	OSMO_STRLCPY_ARRAY(ps_new.imsi, gsup->imsi);
-	proxy_subscr_update(&ps_new);
-	ps = &ps_new;
+	proxy_subscr_update(proxy, &ps_new);
+	proxy_subscr = &ps_new;
 
 yes_we_are_proxying:
-	OSMO_ASSERT(ps);
+	OSMO_ASSERT(proxy_subscr);
 
 	/* To forward to a remote HLR, we need to indicate the source MSC's name to make sure the reply can be routed
 	 * back. Store the sender MSC in gsup->source_name -- the remote HLR is required to return this as
@@ -254,7 +253,7 @@ yes_we_are_proxying:
 	gsup_copy.source_name = r->addr;
 	gsup_copy.source_name_len = talloc_total_size(r->addr);
 
-	dgsm_send_to_remote_hlr(ps, &gsup_copy);
+	dgsm_send_to_remote_hlr(proxy_subscr, &gsup_copy);
 	return true;
 }
 
@@ -263,62 +262,96 @@ void dgsm_init(void *ctx)
 {
 	dgsm_ctx = talloc_named_const(ctx, 0, "dgsm");
 	dgsm_pending_messages_ctx = talloc_named_const(dgsm_ctx, 0, "dgsm_pending_messages");
-	INIT_LLIST_HEAD(&dgsm_config.server.msc_configs);
+	INIT_LLIST_HEAD(&g_hlr->mslookup.vty.server.msc_configs);
+	osmo_sockaddr_str_from_str(&g_hlr->mslookup.vty.server.mdns.bind_addr,
+				   OSMO_MSLOOKUP_MDNS_IP4, OSMO_MSLOOKUP_MDNS_PORT);
+	osmo_sockaddr_str_from_str(&g_hlr->mslookup.vty.client.mdns.query_addr,
+				   OSMO_MSLOOKUP_MDNS_IP4, OSMO_MSLOOKUP_MDNS_PORT);
 }
 
 void dgsm_start(void *ctx)
 {
-	mslookup_client = osmo_mslookup_client_new(dgsm_ctx);
-	OSMO_ASSERT(mslookup_client);
+	g_hlr->mslookup.client.client = osmo_mslookup_client_new(dgsm_ctx);
+	OSMO_ASSERT(g_hlr->mslookup.client.client);
+	g_hlr->mslookup.allow_startup = true;
+	dgsm_config_apply();
 }
 
-void dgsm_dns_server_config_apply()
+static void dgsm_mdns_server_config_apply()
 {
-	/* Check whether to start/stop/restart DNS server */
-	bool should_run = dgsm_config.server.enable && dgsm_config.server.dns.enable;
-	bool should_stop = g_hlr->mslookup.server.dns
+	/* Check whether to start/stop/restart mDNS server */
+	bool should_run;
+	bool should_stop;
+	if (!g_hlr->mslookup.allow_startup)
+		return;
+
+	g_hlr->mslookup.server.max_age = g_hlr->mslookup.vty.server.max_age;
+	
+	should_run = g_hlr->mslookup.vty.server.enable && g_hlr->mslookup.vty.server.mdns.enable;
+	should_stop = g_hlr->mslookup.server.mdns
 		&& (!should_run
-		    || osmo_sockaddr_str_cmp(&dgsm_config.server.dns.multicast_bind_addr,
-					     &g_hlr->mslookup.server.dns->multicast_bind_addr));
+		    || osmo_sockaddr_str_cmp(&g_hlr->mslookup.vty.server.mdns.bind_addr,
+					     &g_hlr->mslookup.server.mdns->bind_addr));
 
 	if (should_stop) {
-		osmo_mslookup_server_dns_stop(g_hlr->mslookup.server.dns);
-		LOGP(DDGSM, LOGL_ERROR, "Stopped MS Lookup DNS server\n");
+		osmo_mslookup_server_mdns_stop(g_hlr->mslookup.server.mdns);
+		g_hlr->mslookup.server.mdns = NULL;
+		LOGP(DDGSM, LOGL_NOTICE, "Stopped mslookup mDNS server\n");
 	}
 
-	if (should_run) {
-		g_hlr->mslookup.server.dns =
-			osmo_mslookup_server_dns_start(&dgsm_config.server.dns.multicast_bind_addr);
-		if (!g_hlr->mslookup.server.dns)
-			LOGP(DDGSM, LOGL_ERROR, "Failed to start MS Lookup DNS server\n");
+	if (should_run && !g_hlr->mslookup.server.mdns) {
+		g_hlr->mslookup.server.mdns =
+			osmo_mslookup_server_mdns_start(g_hlr, &g_hlr->mslookup.vty.server.mdns.bind_addr);
+		if (!g_hlr->mslookup.server.mdns)
+			LOGP(DDGSM, LOGL_ERROR, "Failed to start mslookup mDNS server on " OSMO_SOCKADDR_STR_FMT "\n",
+			     OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.server.mdns->bind_addr));
 		else
-			LOGP(DDGSM, LOGL_ERROR, "Started MS Lookup DNS server on " OSMO_SOCKADDR_STR_FMT "\n",
-			     OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.server.dns->multicast_bind_addr));
+			LOGP(DDGSM, LOGL_NOTICE, "Started mslookup mDNS server, receiving mDNS requests at multicast "
+			     OSMO_SOCKADDR_STR_FMT "\n",
+			     OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.server.mdns->bind_addr));
 	}
 }
 
-void dgsm_dns_client_config_apply()
+static void dgsm_mdns_client_config_apply()
 {
-	/* Check whether to start/stop/restart DNS client */
-	struct osmo_mslookup_client_method *dns_method = g_hlr->mslookup.client.dns;
-	const struct osmo_sockaddr_str *current_bind_addr = osmo_mslookup_client_method_dns_get_bind_addr(dns_method);
+	if (!g_hlr->mslookup.allow_startup)
+		return;
 
-	bool should_run = dgsm_config.client.enable && dgsm_config.client.dns.enable;
-	bool should_stop = dns_method &&
+	/* Check whether to start/stop/restart mDNS client */
+	const struct osmo_sockaddr_str *current_bind_addr;
+	current_bind_addr = osmo_mslookup_client_method_mdns_get_bind_addr(g_hlr->mslookup.client.mdns);
+
+	bool should_run = g_hlr->mslookup.vty.client.enable && g_hlr->mslookup.vty.client.mdns.enable;
+	bool should_stop = g_hlr->mslookup.client.mdns &&
 		(!should_run
-		 || osmo_sockaddr_str_cmp(&dgsm_config.client.dns.multicast_query_addr,
+		 || osmo_sockaddr_str_cmp(&g_hlr->mslookup.vty.client.mdns.query_addr,
 					  current_bind_addr));
 
-	if (should_stop) 
-		osmo_mslookup_client_method_del(mslookup_client, dns_method);
-	if (should_run) {
-		if (osmo_mslookup_client_add_dns(mslookup_client,
-						 dgsm_config.client.dns.multicast_query_addr.ip,
-						 dgsm_config.client.dns.multicast_query_addr.port,
-						 true))
-			LOGP(DDGSM, LOGL_ERROR, "Failed to start MS Lookup DNS client\n");
+	if (should_stop) {
+		osmo_mslookup_client_method_del(g_hlr->mslookup.client.client, g_hlr->mslookup.client.mdns);
+		g_hlr->mslookup.client.mdns = NULL;
+		LOGP(DDGSM, LOGL_NOTICE, "Stopped mslookup mDNS client\n");
+	}
+
+	if (should_run && !g_hlr->mslookup.client.mdns) {
+		g_hlr->mslookup.client.mdns =
+			osmo_mslookup_client_add_mdns(g_hlr->mslookup.client.client,
+						      g_hlr->mslookup.vty.client.mdns.query_addr.ip,
+						      g_hlr->mslookup.vty.client.mdns.query_addr.port,
+						      true);
+		if (!g_hlr->mslookup.client.mdns)
+			LOGP(DDGSM, LOGL_ERROR, "Failed to start mslookup mDNS client with target "
+			     OSMO_SOCKADDR_STR_FMT "\n",
+			     OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.vty.client.mdns.query_addr));
 		else
-			LOGP(DDGSM, LOGL_ERROR, "Started MS Lookup DNS client with " OSMO_SOCKADDR_STR_FMT "\n",
-			     OSMO_SOCKADDR_STR_FMT_ARGS(&dgsm_config.client.dns.multicast_query_addr));
+			LOGP(DDGSM, LOGL_NOTICE, "Started mslookup mDNS client, sending mDNS requests to multicast " OSMO_SOCKADDR_STR_FMT "\n",
+			     OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.vty.client.mdns.query_addr));
 	}
 }
+
+void dgsm_config_apply()
+{
+	dgsm_mdns_server_config_apply();
+	dgsm_mdns_client_config_apply();
+}
+

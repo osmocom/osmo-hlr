@@ -42,6 +42,8 @@ noinst_HEADERS = \
 	dgsm.h \
 	remote_hlr.h \
 	global_title.h \
+	mslookup_server.h \
+	mslookup_server_mdns.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -71,6 +73,7 @@ osmo_hlr_SOURCES = \
 	dgsm_vty.c \
 	remote_hlr.c \
 	mslookup_server.c \
+	mslookup_server_mdns.c \
 	global_title.c \
 	$(NULL)
 

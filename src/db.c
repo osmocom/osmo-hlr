@@ -47,7 +47,8 @@
 	"ms_purged_cs," \
 	"ms_purged_ps," \
 	"last_lu_seen," \
-	"vlr_via_proxy"
+	"vlr_via_proxy," \
+	"sgsn_via_proxy"
 
 static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
@@ -55,7 +56,7 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_ID] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE id = ?",
 	[DB_STMT_SEL_BY_IMEI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imei = ?",
 	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = $number, vlr_via_proxy = $proxy WHERE id = $subscriber_id",
-	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = $number WHERE id = $subscriber_id",
+	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = $number, sgsn_via_proxy = $proxy WHERE id = $subscriber_id",
 	[DB_STMT_UPD_IMEI_BY_IMSI] = "UPDATE subscriber SET imei = $imei WHERE imsi = $imsi",
 	[DB_STMT_AUC_BY_IMSI] =
 		"SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn, ind_bitlen"
@@ -456,6 +457,7 @@ static int db_upgrade_v4(struct db_context *dbc)
 	int rc;
 	const char *statements[] = {
 		"ALTER TABLE subscriber ADD COLUMN vlr_via_proxy VARCHAR",
+		"ALTER TABLE subscriber ADD COLUMN sgsn_via_proxy VARCHAR",
 		"PRAGMA user_version = 4",
 	};
 

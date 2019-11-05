@@ -185,5 +185,5 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 #define copy_sqlite3_text_to_gt(gt, stmt, idx) \
 	do { \
 		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
-		global_title_set(gt, (uint8_t*)_txt, _txt ? strlen(_txt)+1 : 0); \
+		global_title_set_str(gt, _txt); \
 	} while (0)

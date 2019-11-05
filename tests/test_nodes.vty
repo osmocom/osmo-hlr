@@ -119,8 +119,8 @@ OsmoHLR# configure terminal
 OsmoHLR(config)# mslookup
 OsmoHLR(config-mslookup)# list
 ...
-  dns
-  no dns
+  mdns
+  no mdns
   server
   no server
   client
@@ -129,8 +129,8 @@ OsmoHLR(config-mslookup)# list
 OsmoHLR(config-mslookup)# server
 OsmoHLR(config-mslookup-server)# list
 ...
-  dns bind multicast IP <1-65535>
-  no dns
+  mdns bind IP <1-65535>
+  no mdns
   service NAME at IP <1-65535>
   no service NAME
   no service NAME at IP <1-65535>
@@ -148,7 +148,7 @@ OsmoHLR(config-mslookup-server)# exit
 OsmoHLR(config-mslookup)# client
 OsmoHLR(config-mslookup-client)# list
 ...
-  timeout <1-255>
-  dns to multicast IP <1-65535>
-  no dns
+  timeout <1-100000>
+  mdns to IP <1-65535>
+  no mdns
 

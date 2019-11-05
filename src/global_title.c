@@ -16,6 +16,11 @@ int global_title_set(struct global_title *gt, const uint8_t *val, size_t len)
 	return 0;
 }
 
+int global_title_set_str(struct global_title *gt, const char *str)
+{
+	return global_title_set(gt, (const uint8_t*)str, str ? strlen(str)+1 : 0);
+}
+
 int global_title_cmp(const struct global_title *a, const struct global_title *b)
 {
 	int cmp;

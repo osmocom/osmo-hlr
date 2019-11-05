@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/ipa.h>
+#include "dgsm.h"
 
 #define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
 
@@ -66,19 +67,24 @@ struct hlr {
 	unsigned int subscr_create_on_demand_rand_msisdn_len;
 
 	struct {
+		bool allow_startup;
+		struct dgsm_config vty;
+
 		struct {
-			struct osmo_mslookup_server_dns *dns;
+			struct osmo_mslookup_server_mdns *mdns;
+			uint32_t max_age;
 		} server;
 
 		struct {
 			struct osmo_mslookup_client *client;
-
-			struct osmo_mslookup_client_method *dns;
+			struct osmo_mslookup_client_method *mdns;
 		} client;
 	} mslookup;
 
 	struct {
 		struct ipaccess_unit gsup_client_name;
+		struct proxy *cs;
+		struct proxy *ps;
 	} gsup_proxy;
 };
 

@@ -45,7 +45,8 @@ CREATE TABLE subscriber (
 	last_lu_seen TIMESTAMP default NULL,
 	-- When a LU was received via a proxy, that proxy's hlr_number is stored here,
 	-- while vlr_number reflects the MSC on the far side of that proxy.
-	vlr_via_proxy	VARCHAR
+	vlr_via_proxy	VARCHAR,
+	sgsn_via_proxy	VARCHAR
 );
 
 CREATE TABLE subscriber_apn (
