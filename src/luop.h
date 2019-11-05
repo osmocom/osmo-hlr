@@ -59,8 +59,10 @@ struct lu_operation {
 
 	/*! subscriber related to this operation */
 	struct hlr_subscriber subscr;
-	/*! peer VLR/SGSN starting the request */
-	uint8_t *peer;
+	/*! Immediate peer VLR/SGSN/proxy starting the request */
+	struct global_title peer;
+	/*! Actual VLR, possibly behind the immediate peer. */
+	struct global_title vlr_number;
 };
 
 

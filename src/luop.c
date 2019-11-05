@@ -54,9 +54,7 @@ static void _luop_tx_gsup(struct lu_operation *luop,
 	OSMO_ASSERT(msg_out);
 	osmo_gsup_encode(msg_out, gsup);
 
-	osmo_gsup_addr_send(luop->gsup_server, luop->peer,
-			    talloc_total_size(luop->peer),
-			    msg_out);
+	osmo_gsup_gt_send(luop->gsup_server, &luop->peer, msg_out);
 }
 
 static inline void fill_gsup_msg(struct osmo_gsup_message *out,
@@ -135,7 +133,12 @@ struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn)
 		return NULL;
 	}
 
-	luop->peer = talloc_memdup(luop, peer_addr, rc);
+	if (global_title_set(&luop->peer, peer_addr, rc)) {
+		LOGP(DMAIN, LOGL_ERROR, "Invalid GSUP peer name: %s\n",
+		     osmo_quote_str((char*)peer_addr, rc));
+		lu_op_free(luop);
+		return NULL;
+	}
 
 	return luop;
 }
@@ -232,8 +235,8 @@ void lu_op_tx_insert_subscr_data(struct lu_operation *luop)
 	if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, msisdn_enc,
 							sizeof(msisdn_enc), apn, sizeof(apn), cn_domain) != 0) {
 		LOGP(DMAIN, LOGL_ERROR,
-		       "IMSI='%s': Cannot notify GSUP client; could not create gsup message "
-		       "for %s\n", subscr->imsi, luop->peer);
+		     "IMSI='%s': Cannot notify GSUP client; could not create gsup message for %s\n",
+		     subscr->imsi, global_title_name(&luop->peer));
 		return;
 	}
 

@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 
+#include "global_title.h"
+
 struct hlr;
 
 enum stmt_idx {
@@ -52,6 +54,7 @@ void db_remove_reset(sqlite3_stmt *stmt);
 bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text);
 bool db_bind_int(sqlite3_stmt *stmt, const char *param_name, int nr);
 bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr);
+bool db_bind_null(sqlite3_stmt *stmt, const char *param_name);
 void db_close(struct db_context *dbc);
 struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite3_logging, bool allow_upgrades);
 
@@ -99,6 +102,8 @@ struct hlr_subscriber {
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
+	/* talloc'd IPA unit name */
+	struct global_title vlr_via_proxy;
 };
 
 /* A format string for use with strptime(3). This format string is
@@ -153,7 +158,8 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps);
+		 const struct global_title *gsup_peer,
+		 const struct global_title *vlr_or_sgsn_number, bool is_ps);
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
@@ -169,4 +175,15 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 	do { \
 		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
 		osmo_strlcpy(buf, _txt, sizeof(buf)); \
+	} while (0)
+
+/*! Call sqlite3_column_text() and copy result to a struct global_title.
+ * \param[out] gt  A struct global_title* to write to.
+ * \param[in] stmt  An sqlite3_stmt*.
+ * \param[in] idx  Index in stmt's returned columns.
+ */
+#define copy_sqlite3_text_to_gt(gt, stmt, idx) \
+	do { \
+		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
+		global_title_set(gt, (uint8_t*)_txt, _txt ? strlen(_txt)+1 : 0); \
 	} while (0)

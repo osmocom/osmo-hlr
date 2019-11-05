@@ -29,10 +29,8 @@
 
 struct osmo_gsup_server;
 
-/* override osmo_gsup_addr_send() to not actually send anything. */
-int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
-			const uint8_t *addr, size_t addrlen,
-			struct msgb *msg)
+/* override osmo_gsup_gt_send() to not actually send anything. */
+int osmo_gsup_gt_send(struct osmo_gsup_server *gs, const struct global_title *gt, struct msgb *msg)
 {
 	LOGP(DMAIN, LOGL_DEBUG, "%s\n", msgb_hexdump(msg));
 	msgb_free(msg);

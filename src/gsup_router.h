@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "global_title.h"
 #include "gsup_server.h"
 
 struct gsup_route {
@@ -24,3 +25,4 @@ int gsup_route_del_conn(struct osmo_gsup_conn *conn);
 int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 			const uint8_t *addr, size_t addrlen,
 			struct msgb *msg);
+int osmo_gsup_gt_send(struct osmo_gsup_server *gs, const struct global_title *gt, struct msgb *msg);

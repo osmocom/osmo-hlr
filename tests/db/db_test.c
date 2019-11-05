@@ -145,6 +145,8 @@ void dump_subscr(struct hlr_subscriber *subscr)
 #define Ps(name) \
 	if (*subscr->name) \
 		Pfo(name, "'%s'", subscr)
+#define Pgt(name) \
+	Pfv(name, "%s", global_title_name(&subscr->name))
 #define Pd(name) \
 	Pfv(name, "%"PRId64, (int64_t)subscr->name)
 #define Pd_nonzero(name) \
@@ -234,6 +236,14 @@ static const char *imsi1 = "123456789000001";
 static const char *imsi2 = "123456789000002";
 static const char *short_imsi = "123456";
 static const char *unknown_imsi = "999999999";
+
+static int db_subscr_lu_str(struct db_context *dbc, int64_t subscr_id,
+			    const char *vlr_or_sgsn_number, bool is_ps)
+{
+	struct global_title vlr_nr;
+	global_title_set(&vlr_nr, (uint8_t*)vlr_or_sgsn_number, vlr_or_sgsn_number ? strlen(vlr_or_sgsn_number)+1 : 0);
+	return db_subscr_lu(dbc, subscr_id, &vlr_nr, &vlr_nr, is_ps);
+}
 
 static void test_subscr_create_update_sel_delete()
 {
@@ -386,39 +396,39 @@ static void test_subscr_create_update_sel_delete()
 
 	comment("Record LU for PS and CS (SGSN and VLR names)");
 
-	ASSERT_RC(db_subscr_lu(dbc, id0, "5952", true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "5952", true), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "712", false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "712", false), 0);
 	ASSERT_SEL(id, id0, 0);
 
 	comment("Record LU for PS and CS (SGSN and VLR names) *again*");
 
-	ASSERT_RC(db_subscr_lu(dbc, id0, "111", true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "111", true), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "111", true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "111", true), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "222", false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "222", false), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "222", false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "222", false), 0);
 	ASSERT_SEL(id, id0, 0);
 
 	comment("Unset LU info for PS and CS (SGSN and VLR names)");
-	ASSERT_RC(db_subscr_lu(dbc, id0, "", true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "", true), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "", false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "", false), 0);
 	ASSERT_SEL(id, id0, 0);
 
-	ASSERT_RC(db_subscr_lu(dbc, id0, "111", true), 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, "222", false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "111", true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, "222", false), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, NULL, true), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, NULL, true), 0);
 	ASSERT_SEL(id, id0, 0);
-	ASSERT_RC(db_subscr_lu(dbc, id0, NULL, false), 0);
+	ASSERT_RC(db_subscr_lu_str(dbc, id0, NULL, false), 0);
 	ASSERT_SEL(id, id0, 0);
 
 	comment("Record LU for non-existent ID");
-	ASSERT_RC(db_subscr_lu(dbc, 99999, "5952", true), -ENOENT);
-	ASSERT_RC(db_subscr_lu(dbc, 99999, "712", false), -ENOENT);
+	ASSERT_RC(db_subscr_lu_str(dbc, 99999, "5952", true), -ENOENT);
+	ASSERT_RC(db_subscr_lu_str(dbc, 99999, "712", false), -ENOENT);
 	ASSERT_SEL(id, 99999, -ENOENT);
 
 	comment("Purge and un-purge PS and CS");

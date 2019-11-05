@@ -493,6 +493,7 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 			}
 		}
 	}
+	copy_sqlite3_text_to_gt(&subscr->vlr_via_proxy, stmt, 15);
 
 out:
 	db_remove_reset(stmt);
@@ -722,7 +723,8 @@ out:
  *         -EIO on database errors.
  */
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps)
+		 const struct global_title *gsup_peer,
+		 const struct global_title *vlr_or_sgsn_number, bool is_ps)
 {
 	sqlite3_stmt *stmt;
 	int rc, ret = 0;
@@ -734,8 +736,19 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
 		return -EIO;
 
-	if (!db_bind_text(stmt, "$number", vlr_or_sgsn_number))
+	if (!db_bind_text(stmt, "$number", (char*)vlr_or_sgsn_number->val))
 		return -EIO;
+
+	if (!is_ps) {
+		if (gsup_peer && gsup_peer->len
+		    && global_title_cmp(gsup_peer, vlr_or_sgsn_number)) {
+			if (!db_bind_text(stmt, "$proxy", (char*)gsup_peer->val))
+				return -EIO;
+		} else {
+			if (!db_bind_null(stmt, "$proxy"))
+				return -EIO;
+		}
+	}
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);

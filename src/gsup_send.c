@@ -42,7 +42,8 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 
 	conn = gsup_route_find(gs, addr, addrlen);
 	if (!conn) {
-		DEBUGP(DLGSUP, "Cannot find route for addr %s\n", osmo_quote_str((const char*)addr, addrlen));
+		LOGP(DLGSUP, LOGL_ERROR,
+		     "Cannot find route for addr %s\n", osmo_quote_str((const char*)addr, addrlen));
 		msgb_free(msg);
 		return -ENODEV;
 	}
@@ -50,3 +51,24 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 	return osmo_gsup_conn_send(conn, msg);
 }
 
+/*! Send a msgb to a given address using routing.
+ * \param[in] gs  gsup server
+ * \param[in] gt  IPA unit name of the client (SGSN, MSC/VLR, proxy).
+ * \param[in] msg  message buffer
+ */
+int osmo_gsup_gt_send(struct osmo_gsup_server *gs, const struct global_title *gt, struct msgb *msg)
+{
+	if (gt->val[gt->len - 1]) {
+		/* Is not nul terminated. But for legacy reasons we (still) require that. */
+		if (gt->len >= sizeof(gt->val)) {
+			LOGP(DLGSUP, LOGL_ERROR, "Global title (IPA unit name) is too long: %s\n",
+			     global_title_name(gt));
+			return -EINVAL;
+		}
+		struct global_title gt2 = *gt;
+		gt2.val[gt->len] = '\0';
+		gt2.len++;
+		return osmo_gsup_addr_send(gs, gt2.val, gt2.len, msg);
+	}
+	return osmo_gsup_addr_send(gs, gt->val, gt->len, msg);
+}

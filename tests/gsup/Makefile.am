@@ -32,6 +32,7 @@ gsup_test_LDADD = \
 	$(top_srcdir)/src/luop.c \
 	$(top_srcdir)/src/gsup_server.c \
 	$(top_srcdir)/src/gsup_router.c \
+	$(top_srcdir)/src/global_title.c \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOABIS_LIBS) \

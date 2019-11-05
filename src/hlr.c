@@ -407,8 +407,8 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* Store the VLR / SGSN number with the subscriber, so we know where it was last seen. */
 	LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
 	     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
-	     osmo_quote_str((const char*)luop->peer, -1));
-	if (db_subscr_lu(g_hlr->dbc, subscr->id, (const char *)luop->peer, luop->is_ps))
+	     global_title_name(&luop->peer));
+	if (db_subscr_lu(g_hlr->dbc, subscr->id, &luop->peer, &luop->vlr_number, luop->is_ps))
 		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
 		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
 

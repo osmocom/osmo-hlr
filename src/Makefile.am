@@ -41,6 +41,7 @@ noinst_HEADERS = \
 	proxy.h \
 	dgsm.h \
 	remote_hlr.h \
+	global_title.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -70,6 +71,7 @@ osmo_hlr_SOURCES = \
 	dgsm_vty.c \
 	remote_hlr.c \
 	mslookup_server.c \
+	global_title.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
@@ -90,6 +92,7 @@ osmo_hlr_db_tool_SOURCES = \
 	logging.c \
 	rand_urandom.c \
 	dbd_decode_binary.c \
+	global_title.c \
 	$(NULL)
 
 osmo_hlr_db_tool_LDADD = \

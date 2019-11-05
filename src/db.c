@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 #include <string.h>
+#include <errno.h>
 
 #include "logging.h"
 #include "db.h"
@@ -45,14 +46,15 @@
 	"lmsi," \
 	"ms_purged_cs," \
 	"ms_purged_ps," \
-	"last_lu_seen"
+	"last_lu_seen," \
+	"vlr_via_proxy"
 
 static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
 	[DB_STMT_SEL_BY_MSISDN] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE msisdn = ?",
 	[DB_STMT_SEL_BY_ID] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE id = ?",
 	[DB_STMT_SEL_BY_IMEI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imei = ?",
-	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = $number WHERE id = $subscriber_id",
+	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = $number, vlr_via_proxy = $proxy WHERE id = $subscriber_id",
 	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = $number WHERE id = $subscriber_id",
 	[DB_STMT_UPD_IMEI_BY_IMSI] = "UPDATE subscriber SET imei = $imei WHERE imsi = $imsi",
 	[DB_STMT_AUC_BY_IMSI] =
@@ -181,6 +183,25 @@ bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr)
 	rc = sqlite3_bind_int64(stmt, idx, nr);
 	if (rc != SQLITE_OK) {
 		LOGP(DDB, LOGL_ERROR, "Error binding int64 to SQL parameter %s: %d\n",
+		     param_name ? param_name : "#1", rc);
+		db_remove_reset(stmt);
+		return false;
+	}
+	return true;
+}
+
+bool db_bind_null(sqlite3_stmt *stmt, const char *param_name)
+{
+	int rc;
+	int idx = param_name ? sqlite3_bind_parameter_index(stmt, param_name) : 1;
+	if (idx < 1) {
+		LOGP(DDB, LOGL_ERROR, "Error composing SQL, cannot bind parameter '%s'\n",
+		     param_name);
+		return false;
+	}
+	rc = sqlite3_bind_null(stmt, idx);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error binding NULL to SQL parameter %s: %d\n",
 		     param_name ? param_name : "#1", rc);
 		db_remove_reset(stmt);
 		return false;
