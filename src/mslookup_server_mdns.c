@@ -33,7 +33,7 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 	ans.domain = req->domain;
 
 	rec_age = osmo_mdns_encode_txt_record(ctx, "age", "%u", result->age);
-	llist_add(&rec_age->list, &ans.records);
+	llist_add_tail(&rec_age->list, &ans.records);
 
 	if (osmo_sockaddr_str_is_nonzero(&result->host_v4)) {
 		if (osmo_sockaddr_str_to_32(&result->host_v4, &ip_v4)) {
@@ -43,14 +43,14 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 		rec_ip_v4.type = OSMO_MSLOOKUP_MDNS_RECORD_TYPE_A;
 		rec_ip_v4.data = (void*)&ip_v4;
 		rec_ip_v4.length = sizeof(ip_v4);
-		llist_add(&rec_ip_v4.list, &ans.records);
+		llist_add_tail(&rec_ip_v4.list, &ans.records);
 
 		rec_ip_v4_port = osmo_mdns_encode_txt_record(ctx, "port", "%u", result->host_v4.port);
 		if (!rec_ip_v4_port) {
 			errmsg = "Error encoding IPv4 port";
 			goto clean_and_exit;
 		}
-		llist_add(&rec_ip_v4_port->list, &ans.records);
+		llist_add_tail(&rec_ip_v4_port->list, &ans.records);
 	}
 
 	if (osmo_sockaddr_str_is_nonzero(&result->host_v6)) {
@@ -62,14 +62,14 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 		rec_ip_v6.type = OSMO_MSLOOKUP_MDNS_RECORD_TYPE_AAAA;
 		rec_ip_v6.data = (void*)&ip_v6;
 		rec_ip_v6.length = sizeof(ip_v6);
-		llist_add(&rec_ip_v6.list, &ans.records);
+		llist_add_tail(&rec_ip_v6.list, &ans.records);
 
 		rec_ip_v6_port = osmo_mdns_encode_txt_record(ctx, "port", "%u", result->host_v6.port);
 		if (!rec_ip_v6_port) {
 			errmsg = "Error encoding IPv6 port";
 			goto clean_and_exit;
 		}
-		llist_add(&rec_ip_v6_port->list, &ans.records);
+		llist_add_tail(&rec_ip_v6_port->list, &ans.records);
 	}
 
 	msg = msgb_alloc(1024, __func__);
