@@ -25,6 +25,9 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 
 	void *ctx = talloc_named_const(server, 0, __func__);
 
+	LOGP(DDGSM, LOGL_DEBUG, "%s: sending mDNS response\n",
+	     osmo_mslookup_result_name_c(OTC_SELECT, query, result));
+
 	osmo_mdns_answer_init(&ans);
 	ans.id = req->id;
 	ans.domain = req->domain;
@@ -33,7 +36,7 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 	llist_add(&rec_age->list, &ans.records);
 
 	if (osmo_sockaddr_str_is_nonzero(&result->host_v4)) {
-		if (osmo_sockaddr_str_to_32n(&result->host_v4, &ip_v4)) {
+		if (osmo_sockaddr_str_to_32(&result->host_v4, &ip_v4)) {
 			errmsg = "Error encoding IPv4 address";
 			goto clean_and_exit;
 		}

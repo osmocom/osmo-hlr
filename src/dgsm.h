@@ -28,10 +28,6 @@ struct dgsm_config {
 		/* Whether to listen for incoming MS Lookup requests */
 		bool enable;
 
-		/* If we have a local record of a LU, but it is older than max_age (in seconds),
-		 * do not send it as mslookup result. */
-		uint32_t max_age;
-
 		struct {
 			bool enable;
 			struct osmo_sockaddr_str bind_addr;

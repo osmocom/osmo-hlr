@@ -263,6 +263,7 @@ void dgsm_init(void *ctx)
 	dgsm_ctx = talloc_named_const(ctx, 0, "dgsm");
 	dgsm_pending_messages_ctx = talloc_named_const(dgsm_ctx, 0, "dgsm_pending_messages");
 	INIT_LLIST_HEAD(&g_hlr->mslookup.vty.server.msc_configs);
+	g_hlr->mslookup.server.max_age = 60 * 60;
 	osmo_sockaddr_str_from_str(&g_hlr->mslookup.vty.server.mdns.bind_addr,
 				   OSMO_MSLOOKUP_MDNS_IP4, OSMO_MSLOOKUP_MDNS_PORT);
 	osmo_sockaddr_str_from_str(&g_hlr->mslookup.vty.client.mdns.query_addr,
@@ -285,8 +286,6 @@ static void dgsm_mdns_server_config_apply()
 	if (!g_hlr->mslookup.allow_startup)
 		return;
 
-	g_hlr->mslookup.server.max_age = g_hlr->mslookup.vty.server.max_age;
-	
 	should_run = g_hlr->mslookup.vty.server.enable && g_hlr->mslookup.vty.server.mdns.enable;
 	should_stop = g_hlr->mslookup.server.mdns
 		&& (!should_run

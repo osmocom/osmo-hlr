@@ -47,13 +47,13 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 	}
 
 	if (rc) {
-		LOGP(DDGSM, LOGL_DEBUG, "Does not exist in local HLR: %s\n",
+		LOGP(DDGSM, LOGL_DEBUG, "%s: does not exist in local HLR\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 		*result = not_found;
 		return;
 	}
 
-	LOGP(DDGSM, LOGL_DEBUG, "Found in local HLR: %s\n",
+	LOGP(DDGSM, LOGL_DEBUG, "%s: found in local HLR\n",
 	     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 
 	/* Find a HLR/GSUP service set for the server (no MSC unit name) */
@@ -69,9 +69,10 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 		set_result(result, &gsup_bind, 0);
 		if (result->rc != OSMO_MSLOOKUP_RC_OK) {
 			LOGP(DDGSM, LOGL_ERROR,
-			     "Subscriber found, but no service '" OSMO_MSLOOKUP_SERVICE_HLR_GSUP "' configured,"
+			     "%s: subscriber found, but no service '" OSMO_MSLOOKUP_SERVICE_HLR_GSUP "' configured,"
 			     " and cannot use configured GSUP bind address %s in mslookup response."
 			     " Cannot service HLR lookup request\n",
+			     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
 			     osmo_quote_str(g_hlr->gsup_bind_addr, -1));
 		}
 		return;
@@ -111,13 +112,13 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
 	}
 
 	if (rc) {
-		LOGP(DDGSM, LOGL_DEBUG, "%s: Does not exist in local HLR\n",
+		LOGP(DDGSM, LOGL_DEBUG, "%s: does not exist in local HLR\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 		return false;
 	}
 
 	if (!subscr.vlr_number[0]) {
-		LOGP(DDGSM, LOGL_DEBUG, "%s: Not attached\n",
+		LOGP(DDGSM, LOGL_DEBUG, "%s: not attached (vlr_number unset)\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 	}
 
@@ -134,9 +135,9 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
 	age = timestamp_age(&age_tv);
 
 	if (age > g_hlr->mslookup.server.max_age) {
-		LOGP(DDGSM, LOGL_ERROR, "%s: last attach was here, but too long ago: %us\n",
+		LOGP(DDGSM, LOGL_ERROR, "%s: last attach was here, but too long ago: %us > %us\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
-		     age);
+		     age, g_hlr->mslookup.server.max_age);
 		return false;
 	}
 
@@ -183,9 +184,9 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 	age = timestamp_age(&subscr->last_lu);
 
 	if (age > g_hlr->mslookup.server.max_age) {
-		LOGP(DDGSM, LOGL_ERROR, "%s: last attach was here (proxy), but too long ago: %us\n",
+		LOGP(DDGSM, LOGL_ERROR, "%s: last attach was here (proxy), but too long ago: %us > %us\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
-		     age);
+		     age, g_hlr->mslookup.server.max_age);
 		return false;
 	}
 
@@ -257,7 +258,7 @@ void osmo_mslookup_server_rx(const struct osmo_mslookup_query *query,
 
 	/* A request for a home HLR: answer exactly if this is the subscriber's home HLR, i.e. the IMSI is listed in the
 	 * HLR database. */
-	if (strcmp(query->service, OSMO_MSLOOKUP_SERVICE_HLR_GSUP) != 0)
+	if (strcmp(query->service, OSMO_MSLOOKUP_SERVICE_HLR_GSUP) == 0)
 		return mslookup_server_rx_hlr_gsup(query, result);
 
 	/* All other service types: answer when the subscriber has done a LU that is either listed in the local HLR or
