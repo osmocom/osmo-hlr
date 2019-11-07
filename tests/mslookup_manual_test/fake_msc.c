@@ -21,6 +21,12 @@ int gsup_client_read_cb(struct osmo_gsup_client *gsupc, struct msgb *msg)
 struct osmo_gsup_client *gsupc;
 struct osmo_timer_list do_stuff_timer;
 
+static void gsup_send(const struct osmo_gsup_message *gsup)
+{
+	printf("fake_msc: GSUP tx %s %s\n", gsup->imsi, osmo_gsup_message_type_name(gsup->message_type));
+	osmo_gsup_client_enc_send(gsupc, gsup);
+}
+
 void do_stuff(void *data)
 {
 	static int i = 0;
@@ -31,7 +37,7 @@ void do_stuff(void *data)
 			.imsi = "222222",
 			.cn_domain = OSMO_GSUP_CN_DOMAIN_CS,
 		};
-		osmo_gsup_client_enc_send(gsupc, &gsup);
+		gsup_send(&gsup);
 	}
 
 	seq += 3;
@@ -41,10 +47,10 @@ void do_stuff(void *data)
 			.imsi = "222222",
 			.cn_domain = OSMO_GSUP_CN_DOMAIN_CS,
 		};
-		osmo_gsup_client_enc_send(gsupc, &gsup);
+		gsup_send(&gsup);
 	}
 
-	seq += 10;
+	seq += 60;
 	if (i == seq++) {
 		exit(0);
 	}
