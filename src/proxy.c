@@ -83,6 +83,19 @@ const struct proxy_subscr *proxy_subscr_get_by_msisdn(struct proxy *proxy, const
 	return &e->data;
 }
 
+void proxy_subscrs_get_by_remote_hlr(struct proxy *proxy, const struct osmo_sockaddr_str *remote_hlr_addr,
+				     bool (*yield)(struct proxy *proxy, const struct proxy_subscr *subscr, void *data),
+				     void *data)
+{
+	struct proxy_subscr_listentry *e;
+	llist_for_each_entry(e, &proxy->subscr_list, entry) {
+		if (!osmo_sockaddr_str_ip_cmp(remote_hlr_addr, &e->data.remote_hlr_addr)) {
+			if (!yield(proxy, &e->data, data))
+				return;
+		}
+	}
+}
+
 int proxy_subscr_update(struct proxy *proxy, const struct proxy_subscr *proxy_subscr)
 {
 	struct proxy_subscr_listentry *e = _proxy_get_by_imsi(proxy, proxy_subscr->imsi);

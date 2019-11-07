@@ -234,15 +234,14 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 			     const struct osmo_gsup_message *gsup,
 			     struct db_context *dbc)
 {
-	struct osmo_gsup_message gsup_out;
+	struct osmo_gsup_message gsup_out = {};
 	struct msgb *msg_out;
 	int rc;
 
 	subscr_create_on_demand(gsup->imsi);
 
 	/* initialize return message structure */
-	memset(&gsup_out, 0, sizeof(gsup_out));
-	memcpy(&gsup_out.imsi, &gsup->imsi, sizeof(gsup_out.imsi));
+	osmo_gsup_set_reply(gsup, &gsup_out);
 
 	rc = db_get_auc(dbc, gsup->imsi, conn->auc_3g_ind,
 			gsup_out.auth_vectors,
@@ -344,7 +343,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 			  const struct osmo_gsup_message *gsup)
 {
 	struct hlr_subscriber *subscr;
-	struct lu_operation *luop = lu_op_alloc_conn(conn);
+	struct lu_operation *luop = lu_op_alloc_conn(conn, gsup);
 	if (!luop) {
 		LOGP(DMAIN, LOGL_ERROR, "LU REQ from conn without addr?\n");
 		return -EINVAL;
@@ -406,9 +405,15 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 #endif
 
 	/* Store the VLR / SGSN number with the subscriber, so we know where it was last seen. */
-	LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
-	     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
-	     global_title_name(&luop->peer));
+	if (global_title_cmp(&luop->vlr_number, &luop->peer))
+		LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s, via proxy %s\n",
+		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
+		     global_title_name(&luop->vlr_number), global_title_name(&luop->peer));
+	else
+		LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
+		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
+		     global_title_name(&luop->vlr_number));
+
 	if (db_subscr_lu(g_hlr->dbc, subscr->id, &luop->peer, &luop->vlr_number, luop->is_ps))
 		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
 		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
@@ -425,12 +430,12 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
 			   const struct osmo_gsup_message *gsup)
 {
-	struct osmo_gsup_message gsup_reply = {0};
+	struct osmo_gsup_message gsup_reply = {};
 	struct msgb *msg_out;
 	bool is_ps = false;
 	int rc;
 
-	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
+	osmo_gsup_set_reply(gsup, &gsup_reply);
 
 	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
 		is_ps = true;

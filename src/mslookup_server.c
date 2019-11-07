@@ -196,7 +196,7 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 	     OSMO_SOCKADDR_STR_FMT "\n",
 	     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
 	     age, global_title_name(local_msc_name),
-	     OSMO_SOCKADDR_STR_FMT_ARGS(&subscr->remote_hlr));
+	     OSMO_SOCKADDR_STR_FMT_ARGS(&subscr->remote_hlr_addr));
 
 	return true;
 }

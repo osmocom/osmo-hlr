@@ -188,4 +188,5 @@ AC_OUTPUT(
 	tests/gsup/Makefile
 	tests/db/Makefile
 	tests/db_upgrade/Makefile
+	tests/mslookup_manual_test/Makefile
 	)

@@ -353,7 +353,3 @@ void dgsm_vty_init()
 	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_no_mdns_cmd);
 
 }
-
-void dgsm_vty_go_parent_action(struct vty *vty)
-{
-}

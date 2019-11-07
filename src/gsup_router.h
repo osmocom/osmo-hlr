@@ -13,6 +13,7 @@ struct gsup_route {
 
 struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 					const uint8_t *addr, size_t addrlen);
+struct osmo_gsup_conn *gsup_route_find_gt(struct osmo_gsup_server *gs, const struct global_title *gt);
 
 struct gsup_route *gsup_route_find_by_conn(const struct osmo_gsup_conn *conn);
 

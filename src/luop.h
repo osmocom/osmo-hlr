@@ -67,7 +67,7 @@ struct lu_operation {
 
 
 struct lu_operation *lu_op_alloc(struct osmo_gsup_server *srv);
-struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn);
+struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
 void lu_op_statechg(struct lu_operation *luop, enum lu_state new_state);
 bool lu_op_fill_subscr(struct lu_operation *luop, struct db_context *dbc,
 		       const char *imsi);

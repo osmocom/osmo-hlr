@@ -66,6 +66,7 @@ static inline void fill_gsup_msg(struct osmo_gsup_message *out,
 		osmo_strlcpy(out->imsi, lu->subscr.imsi,
 			     GSM23003_IMSI_MAX_DIGITS + 1);
 	out->message_type = mt;
+	out->cn_domain = lu->is_ps ? OSMO_GSUP_CN_DOMAIN_PS : OSMO_GSUP_CN_DOMAIN_CS;
 }
 
 /* timer call-back in case LU operation doesn't receive an response */
@@ -123,7 +124,7 @@ void lu_op_free(struct lu_operation *luop)
 	talloc_free(luop);
 }
 
-struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn)
+struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
 {
 	uint8_t *peer_addr;
 	struct lu_operation *luop = lu_op_alloc(conn->server);
@@ -140,10 +141,14 @@ struct lu_operation *lu_op_alloc_conn(struct osmo_gsup_conn *conn)
 		return NULL;
 	}
 
+	if (gsup && gsup->source_name_len)
+		global_title_set(&luop->vlr_number, gsup->source_name, gsup->source_name_len);
+	else
+		luop->vlr_number = luop->peer;
+
 	return luop;
 }
 
-/* FIXME: this doesn't seem to work at all */
 struct lu_operation *lu_op_by_imsi(const char *imsi,
 				   const struct llist_head *lst)
 {
@@ -254,8 +259,6 @@ void lu_op_tx_del_subscr_data(struct lu_operation *luop)
 	struct osmo_gsup_message gsup;
 
 	fill_gsup_msg(&gsup, luop, OSMO_GSUP_MSGT_DELETE_DATA_REQUEST);
-
-	gsup.cn_domain = OSMO_GSUP_CN_DOMAIN_PS;
 
 	/* Send ISD to new VLR/SGSN */
 	_luop_tx_gsup(luop, &gsup);

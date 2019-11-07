@@ -4,7 +4,11 @@
 #include "gsup_server.h"
 #include "global_title.h"
 
+#define LOG_DGSM(imsi, level, fmt, args...) \
+	LOGP(DDGSM, level, "(IMSI-%s) " fmt, imsi, ##args)
+
 struct vty;
+struct remote_hlr;
 
 extern void *dgsm_ctx;
 
@@ -67,4 +71,5 @@ void dgsm_start(void *ctx);
 bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
 
 void dgsm_vty_init();
-void dgsm_vty_go_parent_action(struct vty *vty);
+
+void dgsm_remote_hlr_up(struct remote_hlr *remote_hlr);

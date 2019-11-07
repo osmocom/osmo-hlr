@@ -147,6 +147,24 @@ DEFUN(cfg_hlr_gsup_bind_ip,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_hlr_gsup_ipa_name,
+      cfg_hlr_gsup_ipa_name_cmd,
+      "ipa-name NAME",
+      "Set the IPA name of this HLR, for proxying to remote HLRs\n"
+      "A globally unique name for this HLR. For example: PLMN + redundancy server number: HLR-901-70-0. "
+      "This name is used for GSUP routing and must be set if multiple HLRs interconnect (e.g. mslookup "
+      "for Distributed GSM).\n")
+{
+	if (vty->type != VTY_FILE) {
+		vty_out(vty, "gsup/ipa-name: The GSUP IPA name cannot be changed at run-time; "
+			"It can only be set in the configuraton file.%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	g_hlr->gsup_proxy.gsup_client_name.serno = talloc_strdup(g_hlr, argv[0]);
+	return CMD_SUCCESS;
+}
+
 /***********************************************************************
  * USSD Entity
  ***********************************************************************/
@@ -397,7 +415,6 @@ DEFUN(cfg_no_subscr_create_on_demand, cfg_no_subscr_create_on_demand_cmd,
 
 int hlr_vty_go_parent(struct vty *vty)
 {
-	dgsm_vty_go_parent_action(vty);
 	switch (vty->node) {
 	case GSUP_NODE:
 	case EUSE_NODE:
@@ -457,6 +474,7 @@ void hlr_vty_init(void)
 	install_node(&gsup_node, config_write_hlr_gsup);
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
+	install_element(GSUP_NODE, &cfg_hlr_gsup_ipa_name_cmd);
 
 	install_element(HLR_NODE, &cfg_database_cmd);
 

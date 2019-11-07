@@ -906,7 +906,7 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 
 	/* FIXME: only send to single SGSN where latest update for IMSI came from */
 	llist_for_each_entry(co, &hlr->gs->clients, list) {
-		luop = lu_op_alloc_conn(co);
+		luop = lu_op_alloc_conn(co, NULL);
 		if (!luop) {
 			LOGHLR(subscr->imsi, LOGL_ERROR,
 			       "Cannot notify GSUP client, cannot allocate lu_operation,"

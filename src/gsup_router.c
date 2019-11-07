@@ -47,6 +47,11 @@ struct osmo_gsup_conn *gsup_route_find(struct osmo_gsup_server *gs,
 	return NULL;
 }
 
+struct osmo_gsup_conn *gsup_route_find_gt(struct osmo_gsup_server *gs, const struct global_title *gt)
+{
+	return gsup_route_find(gs, gt->val, gt->len);
+}
+
 /*! Find a GSUP connection's route (to read the IPA address from the route).
  * \param[in] conn GSUP connection
  * \return GSUP route

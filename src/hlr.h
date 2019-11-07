@@ -76,6 +76,7 @@ struct hlr {
 		} server;
 
 		struct {
+			unsigned int result_timeout_milliseconds;
 			struct osmo_mslookup_client *client;
 			struct osmo_mslookup_client_method *mdns;
 		} client;

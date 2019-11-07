@@ -97,7 +97,14 @@ static void connect_timer_cb(void *gsupc_)
 	if (gsupc->is_connected)
 		return;
 
+	if (gsupc->up_down_cb) {
+		/* When the up_down_cb() returns false, the user asks us not to retry connecting. */
+		if (!gsupc->up_down_cb(gsupc, false))
+			return;
+	}
+
 	gsup_client_connect(gsupc);
+
 }
 
 static void client_send(struct osmo_gsup_client *gsupc, int proto_ext,
@@ -139,8 +146,17 @@ static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 			gsup_client_oap_register(gsupc);
 
 		osmo_timer_del(&gsupc->connect_timer);
+
+		if (gsupc->up_down_cb)
+			gsupc->up_down_cb(gsupc, true);
 	} else {
 		osmo_timer_del(&gsupc->ping_timer);
+
+		if (gsupc->up_down_cb) {
+			/* When the up_down_cb() returns false, the user asks us not to retry connecting. */
+			if (!gsupc->up_down_cb(gsupc, false))
+				return;
+		}
 
 		osmo_timer_schedule(&gsupc->connect_timer,
 				    OSMO_GSUP_CLIENT_RECONNECT_INTERVAL, 0);
@@ -258,6 +274,57 @@ static void start_test_procedure(struct osmo_gsup_client *gsupc)
 	gsup_client_send_ping(gsupc);
 }
 
+struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx,
+						  struct ipaccess_unit *ipa_dev,
+						  const char *ip_addr,
+						  unsigned int tcp_port,
+						  struct osmo_oap_client_config *oapc_config,
+						  osmo_gsup_client_read_cb_t read_cb,
+						  osmo_gsup_client_up_down_cb_t up_down_cb,
+						  void *data)
+{
+	struct osmo_gsup_client *gsupc;
+	int rc;
+
+	OSMO_ASSERT(ipa_dev->unit_name);
+
+	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
+	OSMO_ASSERT(gsupc);
+	*gsupc = (struct osmo_gsup_client){
+		.unit_name = (const char *)ipa_dev->unit_name, /* API backwards compat */
+		.ipa_dev = ipa_dev,
+		.read_cb = read_cb,
+		.up_down_cb = up_down_cb,
+		.data = data,
+	};
+
+	/* a NULL oapc_config will mark oap_state disabled. */
+	rc = osmo_oap_client_init(oapc_config, &gsupc->oap_state);
+	if (rc != 0)
+		goto failed;
+
+	gsupc->link = ipa_client_conn_create(gsupc,
+					     /* no e1inp */ NULL,
+					     0,
+					     ip_addr, tcp_port,
+					     gsup_client_updown_cb,
+					     gsup_client_read_cb,
+					     /* default write_cb */ NULL,
+					     gsupc);
+	if (!gsupc->link)
+		goto failed;
+
+	osmo_timer_setup(&gsupc->connect_timer, connect_timer_cb, gsupc);
+	rc = gsup_client_connect(gsupc);
+	if (rc < 0)
+		goto failed;
+	return gsupc;
+
+failed:
+	osmo_gsup_client_destroy(gsupc);
+	return NULL;
+}
+
 /*!
  * Create a gsup client connecting to the specified IP address and TCP port.
  * Use the provided ipaccess unit as the client-side identifier; ipa_dev should
@@ -278,44 +345,8 @@ struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 						  osmo_gsup_client_read_cb_t read_cb,
 						  struct osmo_oap_client_config *oapc_config)
 {
-	struct osmo_gsup_client *gsupc;
-	int rc;
-
-	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
-	OSMO_ASSERT(gsupc);
-	gsupc->unit_name = (const char *)ipa_dev->unit_name; /* API backwards compat */
-	gsupc->ipa_dev = ipa_dev;
-
-	/* a NULL oapc_config will mark oap_state disabled. */
-	rc = osmo_oap_client_init(oapc_config, &gsupc->oap_state);
-	if (rc != 0)
-		goto failed;
-
-	gsupc->link = ipa_client_conn_create(gsupc,
-					     /* no e1inp */ NULL,
-					     0,
-					     ip_addr, tcp_port,
-					     gsup_client_updown_cb,
-					     gsup_client_read_cb,
-					     /* default write_cb */ NULL,
-					     gsupc);
-	if (!gsupc->link)
-		goto failed;
-
-	osmo_timer_setup(&gsupc->connect_timer, connect_timer_cb, gsupc);
-
-	rc = gsup_client_connect(gsupc);
-
-	if (rc < 0)
-		goto failed;
-
-	gsupc->read_cb = read_cb;
-
-	return gsupc;
-
-failed:
-	osmo_gsup_client_destroy(gsupc);
-	return NULL;
+	return osmo_gsup_client_create3(talloc_ctx, ipa_dev, ip_addr, tcp_port, oapc_config,
+					read_cb, NULL, NULL);
 }
 
 /**

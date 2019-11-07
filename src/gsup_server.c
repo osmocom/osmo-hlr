@@ -82,14 +82,10 @@ void osmo_gsup_conn_send_err_reply(struct osmo_gsup_conn *conn, const struct osm
 		/* RP-Message-Reference is mandatory for SM Service */
 		.sm_rp_mr = gsup_orig->sm_rp_mr,
 	};
+	osmo_gsup_set_reply(gsup_orig, &gsup_reply);
 
-	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, gsup_orig->imsi);
-
-	/* For SS/USSD, it's important to keep both session state and ID IEs */
-	if (gsup_orig->session_state != OSMO_GSUP_SESSION_STATE_NONE) {
+	if (gsup_orig->session_state != OSMO_GSUP_SESSION_STATE_NONE)
 		gsup_reply.session_state = OSMO_GSUP_SESSION_STATE_END;
-		gsup_reply.session_id = gsup_orig->session_id;
-	}
 
 	msg_out = osmo_gsup_msgb_alloc("GSUP ERR response");
 	rc = osmo_gsup_encode(msg_out, &gsup_reply);
@@ -99,6 +95,9 @@ void osmo_gsup_conn_send_err_reply(struct osmo_gsup_conn *conn, const struct osm
 		     rc);
 		return;
 	}
+
+	LOGP(DLGSUP, LOGL_DEBUG, "%s: GSUP tx %s\n",
+	     osmo_quote_str(gsup_orig->imsi, -1), osmo_gsup_message_type_name(gsup_reply.message_type));
 
 	rc = osmo_gsup_conn_send(conn, msg_out);
 	if (rc)

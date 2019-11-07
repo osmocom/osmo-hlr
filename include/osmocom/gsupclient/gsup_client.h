@@ -39,6 +39,8 @@ struct osmo_gsup_client;
 /* Expects message in msg->l2h */
 typedef int (*osmo_gsup_client_read_cb_t)(struct osmo_gsup_client *gsupc, struct msgb *msg);
 
+typedef bool (*osmo_gsup_client_up_down_cb_t)(struct osmo_gsup_client *gsupc, bool up);
+
 struct osmo_gsup_client {
 	const char *unit_name; /* same as ipa_dev->unit_name, for backwards compat */
 
@@ -54,8 +56,18 @@ struct osmo_gsup_client {
 	int got_ipa_pong;
 
 	struct ipaccess_unit *ipa_dev; /* identification information sent to IPA server */
+
+	osmo_gsup_client_up_down_cb_t up_down_cb;
 };
 
+struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx,
+						  struct ipaccess_unit *ipa_dev,
+						  const char *ip_addr,
+						  unsigned int tcp_port,
+						  struct osmo_oap_client_config *oapc_config,
+						  osmo_gsup_client_read_cb_t read_cb,
+						  osmo_gsup_client_up_down_cb_t up_down_cb,
+						  void *data);
 struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 						  struct ipaccess_unit *ipa_dev,
 						  const char *ip_addr,

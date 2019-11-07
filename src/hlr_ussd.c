@@ -262,16 +262,18 @@ static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_m
 			bool final, struct msgb *ss_msg)
 
 {
-	struct osmo_gsup_message resp = {0};
+	struct osmo_gsup_message resp = {
+		.message_type = gsup_msg_type,
+		.cn_domain = OSMO_GSUP_CN_DOMAIN_CS,
+		.session_id = ss->session_id,
+	};
 	struct msgb *resp_msg;
 
-	resp.message_type = gsup_msg_type;
 	OSMO_STRLCPY_ARRAY(resp.imsi, ss->imsi);
 	if (final)
 		resp.session_state = OSMO_GSUP_SESSION_STATE_END;
 	else
 		resp.session_state = OSMO_GSUP_SESSION_STATE_CONTINUE;
-	resp.session_id = ss->session_id;
 	if (ss_msg) {
 		resp.ss_info = msgb_data(ss_msg);
 		resp.ss_info_len = msgb_length(ss_msg);
