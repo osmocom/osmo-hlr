@@ -73,7 +73,7 @@ static void osmo_mslookup_server_mdns_tx(struct osmo_mslookup_server_mdns *serve
 	}
 
 	msg = msgb_alloc(1024, __func__);
-	if (dns_encode_answer(ctx, msg, &ans)) {
+	if (osmo_mdns_encode_answer(ctx, msg, &ans)) {
 		errmsg = "Error encoding DNS answer packet";
 		goto clean_and_exit;
 	}
@@ -121,7 +121,7 @@ static int osmo_mslookup_server_mdns_rx(struct osmo_fd *osmo_fd, unsigned int wh
 		return n;
 
 	ctx = talloc_named_const(server, 0, __func__);
-	req = dns_decode_request(ctx, buffer, n);
+	req = osmo_mdns_decode_request(ctx, buffer, n);
 	if (!req) {
 		LOGP(DDGSM, LOGL_DEBUG, "mDNS rx: ignoring: not a request\n");
 		talloc_free(ctx);
