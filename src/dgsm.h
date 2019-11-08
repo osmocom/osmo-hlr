@@ -68,7 +68,7 @@ struct dgsm_msc_config *dgsm_config_msc_get(const struct global_title *msc_name,
 
 void dgsm_init(void *ctx);
 void dgsm_start(void *ctx);
-bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
+bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req);
 
 void dgsm_vty_init();
 

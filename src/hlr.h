@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/ipa.h>
+#include <osmocom/core/tdef.h>
 #include "dgsm.h"
 
 #define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
@@ -32,6 +33,8 @@
 struct hlr_euse;
 struct osmo_gsup_conn;
 enum osmo_gsup_message_type;
+
+extern struct osmo_tdef g_hlr_tdefs[];
 
 struct hlr {
 	/* GSUP server pointer */
@@ -91,3 +94,4 @@ extern struct hlr *g_hlr;
 struct hlr_subscriber;
 
 void osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr);
+int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);

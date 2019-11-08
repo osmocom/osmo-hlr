@@ -31,6 +31,12 @@ const struct log_info_cat hlr_log_info_cat[] = {
 		.color = "\033[1;35m",
 		.enabled = 1, .loglevel = LOGL_NOTICE,
 	},
+	[DLU] = {
+		.name = "DLU",
+		.description = "Location Updating",
+		.color = "\033[1;33m",
+		.enabled = 1, .loglevel = LOGL_NOTICE,
+	},
 
 };
 

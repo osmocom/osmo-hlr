@@ -72,10 +72,15 @@ struct gsup_route *gsup_route_find_by_conn(const struct osmo_gsup_conn *conn)
 int gsup_route_add(struct osmo_gsup_conn *conn, const uint8_t *addr, size_t addrlen)
 {
 	struct gsup_route *gr;
+	struct osmo_gsup_conn *exists_on_conn;
 
 	/* Check if we already have a route for this address */
-	if (gsup_route_find(conn->server, addr, addrlen))
-		return -EEXIST;
+	exists_on_conn = gsup_route_find(conn->server, addr, addrlen);
+	if (exists_on_conn) {
+		if (exists_on_conn != conn)
+			return -EEXIST;
+		return 0;
+	}
 
 	/* allocate new route and populate it */
 	gr = talloc_zero(conn->server, struct gsup_route);
@@ -91,6 +96,11 @@ int gsup_route_add(struct osmo_gsup_conn *conn, const uint8_t *addr, size_t addr
 	return 0;
 }
 
+int gsup_route_add_gt(struct osmo_gsup_conn *conn, const struct global_title *gt)
+{
+	return gsup_route_add(conn, gt->val, gt->len);
+}
+
 /* delete all routes for the given connection */
 int gsup_route_del_conn(struct osmo_gsup_conn *conn)
 {
@@ -100,7 +110,7 @@ int gsup_route_del_conn(struct osmo_gsup_conn *conn)
 	llist_for_each_entry_safe(gr, gr2, &conn->server->routes, list) {
 		if (gr->conn == conn) {
 			LOGP(DMAIN, LOGL_INFO, "Removing GSUP route for %s (GSUP disconnect)\n",
-			     gr->addr);
+			     osmo_quote_str_c(OTC_SELECT, (char*)gr->addr, talloc_total_size(gr->addr)));
 			llist_del(&gr->list);
 			talloc_free(gr);
 			num_deleted++;

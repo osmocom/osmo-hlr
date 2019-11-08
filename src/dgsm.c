@@ -7,6 +7,7 @@
 #include "hlr.h"
 #include "db.h"
 #include "gsup_router.h"
+#include "gsup_server.h"
 #include "dgsm.h"
 #include "proxy.h"
 #include "remote_hlr.h"
@@ -150,8 +151,7 @@ static void *dgsm_pending_messages_ctx = NULL;
 
 struct pending_gsup_message {
 	struct llist_head entry;
-	char imsi[GSM23003_IMSI_MAX_DIGITS+1];
-	struct msgb *gsup;
+	struct osmo_gsup_req *req;
 	struct timeval received_at;
 };
 static LLIST_HEAD(pending_gsup_messages);
@@ -159,72 +159,29 @@ static LLIST_HEAD(pending_gsup_messages);
 /* Defer a GSUP message until we know a remote HLR to proxy to.
  * Where to send this GSUP message is indicated by its IMSI: as soon as an MS lookup has yielded the IMSI's home HLR,
  * that's where the message should go. */
-static void defer_gsup_message(const struct osmo_gsup_message *gsup)
+static void defer_gsup_req(struct osmo_gsup_req *req)
 {
 	struct pending_gsup_message *m;
 
 	m = talloc_zero(dgsm_pending_messages_ctx, struct pending_gsup_message);
 	OSMO_ASSERT(m);
+	m->req = req;
 	timestamp_update(&m->received_at);
-	OSMO_STRLCPY_ARRAY(m->imsi, gsup->imsi);
-
-	/* Since osmo_gsup_message has a lot of dangling external pointers, the only way to defer the message is to
-	 * store it encoded. */
-	m->gsup = osmo_gsup_msgb_alloc("GSUP proxy defer");
-	if (osmo_gsup_encode(m->gsup, gsup)) {
-		LOGP(DDGSM, LOGL_ERROR, "GSUP proxy defer: unable to encode GSUP message: %s %s\n",
-		     osmo_gsup_message_type_name(gsup->message_type), osmo_quote_str(gsup->imsi, -1));
-		msgb_free(m->gsup);
-		talloc_free(m);
-		return;
-	}
-
 	llist_add_tail(&m->entry, &pending_gsup_messages);
 }
 
 /* Unable to resolve remote HLR for this IMSI, Answer with error back to the sender. */
 static void defer_gsup_message_err(struct pending_gsup_message *m)
 {
-	struct osmo_gsup_message gsup;
-	struct osmo_gsup_conn *conn;
-
-	printf("whaha %p %p\n", m, m->gsup);
-	if (osmo_gsup_decode(m->gsup->data, m->gsup->len, &gsup)) {
-		LOGP(DDGSM, LOGL_ERROR, "Unable to decode deferred GSUP message for %s\n", m->imsi);
-		msgb_free(m->gsup);
-		m->gsup = NULL;
-		return;
-	}
-
-	conn = gsup_route_find(g_hlr->gs, gsup.source_name, gsup.source_name_len);
-	if (!conn) {
-		LOGP(DDGSM, LOGL_ERROR, "Unable to send error reply for %s %s, source_name is not known: %s\n",
-		     osmo_gsup_message_type_name(gsup.message_type), gsup.imsi,
-		     osmo_quote_str_c(OTC_SELECT, (char*)gsup.source_name, gsup.source_name_len));
-		return;
-	}
-	osmo_gsup_conn_send_err_reply(conn, &gsup, GMM_CAUSE_IMSI_UNKNOWN);
-	msgb_free(m->gsup);
-	m->gsup = NULL;
+	osmo_gsup_req_respond_err(m->req, GMM_CAUSE_IMSI_UNKNOWN, "could not reach home HLR");
+	m->req = NULL;
 }
 
 /* Forward spooled message for this IMSI to remote HLR. */
 static void defer_gsup_message_send(struct pending_gsup_message *m, struct remote_hlr *remote_hlr)
 {
-	/* To be able to log what we are forwarding, the spooled message needs to be decoded. Do that only if debug
-	 * logging is enabled and decoding succeeds. If decoding fails, don't change anything about the code path, so
-	 * that logging doesn't affect how osmo-hlr works. */
-	if (log_check_level(DDGSM, LOGL_DEBUG)) {
-		struct osmo_gsup_message gsup;
-		if (osmo_gsup_decode(m->gsup->data, m->gsup->len, &gsup))
-			LOGP(DDGSM, LOGL_ERROR, "Unable to decode deferred GSUP message for %s\n", m->imsi);
-		else
-			LOGP(DDGSM, LOGL_DEBUG,
-			     "Forwarding deferred GSUP: %s %s from %s to " OSMO_SOCKADDR_STR_FMT "\n",
-			     osmo_gsup_message_type_name(gsup.message_type), gsup.imsi,
-			     osmo_quote_str_c(OTC_SELECT, (char*)gsup.source_name, gsup.source_name_len),
-			     OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
-	}
+	LOG_GSUP_REQ(m->req, LOGL_DEBUG, "Forwarding deferred message to " OSMO_SOCKADDR_STR_FMT "\n",
+		     OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
 
 	/* If sending fails, still discard. */
 	if (!remote_hlr->gsupc || !remote_hlr->gsupc->is_connected) {
@@ -234,7 +191,10 @@ static void defer_gsup_message_send(struct pending_gsup_message *m, struct remot
 		return;
 	}
 
-	remote_hlr_msgb_send(remote_hlr, m->gsup);
+	remote_hlr_msgb_send(remote_hlr, m->req->msg);
+	m->req->msg = NULL;
+	osmo_gsup_req_free(m->req);
+	m->req = NULL;
 }
 
 /* Result of looking for remote HLR. If it failed, pass remote_hlr as NULL. */
@@ -249,7 +209,7 @@ static void defer_gsup_message_pop(const char *imsi, struct remote_hlr *remote_h
 		LOG_DGSM(imsi, LOGL_ERROR, "No remote HLR found, dropping spooled GSUP messages\n");
 
 	llist_for_each_entry_safe(m, n, &pending_gsup_messages, entry) {
-		if (strcmp(m->imsi, imsi))
+		if (strcmp(m->req->gsup.imsi, imsi))
 			continue;
 
 		if (!remote_hlr)
@@ -262,40 +222,36 @@ static void defer_gsup_message_pop(const char *imsi, struct remote_hlr *remote_h
 	}
 }
 
-void dgsm_send_to_remote_hlr(const struct proxy_subscr *proxy_subscr, const struct osmo_gsup_message *gsup)
+void dgsm_send_to_remote_hlr(const struct proxy_subscr *proxy_subscr, struct osmo_gsup_req *req)
 {
 	struct remote_hlr *remote_hlr;
 
 	if (!osmo_sockaddr_str_is_nonzero(&proxy_subscr->remote_hlr_addr)) {
 		/* We don't know the remote target yet. Still waiting for an MS lookup response. */
-		LOG_DGSM(gsup->imsi, LOGL_DEBUG, "GSUP Proxy: deferring until remote proxy is known: %s\n",
-			 osmo_gsup_message_type_name(gsup->message_type));
-		defer_gsup_message(gsup);
+		LOG_GSUP_REQ(req, LOGL_DEBUG, "Proxy: deferring until remote HLR is known\n");
+		defer_gsup_req(req);
 		return;
 	}
 
-	LOG_DGSM(gsup->imsi, LOGL_DEBUG, "GSUP Proxy: forwarding to " OSMO_SOCKADDR_STR_FMT ": %s\n",
-		 OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr),
-		 osmo_gsup_message_type_name(gsup->message_type));
+	LOG_GSUP_REQ(req, LOGL_DEBUG, "Proxy: forwarding to " OSMO_SOCKADDR_STR_FMT "\n",
+		 OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr));
 	
 	remote_hlr = remote_hlr_get(&proxy_subscr->remote_hlr_addr, true);
 	if (!remote_hlr) {
-		LOG_DGSM(gsup->imsi, LOGL_ERROR, "Failed to establish connection to remote HLR " OSMO_SOCKADDR_STR_FMT
-			 ", discarding GSUP: %s\n",
-			 OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr),
-			 osmo_gsup_message_type_name(gsup->message_type));
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL,
+					  "Proxy: Failed to establish connection to remote HLR " OSMO_SOCKADDR_STR_FMT,
+					  OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr));
 		return;
 	}
 
 	if (!remote_hlr->gsupc || !remote_hlr->gsupc->is_connected) {
 		/* GSUP link is still busy establishing... */
-		LOG_DGSM(gsup->imsi, LOGL_DEBUG, "GSUP Proxy: deferring until link to remote proxy is up: %s\n",
-			 osmo_gsup_message_type_name(gsup->message_type));
-		defer_gsup_message(gsup);
+		LOG_GSUP_REQ(req, LOGL_DEBUG, "Proxy: deferring until link to remote HLR is up\n");
+		defer_gsup_req(req);
 		return;
 	}
 
-	remote_hlr_gsup_send(remote_hlr, gsup);
+	remote_hlr_gsup_send(remote_hlr, req);
 }
 
 static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
@@ -392,34 +348,21 @@ void dgsm_remote_hlr_up(struct remote_hlr *remote_hlr)
 }
 
 /* Return true when the message has been handled by D-GSM. */
-bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req)
 {
 	const struct proxy_subscr *proxy_subscr;
 	struct proxy_subscr proxy_subscr_new;
-	struct gsup_route *route;
-	struct osmo_gsup_message gsup_copy;
 	struct proxy *proxy = g_hlr->proxy;
 	struct osmo_mslookup_query query;
 	struct osmo_mslookup_query_handling handling;
 	uint32_t request_handle;
 
-	/* To forward to a remote HLR, we need to indicate the source MSC's name to make sure the reply can be routed
-	 * back. Store the sender MSC in gsup->source_name -- the remote HLR is required to return this as
-	 * gsup->destination_name so that the reply gets routed to the original MSC. */
-	route = gsup_route_find_by_conn(conn);
-	if (!route) {
-		/* The conn has not sent its IPA unit name yet, and hence we won't be able to proxy responses back from
-		 * a remote HLR. Send GSUP error and indicate that this message has been handled. */
-		osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_NET_FAIL);
-		return true;
-	}
-
 	/* If the IMSI is known in the local HLR, then we won't proxy. */
-	if (db_subscr_exists_by_imsi(g_hlr->dbc, gsup->imsi) == 0)
+	if (db_subscr_exists_by_imsi(g_hlr->dbc, req->gsup.imsi) == 0)
 		return false;
 
 	/* Are we already forwarding this IMSI to a remote HLR? */
-	proxy_subscr = proxy_subscr_get_by_imsi(proxy, gsup->imsi);
+	proxy_subscr = proxy_subscr_get_by_imsi(proxy, req->gsup.imsi);
 	if (proxy_subscr)
 		goto yes_we_are_proxying;
 
@@ -429,8 +372,7 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 
 	/* Kick off an mslookup for the remote HLR. */
 	if (!g_hlr->mslookup.client.client) {
-		LOGP(DDGSM, LOGL_DEBUG, "mslookup client not running, cannot query remote home HLR for %s\n",
-		     gsup->imsi);
+		LOG_GSUP_REQ(req, LOGL_DEBUG, "mslookup client not running, cannot query remote home HLR\n");
 		return false;
 	}
 
@@ -439,7 +381,7 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 			.type = OSMO_MSLOOKUP_ID_IMSI,
 		}
 	};
-	OSMO_STRLCPY_ARRAY(query.id.imsi, gsup->imsi);
+	OSMO_STRLCPY_ARRAY(query.id.imsi, req->gsup.imsi);
 	OSMO_STRLCPY_ARRAY(query.service, OSMO_MSLOOKUP_SERVICE_HLR_GSUP);
 	handling = (struct osmo_mslookup_query_handling){
 		.result_timeout_milliseconds = g_hlr->mslookup.client.result_timeout_milliseconds,
@@ -447,31 +389,24 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 	};
 	request_handle = osmo_mslookup_client_request(g_hlr->mslookup.client.client, &query, &handling);
 	if (!request_handle) {
-		LOG_DGSM(gsup->imsi, LOGL_ERROR, "Error dispatching mslookup query for home HLR: %s\n",
+		LOG_DGSM(req->gsup.imsi, LOGL_ERROR, "Error dispatching mslookup query for home HLR: %s\n",
 			 osmo_mslookup_result_name_c(OTC_SELECT, &query, NULL));
-		proxy_subscr_del(proxy, gsup->imsi);
+		proxy_subscr_del(proxy, req->gsup.imsi);
 		return false;
 	}
 
 	/* Add a proxy entry without a remote address to indicate that we are busy querying for a remote HLR. */
 	proxy_subscr_new = (struct proxy_subscr){};
-	OSMO_STRLCPY_ARRAY(proxy_subscr_new.imsi, gsup->imsi);
+	OSMO_STRLCPY_ARRAY(proxy_subscr_new.imsi, req->gsup.imsi);
 	proxy_subscr = &proxy_subscr_new;
 	proxy_subscr_update(proxy, proxy_subscr);
 
 yes_we_are_proxying:
 	OSMO_ASSERT(proxy_subscr);
 
-	/* Be aware that osmo_gsup_message has a lot of external pointer references, so this is not a deep copy.
-	 * dgsm_send_to_remote_hlr() may need to defer the GSUP message until the remote HLR has answered, in which case
-	 * it will take care to deep copy (encode into a msgb), i.e. it is fine to pass a shallow copy. */
-	gsup_copy = *gsup;
-	gsup_copy.source_name = route->addr;
-	gsup_copy.source_name_len = talloc_total_size(route->addr);
-
 	/* If the remote HLR is already known, directly forward the GSUP message; otherwise, spool the GSUP message
 	 * until the remote HLR will respond / until timeout aborts. */
-	dgsm_send_to_remote_hlr(proxy_subscr, &gsup_copy);
+	dgsm_send_to_remote_hlr(proxy_subscr, req);
 	return true;
 }
 

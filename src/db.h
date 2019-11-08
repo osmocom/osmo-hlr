@@ -158,13 +158,11 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const struct global_title *gsup_peer,
-		 const struct global_title *vlr_or_sgsn_number, bool is_ps);
+		 const struct global_title *vlr_name, bool is_ps,
+		 const struct global_title *via_proxy);
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
-
-int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
 
 /*! Call sqlite3_column_text() and copy result to a char[].
  * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.

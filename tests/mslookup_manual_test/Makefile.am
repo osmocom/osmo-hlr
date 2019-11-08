@@ -1,6 +1,7 @@
 AM_CPPFLAGS = \
 	$(all_includes) \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/include \
 	$(NULL)
 
 AM_CFLAGS = \

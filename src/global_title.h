@@ -12,6 +12,6 @@ struct global_title {
 };
 
 int global_title_set(struct global_title *gt, const uint8_t *val, size_t len);
-int global_title_set_str(struct global_title *gt, const char *str);
+int global_title_set_str(struct global_title *gt, const char *str_fmt, ...);
 int global_title_cmp(const struct global_title *a, const struct global_title *b);
 const char *global_title_name(const struct global_title *gt);

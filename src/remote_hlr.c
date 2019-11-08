@@ -172,15 +172,22 @@ int remote_hlr_msgb_send(struct remote_hlr *remote_hlr, struct msgb *msg)
 	return rc;
 }
 
-int remote_hlr_gsup_send(struct remote_hlr *remote_hlr, const struct osmo_gsup_message *gsup)
+void remote_hlr_gsup_send(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req)
 {
 	int rc;
 	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP proxy to remote HLR");
-	rc = osmo_gsup_encode(msg, gsup);
+	/* To forward to a remote HLR, we need to indicate the source MSC's name in the Source Name IE to make sure the
+	 * reply can be routed back. Store the sender MSC in gsup->source_name -- the remote HLR is required to return
+	 * this as gsup->destination_name so that the reply gets routed to the original MSC. */
+	struct osmo_gsup_message forward = req->gsup;
+	forward.source_name = req->source_name.val;
+	forward.source_name_len = req->source_name.len;
+
+	rc = osmo_gsup_encode(msg, &forward);
 	if (rc) {
-		LOG_DGSM(gsup->imsi, LOGL_ERROR, "Failed to encode GSUP message: %s\n",
-			 osmo_gsup_message_type_name(gsup->message_type));
-		return rc;
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Failed to encode GSUP message for forwarding\n");
+		return;
 	}
-	return remote_hlr_msgb_send(remote_hlr, msg);
+	remote_hlr_msgb_send(remote_hlr, msg);
+	osmo_gsup_req_free(req);
 }

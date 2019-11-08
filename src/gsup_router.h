@@ -18,6 +18,7 @@ struct osmo_gsup_conn *gsup_route_find_gt(struct osmo_gsup_server *gs, const str
 struct gsup_route *gsup_route_find_by_conn(const struct osmo_gsup_conn *conn);
 
 /* add a new route for the given address to the given conn */
+int gsup_route_add_gt(struct osmo_gsup_conn *conn, const struct global_title *gt);
 int gsup_route_add(struct osmo_gsup_conn *conn, const uint8_t *addr, size_t addrlen);
 
 /* delete all routes for the given connection */
@@ -27,3 +28,5 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 			const uint8_t *addr, size_t addrlen,
 			struct msgb *msg);
 int osmo_gsup_gt_send(struct osmo_gsup_server *gs, const struct global_title *gt, struct msgb *msg);
+int osmo_gsup_gt_enc_send(struct osmo_gsup_server *gs, const struct global_title *gt,
+			  const struct osmo_gsup_message *gsup);

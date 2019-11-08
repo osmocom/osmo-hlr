@@ -242,7 +242,7 @@ static int db_subscr_lu_str(struct db_context *dbc, int64_t subscr_id,
 {
 	struct global_title vlr_nr;
 	global_title_set_str(&vlr_nr, vlr_or_sgsn_number);
-	return db_subscr_lu(dbc, subscr_id, &vlr_nr, &vlr_nr, is_ps);
+	return db_subscr_lu(dbc, subscr_id, &vlr_nr, is_ps, NULL);
 }
 
 static void test_subscr_create_update_sel_delete()

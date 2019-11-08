@@ -72,3 +72,20 @@ int osmo_gsup_gt_send(struct osmo_gsup_server *gs, const struct global_title *gt
 	}
 	return osmo_gsup_addr_send(gs, gt->val, gt->len, msg);
 }
+
+int osmo_gsup_gt_enc_send(struct osmo_gsup_server *gs, const struct global_title *gt,
+			  const struct osmo_gsup_message *gsup)
+{
+	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP Tx");
+	int rc;
+	rc = osmo_gsup_encode(msg, gsup);
+	if (rc) {
+		LOGP(DLGSUP, LOGL_ERROR, "IMSI-%s: Cannot encode GSUP: %s\n",
+		     gsup->imsi, osmo_gsup_message_type_name(gsup->message_type));
+		msgb_free(msg);
+		return -EINVAL;
+	}
+
+	LOGP(DLGSUP, LOGL_DEBUG, "IMSI-%s: Tx: %s\n", gsup->imsi, osmo_gsup_message_type_name(gsup->message_type));
+	return osmo_gsup_gt_send(gs, gt, msg);
+}

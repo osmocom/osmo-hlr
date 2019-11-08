@@ -170,12 +170,14 @@ struct ss_session {
 	/* subscriber's vlr_number
 	 * MO USSD: originating MSC's vlr_number
 	 * MT USSD: looked up once per session and cached here */
-	uint8_t *vlr_number;
-	size_t vlr_number_len;
+	struct global_title vlr_name;
 
 	/* we don't keep a pointer to the osmo_gsup_{route,conn} towards the MSC/VLR here,
 	 * as this might change during inter-VLR hand-over, and we simply look-up the serving MSC/VLR
 	 * every time we receive an USSD component from the EUSE */
+
+	struct osmo_gsup_req *initial_req_from_ms;
+	struct osmo_gsup_req *initial_req_from_euse;
 };
 
 struct ss_session *ss_session_find(struct hlr *hlr, const char *imsi, uint32_t session_id)
@@ -191,6 +193,10 @@ struct ss_session *ss_session_find(struct hlr *hlr, const char *imsi, uint32_t s
 void ss_session_free(struct ss_session *ss)
 {
 	osmo_timer_del(&ss->timeout);
+	if (ss->initial_req_from_ms)
+		osmo_gsup_req_free(ss->initial_req_from_ms);
+	if (ss->initial_req_from_euse)
+		osmo_gsup_req_free(ss->initial_req_from_euse);
 	llist_del(&ss->list);
 	talloc_free(ss);
 }
@@ -230,44 +236,58 @@ struct ss_session *ss_session_alloc(struct hlr *hlr, const char *imsi, uint32_t 
  ***********************************************************************/
 
 /* Resolve the target MSC by ss->imsi and send GSUP message. */
-static int ss_gsup_send(struct ss_session *ss, struct osmo_gsup_server *gs, struct msgb *msg)
+static int ss_gsup_send_to_ms(struct ss_session *ss, struct osmo_gsup_server *gs, struct osmo_gsup_message *gsup)
 {
 	struct hlr_subscriber subscr = {};
+	struct msgb *msg;
 	int rc;
 
+	if (ss->initial_req_from_ms) {
+		/* If this is a response to an incoming GSUP request from the MS, respond via osmo_gsup_req_respond() to
+		 * make sure that all required routing information is kept intact.
+		 * Use osmo_gsup_req_respond_nonfinal() to not deallocate the ss->initial_req_from_ms */
+		osmo_gsup_req_respond_nonfinal(ss->initial_req_from_ms, gsup);
+		return 0;
+	}
+
+	msg = osmo_gsup_msgb_alloc("GSUP USSD FW");
+	rc = osmo_gsup_encode(msg, gsup);
+	if (rc) {
+		LOGPSS(ss, LOGL_ERROR, "Failed to encode GSUP message\n");
+		return rc;
+	}
+
 	/* Use vlr_number as looked up by the caller, or look up now. */
-	if (!ss->vlr_number) {
+	if (!ss->vlr_name.len) {
 		rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 		if (rc < 0) {
 			LOGPSS(ss, LOGL_ERROR, "Cannot find subscriber, cannot route GSUP message\n");
 			msgb_free(msg);
 			return -EINVAL;
 		}
-		ss->vlr_number = (uint8_t *)talloc_strdup(ss, subscr.vlr_number);
-		ss->vlr_number_len = strlen(subscr.vlr_number) + 1;
+		global_title_set_str(&ss->vlr_name, subscr.vlr_number);
 	}
 
 	/* Check for empty string (all vlr_number strings end in "\0", because otherwise gsup_route_find() fails) */
-	if (ss->vlr_number_len == 1) {
+	if (ss->vlr_name.len <= 1) {
 		LOGPSS(ss, LOGL_ERROR, "Cannot send GSUP message, no VLR number stored for subscriber\n");
 		msgb_free(msg);
 		return -EINVAL;
 	}
 
-	LOGPSS(ss, LOGL_DEBUG, "Tx SS/USSD to VLR %s\n", osmo_quote_str((char *)ss->vlr_number, ss->vlr_number_len));
-	return osmo_gsup_addr_send(gs, ss->vlr_number, ss->vlr_number_len, msg);
+	LOGPSS(ss, LOGL_DEBUG, "Tx SS/USSD to VLR %s\n", global_title_name(&ss->vlr_name));
+	return osmo_gsup_gt_send(gs, &ss->vlr_name, msg);
 }
 
 static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_msg_type,
-			bool final, struct msgb *ss_msg)
+		       bool final, struct msgb *ss_msg)
 
 {
 	struct osmo_gsup_message resp = {
 		.message_type = gsup_msg_type,
-		.cn_domain = OSMO_GSUP_CN_DOMAIN_CS,
 		.session_id = ss->session_id,
 	};
-	struct msgb *resp_msg;
+	int rc;
 
 	OSMO_STRLCPY_ARRAY(resp.imsi, ss->imsi);
 	if (final)
@@ -279,12 +299,10 @@ static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_m
 		resp.ss_info_len = msgb_length(ss_msg);
 	}
 
-	resp_msg = msgb_alloc_headroom(4000, 64, __func__);
-	OSMO_ASSERT(resp_msg);
-	osmo_gsup_encode(resp_msg, &resp);
-	msgb_free(ss_msg);
+	rc = ss_gsup_send_to_ms(ss, g_hlr->gs, &resp);
 
-	return ss_gsup_send(ss, g_hlr->gs, resp_msg);
+	msgb_free(ss_msg);
+	return rc;
 }
 
 #if 0
@@ -299,7 +317,7 @@ static int ss_tx_reject(struct ss_session *ss, int invoke_id, uint8_t problem_ta
 }
 #endif
 
-static int ss_tx_error(struct ss_session *ss, uint8_t invoke_id, uint8_t error_code)
+static int ss_tx_to_ms_error(struct ss_session *ss, uint8_t invoke_id, uint8_t error_code)
 {
 	struct msgb *msg = gsm0480_gen_return_error(invoke_id, error_code);
 	LOGPSS(ss, LOGL_NOTICE, "Tx ReturnError(%u, 0x%02x)\n", invoke_id, error_code);
@@ -307,7 +325,7 @@ static int ss_tx_error(struct ss_session *ss, uint8_t invoke_id, uint8_t error_c
 	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
 }
 
-static int ss_tx_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id, const char *text)
+static int ss_tx_to_ms_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id, const char *text)
 {
 	struct msgb *msg = gsm0480_gen_ussd_resp_7bit(invoke_id, text);
 	LOGPSS(ss, LOGL_INFO, "Tx USSD '%s'\n", text);
@@ -321,7 +339,7 @@ static int ss_tx_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id,
 
 #include "db.h"
 
-static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session *ss,
+static int handle_ussd_own_msisdn(struct ss_session *ss,
 				  const struct osmo_gsup_message *gsup, const struct ss_request *req)
 {
 	struct hlr_subscriber subscr;
@@ -335,25 +353,25 @@ static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session
 			snprintf(buf, sizeof(buf), "You have no MSISDN!");
 		else
 			snprintf(buf, sizeof(buf), "Your extension is %s", subscr.msisdn);
-		ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
+		ss_tx_to_ms_ussd_7bit(ss, true, req->invoke_id, buf);
 		break;
 	case -ENOENT:
-		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
+		ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
 		break;
 	case -EIO:
 	default:
-		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+		ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
 		break;
 	}
 	return 0;
 }
 
-static int handle_ussd_own_imsi(struct osmo_gsup_conn *conn, struct ss_session *ss,
+static int handle_ussd_own_imsi(struct ss_session *ss,
 				const struct osmo_gsup_message *gsup, const struct ss_request *req)
 {
 	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
 	snprintf(buf, sizeof(buf), "Your IMSI is %s", ss->imsi);
-	ss_tx_ussd_7bit(ss, true, req->invoke_id, buf);
+	ss_tx_to_ms_ussd_7bit(ss, true, req->invoke_id, buf);
 	return 0;
 }
 
@@ -400,37 +418,26 @@ static bool ss_op_is_ussd(uint8_t opcode)
 }
 
 /* is this GSUP connection an EUSE (true) or not (false)? */
-static bool conn_is_euse(struct osmo_gsup_conn *conn)
+static bool peer_name_is_euse(const struct global_title *peer_name)
 {
-	int rc;
-	uint8_t *addr;
-
-	rc = osmo_gsup_conn_ccm_get(conn, &addr, IPAC_IDTAG_SERNR);
-	if (rc <= 5)
+	if (peer_name->len <= 5)
 		return false;
-	if (!strncmp((char *)addr, "EUSE-", 5))
+	if (!strncmp((char *)(peer_name->val), "EUSE-", 5))
 		return true;
 	else
 		return false;
 }
 
-static struct hlr_euse *euse_by_conn(struct osmo_gsup_conn *conn)
+static struct hlr_euse *euse_by_name(const struct global_title *peer_name)
 {
-	int rc;
-	char *addr;
-	struct hlr *hlr = conn->server->priv;
-
-	rc = osmo_gsup_conn_ccm_get(conn, (uint8_t **) &addr, IPAC_IDTAG_SERNR);
-	if (rc <= 5)
-		return NULL;
-	if (strncmp(addr, "EUSE-", 5))
+	if (!peer_name_is_euse(peer_name))
 		return NULL;
 
-	return euse_find(hlr, addr+5);
+	return euse_find(g_hlr, (const char*)(peer_name->val)+5);
 }
 
-static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup,
-			const struct ss_request *req)
+static int handle_ss(struct ss_session *ss, bool is_euse_originated, const struct osmo_gsup_message *gsup,
+		     const struct ss_request *req)
 {
 	uint8_t comp_type = gsup->ss_info[0];
 
@@ -443,17 +450,16 @@ static int handle_ss(struct ss_session *ss, const struct osmo_gsup_message *gsup
 	 * we don't handle "structured" SS requests at all.
 	 */
 	LOGPSS(ss, LOGL_NOTICE, "Structured SS requests are not supported, rejecting...\n");
-	ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_FACILITY_NOT_SUPPORTED);
+	ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_FACILITY_NOT_SUPPORTED);
 	return -ENOTSUP;
 }
 
 /* Handle a USSD GSUP message for a given SS Session received from VLR or EUSE */
-static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
-			const struct osmo_gsup_message *gsup, const struct ss_request *req)
+static int handle_ussd(struct ss_session *ss, bool is_euse_originated, const struct osmo_gsup_message *gsup,
+		       const struct ss_request *req)
 {
 	uint8_t comp_type = gsup->ss_info[0];
 	struct msgb *msg_out;
-	bool is_euse_originated = conn_is_euse(conn);
 
 	LOGPSS(ss, LOGL_INFO, "USSD CompType=%s, OpCode=%s '%s'\n",
 		gsm0480_comp_type_name(comp_type), gsm0480_op_code_name(req->opcode),
@@ -461,27 +467,27 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 
 	if ((ss->is_external && !ss->u.euse) || !ss->u.iuse) {
 		LOGPSS(ss, LOGL_NOTICE, "USSD for unknown code '%s'\n", req->ussd_text);
-		ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SS_NOT_AVAILABLE);
+		ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_SS_NOT_AVAILABLE);
 		return 0;
 	}
 
 	if (is_euse_originated) {
-		msg_out = osmo_gsup_msgb_alloc("GSUP USSD FW");
-		OSMO_ASSERT(msg_out);
 		/* Received from EUSE, Forward to VLR */
-		osmo_gsup_encode(msg_out, gsup);
-		ss_gsup_send(ss, conn->server, msg_out);
+		/* Need a non-const osmo_gsup_message, because sending might modify some (routing related?) parts. */
+		struct osmo_gsup_message forward = *gsup;
+		ss_gsup_send_to_ms(ss, g_hlr->gs, &forward);
 	} else {
 		/* Received from VLR (MS) */
 		if (ss->is_external) {
 			/* Forward to EUSE */
-			char addr[128];
-			strcpy(addr, "EUSE-");
-			osmo_strlcpy(addr+5, ss->u.euse->name, sizeof(addr)-5);
-			conn = gsup_route_find(conn->server, (uint8_t *)addr, strlen(addr)+1);
+			struct global_title euse_name;
+			struct osmo_gsup_conn *conn;
+			global_title_set_str(&euse_name, "EUSE-%s", ss->u.euse->name);
+			conn = gsup_route_find_gt(g_hlr->gs, &euse_name);
 			if (!conn) {
-				LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n", addr);
-				ss_tx_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
+				LOGPSS(ss, LOGL_ERROR, "Cannot find conn for EUSE %s\n",
+				       global_title_name(&euse_name));
+				ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_SYSTEM_FAILURE);
 			} else {
 				msg_out = osmo_gsup_msgb_alloc("GSUP USSD FW");
 				OSMO_ASSERT(msg_out);
@@ -490,9 +496,10 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 			}
 		} else {
 			/* Handle internally */
-			ss->u.iuse->handle_ussd(conn, ss, gsup, req);
+			ss->u.iuse->handle_ussd(ss, gsup, req);
 			/* Release session immediately */
 			ss_session_free(ss);
+			return 0;
 		}
 	}
 
@@ -502,12 +509,16 @@ static int handle_ussd(struct osmo_gsup_conn *conn, struct ss_session *ss,
 
 /* this function is called for any SS_REQ/SS_RESP messages from both the MSC/VLR side as well
  * as from the EUSE side */
-int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 {
-	struct hlr *hlr = conn->server->priv;
+	struct hlr *hlr = g_hlr;
 	struct ss_session *ss;
 	struct ss_request req = {0};
-	struct gsup_route *gsup_rt;
+	const struct osmo_gsup_message *gsup = &gsup_req->gsup;
+	/* Remember whether this function should free the incoming gsup_req: if it is placed as ss->initial_req_from_*,
+	 * do not free it here. If not, free it here. */
+	struct osmo_gsup_req *free_gsup_req = gsup_req;
+	bool is_euse_originated = peer_name_is_euse(&gsup_req->source_name);
 
 	LOGP(DSS, LOGL_DEBUG, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
@@ -518,14 +529,15 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 			LOGP(DSS, LOGL_ERROR, "%s/0x%082x: Unable to parse SS request: %s\n",
 				gsup->imsi, gsup->session_id,
 				osmo_hexdump(gsup->ss_info, gsup->ss_info_len));
-			/* FIXME: Send a Reject component? */
-			goto out_err;
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_INV_MAND_INFO, "error parsing SS request");
+			return;
 		}
 	} else if (gsup->session_state != OSMO_GSUP_SESSION_STATE_END) {
 		LOGP(DSS, LOGL_ERROR, "%s/0x%082x: Missing SS payload for '%s'\n",
 		     gsup->imsi, gsup->session_id,
 		     osmo_gsup_session_state_name(gsup->session_state));
-		goto out_err;
+		osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_INV_MAND_INFO, "missing SS payload");
+		return;
 	}
 
 	switch (gsup->session_state) {
@@ -534,32 +546,29 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		if (ss_session_find(hlr, gsup->imsi, gsup->session_id)) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: BEGIN with non-unique session ID!\n",
 				gsup->imsi, gsup->session_id);
-			goto out_err;
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_INV_MAND_INFO, "BEGIN with non-unique session ID");
+			return;
 		}
 		ss = ss_session_alloc(hlr, gsup->imsi, gsup->session_id);
 		if (!ss) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: Unable to allocate SS session\n",
 				gsup->imsi, gsup->session_id);
-			goto out_err;
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_NET_FAIL, "Unable to allocate SS session");
+			return;
 		}
 		/* Get IPA name from VLR conn and save as ss->vlr_number */
-		if (!conn_is_euse(conn)) {
-			gsup_rt = gsup_route_find_by_conn(conn);
-			if (gsup_rt) {
-				ss->vlr_number = (uint8_t *)talloc_strdup(ss, (const char *)gsup_rt->addr);
-				ss->vlr_number_len = strlen((const char *)gsup_rt->addr) + 1;
-				LOGPSS(ss, LOGL_DEBUG, "Destination IPA name retrieved from GSUP route: %s\n",
-				       osmo_quote_str((const char *)ss->vlr_number, ss->vlr_number_len));
-			} else {
-				LOGPSS(ss, LOGL_NOTICE, "Could not find GSUP route, therefore can't set the destination"
-							" IPA name. We'll try to look it up later, but this should not"
-							" have happened.\n");
-			}
+		if (!is_euse_originated) {
+			ss->initial_req_from_ms = gsup_req;
+			free_gsup_req = NULL;
+			ss->vlr_name = gsup_req->source_name;
+		} else {
+			ss->initial_req_from_euse = gsup_req;
+			free_gsup_req = NULL;
 		}
 		if (ss_op_is_ussd(req.opcode)) {
-			if (conn_is_euse(conn)) {
+			if (is_euse_originated) {
 				/* EUSE->VLR: MT USSD. EUSE is known ('conn'), VLR is to be resolved */
-				ss->u.euse = euse_by_conn(conn);
+				ss->u.euse = euse_by_name(&gsup_req->source_name);
 			} else {
 				/* VLR->EUSE: MO USSD. VLR is known ('conn'), EUSE is to be resolved */
 				struct hlr_ussd_route *rt;
@@ -580,10 +589,10 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 				}
 			}
 			/* dispatch unstructured SS to routing */
-			handle_ussd(conn, ss, gsup, &req);
+			handle_ussd(ss, is_euse_originated, &gsup_req->gsup, &req);
 		} else {
 			/* dispatch non-call SS to internal code */
-			handle_ss(ss, gsup, &req);
+			handle_ss(ss, is_euse_originated, &gsup_req->gsup, &req);
 		}
 		break;
 	case OSMO_GSUP_SESSION_STATE_CONTINUE:
@@ -591,7 +600,8 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		if (!ss) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: CONTINUE for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
-			goto out_err;
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_INV_MAND_INFO, "CONTINUE for unknown SS session");
+			return;
 		}
 
 		/* Reschedule self-destruction timer */
@@ -600,10 +610,10 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 
 		if (ss_op_is_ussd(req.opcode)) {
 			/* dispatch unstructured SS to routing */
-			handle_ussd(conn, ss, gsup, &req);
+			handle_ussd(ss, is_euse_originated, &gsup_req->gsup, &req);
 		} else {
 			/* dispatch non-call SS to internal code */
-			handle_ss(ss, gsup, &req);
+			handle_ss(ss, is_euse_originated, &gsup_req->gsup, &req);
 		}
 		break;
 	case OSMO_GSUP_SESSION_STATE_END:
@@ -611,17 +621,17 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 		if (!ss) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: END for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
-			goto out_err;
+			return;
 		}
 
 		/* SS payload is optional for END */
 		if (gsup->ss_info && gsup->ss_info_len) {
 			if (ss_op_is_ussd(req.opcode)) {
 				/* dispatch unstructured SS to routing */
-				handle_ussd(conn, ss, gsup, &req);
+				handle_ussd(ss, is_euse_originated, &gsup_req->gsup, &req);
 			} else {
 				/* dispatch non-call SS to internal code */
-				handle_ss(ss, gsup, &req);
+				handle_ss(ss, is_euse_originated, &gsup_req->gsup, &req);
 			}
 		}
 
@@ -630,18 +640,15 @@ int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *
 	default:
 		LOGP(DSS, LOGL_ERROR, "%s/0x%08x: Unknown SS State %d\n", gsup->imsi,
 			gsup->session_id, gsup->session_state);
-		goto out_err;
+		break;
 	}
 
-	return 0;
-
-out_err:
-	return 0;
+	if (free_gsup_req)
+		osmo_gsup_req_free(free_gsup_req);
 }
 
-int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+void rx_proc_ss_error(struct osmo_gsup_req *req)
 {
-	LOGP(DSS, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", gsup->imsi, gsup->session_id,
-		osmo_gsup_session_state_name(gsup->session_state));
-	return 0;
+	LOGP(DSS, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", req->gsup.imsi, req->gsup.session_id,
+		osmo_gsup_session_state_name(req->gsup.session_state));
 }

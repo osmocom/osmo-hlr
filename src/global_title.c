@@ -16,9 +16,17 @@ int global_title_set(struct global_title *gt, const uint8_t *val, size_t len)
 	return 0;
 }
 
-int global_title_set_str(struct global_title *gt, const char *str)
+int global_title_set_str(struct global_title *gt, const char *str_fmt, ...)
 {
-	return global_title_set(gt, (const uint8_t*)str, str ? strlen(str)+1 : 0);
+	va_list ap;
+	if (!str_fmt)
+		return global_title_set(gt, NULL, 0);
+
+	va_start(ap, str_fmt);
+	vsnprintf((char*)(gt->val), sizeof(gt->val), str_fmt, ap);
+	va_end(ap);
+	gt->len = strlen((char*)(gt->val))+1;
+	return 0;
 }
 
 int global_title_cmp(const struct global_title *a, const struct global_title *b)

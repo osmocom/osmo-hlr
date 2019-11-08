@@ -2,25 +2,41 @@
 
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/core/msgb.h>
+#include <osmocom/core/socket.h>
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
 #include <osmocom/gsm/gsup.h>
+#include "global_title.h"
 
 #ifndef OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN
 #define OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN	43 /* TS 24.008 10.5.4.7 */
 #endif
 
-#define LOG_GSUPCONN(conn, level, fmt, args...) \
+#define LOG_GSUP_CONN(conn, level, fmt, args...) \
 	LOGP(DLGSUP, level, "GSUP from %s: " fmt, \
 	     conn && conn->server && conn->server->link ? \
 	       osmo_sock_get_name2_c(OTC_SELECT, conn->server->link->ofd.fd) \
 	       : "?", \
 	     ##args)
 
-#define LOG_GSUPCONN_MSG(conn, gsup_msg, level, fmt, args...) \
-	LOG_GSUPCONN(conn, level, "IMSI-%s %s: " fmt, (gsup_msg)->imsi, \
-		     osmo_gsup_message_type_name((gsup_msg)->message_type), \
-		     ##args)
+#if 0
+#define LOG_GSUP_CONN_MSG(conn, gsup_msg, level, fmt, args...) \
+	LOG_GSUP_CONN(conn, level, "IMSI-%s %s: " fmt, (gsup_msg)->imsi, \
+		      osmo_gsup_message_type_name((gsup_msg)->message_type), \
+		      ##args)
+
+#endif
+
+#define LOG_GSUP_REQ_CAT(req, subsys, level, fmt, args...) \
+	LOGP(subsys, level, "GSUP %u: %s: IMSI-%s %s: " fmt, \
+	     (req) ? (req)->nr : 0, \
+	     (req) ? global_title_name(&(req)->source_name) : "NULL", \
+	     (req) ? (req)->gsup.imsi : "NULL", \
+	     (req) ? osmo_gsup_message_type_name((req)->gsup.message_type) : "NULL", \
+	     ##args)
+
+#define LOG_GSUP_REQ(req, level, fmt, args...) \
+	LOG_GSUP_REQ_CAT(req, DLGSUP, level, fmt, ##args)
 
 struct osmo_gsup_conn;
 
@@ -33,9 +49,6 @@ struct osmo_gsup_server {
 
 	/* list of osmo_gsup_conn */
 	struct llist_head clients;
-
-	/* lu_operations list */
-	struct llist_head *luop;
 
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
@@ -57,13 +70,57 @@ struct osmo_gsup_conn {
 	/* Set when Location Update is received: */
 	bool supports_cs; /* client supports OSMO_GSUP_CN_DOMAIN_CS */
 	bool supports_ps; /* client supports OSMO_GSUP_CN_DOMAIN_PS */
+
+	/* The IPA unit name received on this link. Routes with more unit names serviced by this link may exist in
+	 * osmo_gsup_server->routes, but this is the name the immediate peer identified as in the IPA handshake. */
+	struct global_title peer_name;
 };
+
+/* Keep track of an incoming request to which osmo-hlr composes (or routes back) a response.
+ * Particularly, if a request contained a source_name, we need to add this as destination_name in the response for any
+ * intermediate GSUP proxies to be able to route back to the initial requestor. */
+struct osmo_gsup_req {
+	struct osmo_gsup_server *server;
+	/* Identify this request by number, for logging. */
+	unsigned int nr;
+
+	/* A decoded GSUP message still points into the received msgb. For a decoded osmo_gsup_message to remain valid,
+	 * we also need to keep the msgb. */
+	struct msgb *msg;
+	/* Decoded msg. */
+	int decode_rc;
+	const struct osmo_gsup_message gsup;
+	/* The ultimate source of this message: the source_name form the GSUP message, or, if not present, then the
+	 * immediate GSUP peer. GSUP messages going via a proxy reflect the initial source in the source_name.
+	 * This source_name is implicitly added to the routes for the conn the message was received on. */
+	struct global_title source_name;
+	/* If the source_name is not an immediate GSUP peer, this is set to the closest intermediate peer between here
+	 * and source_name. */
+	struct global_title via_proxy;
+};
+
+struct osmo_gsup_req *osmo_gsup_req_new(struct osmo_gsup_conn *conn, struct msgb *msg);
+#define osmo_gsup_req_free(REQ) do { \
+		LOG_GSUP_REQ(REQ, LOGL_DEBUG, "free\n"); \
+		_osmo_gsup_req_free(REQ); \
+	} while(0)
+void _osmo_gsup_req_free(struct osmo_gsup_req *req);
+
+int osmo_gsup_req_respond(struct osmo_gsup_req *req, struct osmo_gsup_message *response);
+int osmo_gsup_req_respond_nonfinal(struct osmo_gsup_req *req, struct osmo_gsup_message *response);
+int osmo_gsup_req_respond_msgt(struct osmo_gsup_req *req, enum osmo_gsup_message_type message_type);
+
+#define osmo_gsup_req_respond_err(REQ, CAUSE, FMT, args...) do { \
+		LOG_GSUP_REQ(REQ, LOGL_ERROR, "%s: " FMT "\n", \
+			     get_value_string(gsm48_gmm_cause_names, CAUSE), ##args); \
+		_osmo_gsup_req_respond_err(REQ, CAUSE); \
+	} while(0)
+void _osmo_gsup_req_respond_err(struct osmo_gsup_req *req, enum gsm48_gmm_cause cause);
 
 struct msgb *osmo_gsup_msgb_alloc(const char *label);
 
 int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg);
-void osmo_gsup_conn_send_err_reply(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup_orig,
-				   enum gsm48_gmm_cause cause);
+int osmo_gsup_conn_enc_send(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
 int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
 			   uint8_t tag);
 
@@ -71,7 +128,6 @@ struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 						 const char *ip_addr,
 						 uint16_t tcp_port,
 						 osmo_gsup_read_cb_t read_cb,
-						 struct llist_head *lu_op_lst,
 						 void *priv);
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);

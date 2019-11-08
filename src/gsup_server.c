@@ -26,7 +26,9 @@
 #include <osmocom/abis/ipaccess.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/apn.h>
+#include <osmocom/gsm/gsm23003.h>
 
+#include "hlr.h"
 #include "gsup_server.h"
 #include "gsup_router.h"
 
@@ -55,6 +57,180 @@ int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg)
 	osmo_gsup_server_send(conn, IPAC_PROTO_EXT_GSUP, msg);
 
 	return 0;
+}
+
+/* Only for requests originating here. When answering to a remote request, rather use osmo_gsup_req_respond() or
+ * osmo_gsup_req_respond_err(). */
+int osmo_gsup_conn_enc_send(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
+{
+	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP Tx");
+	int rc;
+	rc = osmo_gsup_encode(msg, gsup);
+	if (rc) {
+		LOG_GSUP_CONN(conn, LOGL_ERROR, "Cannot encode GSUP: %s\n",
+			      osmo_gsup_message_type_name(gsup->message_type));
+		msgb_free(msg);
+		return -EINVAL;
+	}
+
+	LOG_GSUP_CONN(conn, LOGL_DEBUG, "Tx: %s\n", osmo_gsup_message_type_name(gsup->message_type));
+	rc = osmo_gsup_conn_send(conn, msg);
+	if (rc)
+		LOG_GSUP_CONN(conn, LOGL_ERROR, "Unable to send: %s\n",
+			      osmo_gsup_message_type_name(gsup->message_type));
+	return rc;
+}
+
+struct osmo_gsup_req *osmo_gsup_req_new(struct osmo_gsup_conn *conn, struct msgb *msg)
+{
+	static unsigned int next_req_nr = 1;
+	struct osmo_gsup_req *req;
+	struct osmo_gsup_message gsup_err;
+	int rc;
+
+	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
+		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP message: missing or empty L2 data\n");
+		msgb_free(msg);
+		return NULL;
+	}
+
+	req = talloc_zero(conn->server, struct osmo_gsup_req);
+	OSMO_ASSERT(req);
+	req->nr = next_req_nr++;
+	req->server = conn->server;
+	req->msg = msg;
+	req->source_name = conn->peer_name;
+
+	rc = osmo_gsup_decode(msgb_l2(req->msg), msgb_l2len(req->msg), (struct osmo_gsup_message*)&req->gsup);
+	if (rc < 0) {
+		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP message: cannot decode (rc=%d)\n", rc);
+		osmo_gsup_req_free(req);
+		return NULL;
+	}
+
+	LOG_GSUP_REQ(req, LOGL_DEBUG, "new\n");
+
+	if (req->gsup.source_name_len) {
+		if (global_title_set(&req->source_name, req->gsup.source_name, req->gsup.source_name_len)) {
+			LOGP(DLGSUP, LOGL_ERROR, "cannot decode GSUP message's source_name, message is not routable\n");
+			goto unroutable_error;
+		}
+
+		if (global_title_cmp(&req->source_name, &conn->peer_name)) {
+			/* The source of the GSUP message is not the immediate GSUP peer, but that peer is our proxy for that
+			 * source. Add it to the routes for this conn (so we can route responses back). */
+			if (gsup_route_add_gt(conn, &req->source_name)) {
+				LOGP(DLGSUP, LOGL_ERROR,
+				     "GSUP message received from %s via peer %s, but there already exists a different"
+				     " route to this source, message is not routable\n",
+				     global_title_name(&req->source_name),
+				     global_title_name(&conn->peer_name));
+				goto unroutable_error;
+			}
+
+			req->via_proxy = conn->peer_name;
+		}
+	}
+
+	if (!osmo_imsi_str_valid(req->gsup.imsi)) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO, "invalid IMSI: %s",
+					  osmo_quote_str(req->gsup.imsi, -1));
+		return NULL;
+	}
+
+	return req;
+
+unroutable_error:
+	gsup_err = (struct osmo_gsup_message){
+		.message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR,
+		.destination_name = req->gsup.destination_name,
+		.destination_name_len = req->gsup.destination_name_len,
+		.source_name = req->gsup.source_name,
+		.source_name_len = req->gsup.source_name_len,
+	};
+	osmo_gsup_set_reply(&req->gsup, &gsup_err);
+	osmo_gsup_conn_enc_send(conn, &gsup_err);
+	osmo_gsup_req_free(req);
+	return NULL;
+}
+
+void _osmo_gsup_req_free(struct osmo_gsup_req *req)
+{
+	if (req->msg)
+		msgb_free(req->msg);
+	talloc_free(req);
+}
+
+int osmo_gsup_req_respond_nonfinal(struct osmo_gsup_req *req, struct osmo_gsup_message *response)
+{
+	struct osmo_gsup_conn *conn;
+	struct msgb *msg;
+	int rc;
+
+	conn = gsup_route_find_gt(req->server, &req->source_name);
+	if (!conn) {
+		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP client that sent this request was disconnected, cannot respond\n");
+		return -EINVAL;
+	}
+
+	osmo_gsup_set_reply(&req->gsup, response);
+
+	msg = osmo_gsup_msgb_alloc("GSUP response");
+	rc = osmo_gsup_encode(msg, response);
+	if (rc) {
+		LOG_GSUP_REQ(req, LOGL_ERROR, "Unable to encode response: %s\n",
+			     osmo_gsup_message_type_name(response->message_type));
+		return -EINVAL;
+	}
+
+	LOG_GSUP_REQ(req, LOGL_DEBUG, "Tx response: %s\n", osmo_gsup_message_type_name(response->message_type));
+
+	rc = osmo_gsup_conn_send(conn, msg);
+	if (rc)
+		LOG_GSUP_REQ(req, LOGL_ERROR, "Unable to send response: %s\n",
+			     osmo_gsup_message_type_name(response->message_type));
+	return rc;
+}
+
+/* Make sure the response message contains all IEs that are required to be a valid response for the received GSUP
+ * request, and send back to the requesting peer. */
+int osmo_gsup_req_respond(struct osmo_gsup_req *req, struct osmo_gsup_message *response)
+{
+	int rc = osmo_gsup_req_respond_nonfinal(req, response);
+	osmo_gsup_req_free(req);
+	return rc;
+}
+
+int osmo_gsup_req_respond_msgt(struct osmo_gsup_req *req, enum osmo_gsup_message_type message_type)
+{
+	struct osmo_gsup_message response = {
+		.message_type = message_type,
+	};
+	return osmo_gsup_req_respond(req, &response);
+}
+
+#define osmo_gsup_req_respond_err(REQ, CAUSE, FMT, args...) do { \
+		LOG_GSUP_REQ(REQ, LOGL_ERROR, "%s: " FMT "\n", \
+			     get_value_string(gsm48_gmm_cause_names, CAUSE), ##args); \
+		_osmo_gsup_req_respond_err(REQ, CAUSE); \
+	} while(0)
+void _osmo_gsup_req_respond_err(struct osmo_gsup_req *req, enum gsm48_gmm_cause cause)
+{
+	struct osmo_gsup_message response = {
+		.cause = cause,
+		.message_type = OSMO_GSUP_TO_MSGT_ERROR(req->gsup.message_type),
+	};
+
+	/* No need to answer if we couldn't parse an ERROR message type, only REQUESTs need an error reply. */
+	if (!OSMO_GSUP_IS_MSGT_REQUEST(req->gsup.message_type)) {
+		osmo_gsup_req_free(req);
+		return;
+	}
+
+	if (req->gsup.session_state != OSMO_GSUP_SESSION_STATE_NONE)
+		response.session_state = OSMO_GSUP_SESSION_STATE_END;
+
+	osmo_gsup_req_respond(req, &response);
 }
 
 /* Encode an error reponse to the given GSUP message with the given cause.
@@ -251,8 +427,16 @@ static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
 		return -EINVAL;
 	}
 
-	gsup_route_add(clnt, addr, addr_len);
+	global_title_set(&clnt->peer_name, addr, addr_len);
+	gsup_route_add_gt(clnt, &clnt->peer_name);
 	return 0;
+}
+
+static void osmo_gsup_conn_free(struct osmo_gsup_conn *conn)
+{
+	gsup_route_del_conn(conn);
+	llist_del(&conn->list);
+	talloc_free(conn);
 }
 
 static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
@@ -262,10 +446,7 @@ static int osmo_gsup_server_closed_cb(struct ipa_server_conn *conn)
 	LOGP(DLGSUP, LOGL_INFO, "Lost GSUP client %s:%d\n",
 		conn->addr, conn->port);
 
-	gsup_route_del_conn(clnt);
-	llist_del(&clnt->list);
-	talloc_free(clnt);
-
+	osmo_gsup_conn_free(clnt);
 	return 0;
 }
 
@@ -347,8 +528,7 @@ failed:
 
 struct osmo_gsup_server *
 osmo_gsup_server_create(void *ctx, const char *ip_addr, uint16_t tcp_port,
-			osmo_gsup_read_cb_t read_cb,
-			struct llist_head *lu_op_lst, void *priv)
+			osmo_gsup_read_cb_t read_cb, void *priv)
 {
 	struct osmo_gsup_server *gsups;
 	int rc;
@@ -373,8 +553,6 @@ osmo_gsup_server_create(void *ctx, const char *ip_addr, uint16_t tcp_port,
 	rc = ipa_server_link_open(gsups->link);
 	if (rc < 0)
 		goto failed;
-
-	gsups->luop = lu_op_lst;
 
 	return gsups;
 
@@ -416,6 +594,7 @@ int osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
 	return 0;
 }
 
+
 /**
  * Populate a gsup message structure with an Insert Subscriber Data Message.
  * All required memory buffers for data pointed to by pointers in struct omso_gsup_message
@@ -432,39 +611,41 @@ int osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
  * \returns 0 on success, and negative on error.
  */
 int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, const char *imsi, const char *msisdn,
-						uint8_t *msisdn_enc, size_t msisdn_enc_size,
-						uint8_t *apn_buf, size_t apn_buf_size,
-						enum osmo_gsup_cn_domain cn_domain)
+                                               uint8_t *msisdn_enc, size_t msisdn_enc_size,
+                                               uint8_t *apn_buf, size_t apn_buf_size,
+                                               enum osmo_gsup_cn_domain cn_domain)
 {
-	int len;
+       int len;
 
-	OSMO_ASSERT(gsup);
+       OSMO_ASSERT(gsup);
+       *gsup = (struct osmo_gsup_message){
+	       .message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST,
+       };
 
-	gsup->message_type = OSMO_GSUP_MSGT_INSERT_DATA_REQUEST;
-	osmo_strlcpy(gsup->imsi, imsi, sizeof(gsup->imsi));
+       osmo_strlcpy(gsup->imsi, imsi, sizeof(gsup->imsi));
 
-	if (msisdn_enc_size < OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN)
-		return -ENOSPC;
+       if (msisdn_enc_size < OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN)
+               return -ENOSPC;
 
-	OSMO_ASSERT(msisdn_enc);
-	len = gsm48_encode_bcd_number(msisdn_enc, msisdn_enc_size, 0, msisdn);
-	if (len < 1) {
-		LOGP(DLGSUP, LOGL_ERROR, "%s: Error: cannot encode MSISDN '%s'\n", imsi, msisdn);
-		return -ENOSPC;
-	}
-	gsup->msisdn_enc = msisdn_enc;
-	gsup->msisdn_enc_len = len;
+       OSMO_ASSERT(msisdn_enc);
+       len = gsm48_encode_bcd_number(msisdn_enc, msisdn_enc_size, 0, msisdn);
+       if (len < 1) {
+               LOGP(DLGSUP, LOGL_ERROR, "%s: Error: cannot encode MSISDN '%s'\n", imsi, msisdn);
+               return -ENOSPC;
+       }
+       gsup->msisdn_enc = msisdn_enc;
+       gsup->msisdn_enc_len = len;
 
-	#pragma message "FIXME: deal with encoding the following data: gsup.hlr_enc"
+       #pragma message "FIXME: deal with encoding the following data: gsup.hlr_enc"
 
-	gsup->cn_domain = cn_domain;
-	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
-		OSMO_ASSERT(apn_buf_size >= APN_MAXLEN);
-		OSMO_ASSERT(apn_buf);
-		/* FIXME: PDP infos - use more fine-grained access control
-		   instead of wildcard APN */
-		osmo_gsup_configure_wildcard_apn(gsup, apn_buf, apn_buf_size);
-	}
+       gsup->cn_domain = cn_domain;
+       if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
+               OSMO_ASSERT(apn_buf_size >= APN_MAXLEN);
+               OSMO_ASSERT(apn_buf);
+               /* FIXME: PDP infos - use more fine-grained access control
+                  instead of wildcard APN */
+               osmo_gsup_configure_wildcard_apn(gsup, apn_buf, apn_buf_size);
+       }
 
-	return 0;
+       return 0;
 }

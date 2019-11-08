@@ -28,7 +28,6 @@ noinst_HEADERS = \
 	auc.h \
 	db.h \
 	hlr.h \
-	luop.h \
 	gsup_router.h \
 	gsup_server.h \
 	logging.h \
@@ -44,6 +43,7 @@ noinst_HEADERS = \
 	global_title.h \
 	mslookup_server.h \
 	mslookup_server_mdns.h \
+	lu_fsm.h \
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -56,7 +56,6 @@ osmo_hlr_SOURCES = \
 	auc.c \
 	ctrl.c \
 	db.c \
-	luop.c \
 	db_auc.c \
 	db_hlr.c \
 	gsup_router.c \
@@ -75,6 +74,7 @@ osmo_hlr_SOURCES = \
 	mslookup_server.c \
 	mslookup_server_mdns.c \
 	global_title.c \
+	lu_fsm.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
