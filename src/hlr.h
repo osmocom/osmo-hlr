@@ -47,6 +47,7 @@ struct hlr {
 
 	/* Local bind addr */
 	char *gsup_bind_addr;
+	struct ipaccess_unit gsup_unit_name;
 
 	struct llist_head euse_list;
 	struct hlr_euse *euse_default;
@@ -82,11 +83,7 @@ struct hlr {
 		} client;
 	} mslookup;
 
-	struct {
-		struct ipaccess_unit gsup_client_name;
-		struct proxy *cs;
-		struct proxy *ps;
-	} gsup_proxy;
+	struct proxy *proxy;
 };
 
 extern struct hlr *g_hlr;

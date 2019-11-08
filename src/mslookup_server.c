@@ -163,17 +163,7 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 
 	/* See the local HLR record. If the subscriber is "at home" in this HLR and is also currently located here, we
 	 * will find a valid location updating and no vlr_via_proxy entry. */
-	switch (query->id.type) {
-	case OSMO_MSLOOKUP_ID_IMSI:
-		subscr = proxy_subscr_get_by_imsi(g_hlr->gsup_proxy.cs, query->id.imsi);
-		break;
-	case OSMO_MSLOOKUP_ID_MSISDN:
-		subscr = proxy_subscr_get_by_msisdn(g_hlr->gsup_proxy.cs, query->id.msisdn);
-		break;
-	default:
-		LOGP(DDGSM, LOGL_ERROR, "Unknown mslookup ID type: %d\n", query->id.type);
-		return false;
-	}
+	subscr = proxy_subscr_get_by_imsi(g_hlr->proxy, query->id.imsi);
 
 	if (!subscr) {
 		LOGP(DDGSM, LOGL_DEBUG, "%s: does not exist in GSUP proxy\n",

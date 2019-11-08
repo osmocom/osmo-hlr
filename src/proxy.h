@@ -21,16 +21,23 @@ struct proxy {
 	struct osmo_timer_list gc_timer;
 };
 
+struct proxy_subscr_domain_state {
+	struct global_title vlr_name;
+	struct timeval last_lu;
+
+#if 0
+	/* not needed unless we ever want a system with multiple proxy hops: */
+	/* Set if this is a middle proxy, i.e. a proxy behind another proxy.
+	 * That is mostly to know whether the MS is attached at a local MSC/SGSN or further away. */
+	struct global_title vlr_via_proxy;
+#endif
+};
+
 struct proxy_subscr {
 	char imsi[GSM23003_IMSI_MAX_DIGITS+1];
 	char msisdn[GSM23003_MSISDN_MAX_DIGITS+1];
-#if 0
-	/* Set if this is a middle proxy, i.e. a proxy behind another proxy. */
-	struct global_title vlr_via_proxy;
-#endif
-	struct global_title vlr_name;
 	struct osmo_sockaddr_str remote_hlr_addr;
-	struct timeval last_lu;
+	struct proxy_subscr_domain_state cs, ps;
 };
 
 struct proxy *proxy_init(void *ctx);

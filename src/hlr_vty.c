@@ -161,7 +161,7 @@ DEFUN(cfg_hlr_gsup_ipa_name,
 		return CMD_WARNING;
 	}
 
-	g_hlr->gsup_proxy.gsup_client_name.serno = talloc_strdup(g_hlr, argv[0]);
+	g_hlr->gsup_unit_name.serno = talloc_strdup(g_hlr, argv[0]);
 	return CMD_SUCCESS;
 }
 

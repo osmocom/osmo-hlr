@@ -49,8 +49,8 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 {
 	struct osmo_gsup_message gsup;
 	struct osmo_gsup_conn *vlr_conn;
-	struct proxy *proxy;
 	const struct proxy_subscr *proxy_subscr;
+	struct global_title destination;
 	struct msgb *gsup_copy;
 	int rc;
 
@@ -67,26 +67,14 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 		return -GMM_CAUSE_INV_MAND_INFO;
 	}
 
-	switch (gsup.cn_domain) {
-	case OSMO_GSUP_CN_DOMAIN_CS:
-		proxy = g_hlr->gsup_proxy.cs;
-		break;
-	case OSMO_GSUP_CN_DOMAIN_PS:
-		proxy = g_hlr->gsup_proxy.ps;
-		break;
-	default:
-		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Unknown cn_domain: %d\n", gsup.cn_domain);
+	if (!gsup.destination_name || !gsup.destination_name_len
+	    || global_title_set(&destination, gsup.destination_name, gsup.destination_name_len)) {
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "no valid Destination Name IE, cannot route to VLR.\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -GMM_CAUSE_INV_MAND_INFO;
 	}
 
-	if (!proxy) {
-		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, there is no GSUP proxy set up\n");
-		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_NET_FAIL);
-		return -GMM_CAUSE_NET_FAIL;
-	}
-
-	proxy_subscr = proxy_subscr_get_by_imsi(proxy, gsup.imsi);
+	proxy_subscr = proxy_subscr_get_by_imsi(g_hlr->proxy, gsup.imsi);
 	if (!proxy_subscr) {
 		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, no GSUP proxy record for this IMSI\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_IMSI_UNKNOWN);
@@ -94,10 +82,10 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	}
 
 	/* Route to MSC that we're proxying for */
-	vlr_conn = gsup_route_find_gt(g_hlr->gs, &proxy_subscr->vlr_name);
+	vlr_conn = gsup_route_find_gt(g_hlr->gs, &destination);
 	if (!vlr_conn) {
 		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Destination VLR unreachable: %s\n",
-			     global_title_name(&proxy_subscr->vlr_name));
+			      global_title_name(&destination));
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_MSC_TEMP_NOTREACH);
 		return -GMM_CAUSE_MSC_TEMP_NOTREACH;
 	}
@@ -146,7 +134,7 @@ struct remote_hlr *remote_hlr_get(const struct osmo_sockaddr_str *addr, bool cre
 	OSMO_ASSERT(rh);
 	*rh = (struct remote_hlr){
 		.addr = *addr,
-		.gsupc = osmo_gsup_client_create3(rh, &g_hlr->gsup_proxy.gsup_client_name,
+		.gsupc = osmo_gsup_client_create3(rh, &g_hlr->gsup_unit_name,
 						  addr->ip, addr->port,
 						  NULL,
 						  remote_hlr_rx,

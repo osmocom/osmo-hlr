@@ -50,6 +50,8 @@ static bool proxy_subscr_matches_msisdn(const struct proxy_subscr *proxy_subscr,
 static struct proxy_subscr_listentry *_proxy_get_by_imsi(struct proxy *proxy, const char *imsi)
 {
 	struct proxy_subscr_listentry *e;
+	if (!proxy)
+		return NULL;
 	llist_for_each_entry(e, &proxy->subscr_list, entry) {
 		if (proxy_subscr_matches_imsi(&e->data, imsi))
 			return e;
@@ -60,6 +62,8 @@ static struct proxy_subscr_listentry *_proxy_get_by_imsi(struct proxy *proxy, co
 static struct proxy_subscr_listentry *_proxy_get_by_msisdn(struct proxy *proxy, const char *msisdn)
 {
 	struct proxy_subscr_listentry *e;
+	if (!proxy)
+		return NULL;
 	llist_for_each_entry(e, &proxy->subscr_list, entry) {
 		if (proxy_subscr_matches_msisdn(&e->data, msisdn))
 			return e;
@@ -88,6 +92,8 @@ void proxy_subscrs_get_by_remote_hlr(struct proxy *proxy, const struct osmo_sock
 				     void *data)
 {
 	struct proxy_subscr_listentry *e;
+	if (!proxy)
+		return;
 	llist_for_each_entry(e, &proxy->subscr_list, entry) {
 		if (!osmo_sockaddr_str_ip_cmp(remote_hlr_addr, &e->data.remote_hlr_addr)) {
 			if (!yield(proxy, &e->data, data))
