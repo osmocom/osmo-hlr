@@ -10,6 +10,18 @@
 #define OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN	43 /* TS 24.008 10.5.4.7 */
 #endif
 
+#define LOG_GSUPCONN(conn, level, fmt, args...) \
+	LOGP(DLGSUP, level, "GSUP from %s: " fmt, \
+	     conn && conn->server && conn->server->link ? \
+	       osmo_sock_get_name2_c(OTC_SELECT, conn->server->link->ofd.fd) \
+	       : "?", \
+	     ##args)
+
+#define LOG_GSUPCONN_MSG(conn, gsup_msg, level, fmt, args...) \
+	LOG_GSUPCONN(conn, level, "IMSI-%s %s: " fmt, (gsup_msg)->imsi, \
+		     osmo_gsup_message_type_name((gsup_msg)->message_type), \
+		     ##args)
+
 struct osmo_gsup_conn;
 
 /* Expects message in msg->l2h */

@@ -8,6 +8,12 @@ struct osmo_gsup_client;
 struct osmo_gsup_message;
 struct msgb;
 
+#define LOG_GSUPC(gsupc, level, fmt, args...) \
+	LOGP(DDGSM, level, "HLR Proxy: GSUP from %s:%u: " fmt, (gsupc)->link->addr, (gsupc)->link->port, ##args)
+
+#define LOG_GSUPC_MSG(gsupc, gsup_msg, level, fmt, args...) \
+	LOG_GSUPC(gsupc, level, "%s: " fmt, osmo_gsup_message_type_name((gsup_msg)->message_type), ##args)
+
 /* GSUP client link for proxying to a remote HLR. */
 struct remote_hlr {
 	struct llist_head entry;

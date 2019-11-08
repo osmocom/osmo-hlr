@@ -12,13 +12,6 @@
 
 static LLIST_HEAD(remote_hlrs);
 
-#define LOG_GSUPC(gsupc, level, fmt, args...) \
-	LOGP(DDGSM, level, "HLR Proxy: GSUP from %s:%u: " fmt, (gsupc)->link->addr, (gsupc)->link->port, ##args)
-
-#define LOG_GSUP_MSG(gsupc, gsup_msg, level, fmt, args...) \
-	LOG_GSUPC(gsupc, level, "%s: " fmt, osmo_gsup_message_type_name((gsup_msg)->message_type), ##args)
-
-
 void remote_hlr_err_reply(struct osmo_gsup_client *gsupc, const struct osmo_gsup_message *gsup_orig,
 			  enum gsm48_gmm_cause cause)
 {
@@ -69,7 +62,7 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	}
 
 	if (!gsup.imsi[0]) {
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Failed to decode GSUP message: missing IMSI\n");
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Failed to decode GSUP message: missing IMSI\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -GMM_CAUSE_INV_MAND_INFO;
 	}
@@ -82,20 +75,20 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 		proxy = g_hlr->gsup_proxy.ps;
 		break;
 	default:
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Unknown cn_domain: %d\n", gsup.cn_domain);
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Unknown cn_domain: %d\n", gsup.cn_domain);
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_INV_MAND_INFO);
 		return -GMM_CAUSE_INV_MAND_INFO;
 	}
 
 	if (!proxy) {
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, there is no GSUP proxy set up\n");
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, there is no GSUP proxy set up\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_NET_FAIL);
 		return -GMM_CAUSE_NET_FAIL;
 	}
 
 	proxy_subscr = proxy_subscr_get_by_imsi(proxy, gsup.imsi);
 	if (!proxy_subscr) {
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, no GSUP proxy record for this IMSI\n");
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Cannot route, no GSUP proxy record for this IMSI\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_IMSI_UNKNOWN);
 		return -GMM_CAUSE_IMSI_UNKNOWN;
 	}
@@ -103,7 +96,7 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	/* Route to MSC that we're proxying for */
 	vlr_conn = gsup_route_find_gt(g_hlr->gs, &proxy_subscr->vlr_name);
 	if (!vlr_conn) {
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Destination VLR unreachable: %s\n",
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Destination VLR unreachable: %s\n",
 			     global_title_name(&proxy_subscr->vlr_name));
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_MSC_TEMP_NOTREACH);
 		return -GMM_CAUSE_MSC_TEMP_NOTREACH;
@@ -114,7 +107,7 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	 * We also need to strip the IPA header and have headroom. Just re-encode. */
 	gsup_copy = osmo_gsup_msgb_alloc("GSUP proxy to VLR");
 	if (osmo_gsup_encode(gsup_copy, &gsup)) {
-		LOG_GSUP_MSG(gsupc, &gsup, LOGL_ERROR, "Failed to re-encode GSUP message, cannot forward\n");
+		LOG_GSUPC_MSG(gsupc, &gsup, LOGL_ERROR, "Failed to re-encode GSUP message, cannot forward\n");
 		remote_hlr_err_reply(gsupc, &gsup, GMM_CAUSE_MSC_TEMP_NOTREACH);
 		return -GMM_CAUSE_MSC_TEMP_NOTREACH;
 	}

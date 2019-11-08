@@ -411,8 +411,7 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 		proxy = g_hlr->gsup_proxy.ps;
 		break;
 	default:
-		LOG_DGSM(gsup->imsi, LOGL_ERROR, "Unknown cn_domain: %d\n", gsup->cn_domain);
-		osmo_gsup_conn_send_err_reply(conn, gsup, GMM_CAUSE_INV_MAND_INFO);
+		LOG_GSUPCONN_MSG(conn, gsup, LOGL_ERROR, "D-GSM: Unknown cn_domain: %d\n", gsup->cn_domain);
 		return -GMM_CAUSE_INV_MAND_INFO;
 	}
 
