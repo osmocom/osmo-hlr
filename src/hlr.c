@@ -597,7 +597,7 @@ end:
 
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
-	static struct osmo_gsup_message gsup;
+	struct osmo_gsup_message gsup;
 	int rc;
 
 	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
