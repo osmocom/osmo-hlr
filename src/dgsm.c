@@ -303,7 +303,7 @@ static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
 				  const struct osmo_mslookup_query *query,
 				  const struct osmo_mslookup_result *result)
 {
-	struct proxy *proxy = g_hlr->gsup_proxy.cs;
+	struct proxy *proxy = g_hlr->proxy;
 	const struct proxy_subscr *proxy_subscr;
 	struct proxy_subscr proxy_subscr_new;
 	struct remote_hlr *remote_hlr;
@@ -388,7 +388,7 @@ void dgsm_remote_hlr_up(struct remote_hlr *remote_hlr)
 	LOGP(DDGSM, LOGL_NOTICE, "link to remote HLR is up, sending spooled GSUP messages: " OSMO_SOCKADDR_STR_FMT "\n",
 	     OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
 	/* Send all spooled GSUP messaged for IMSIs that are waiting for this link to establish. */
-	proxy_subscrs_get_by_remote_hlr(g_hlr->gsup_proxy.cs, &remote_hlr->addr, remote_hlr_up_yield, remote_hlr);
+	proxy_subscrs_get_by_remote_hlr(g_hlr->proxy, &remote_hlr->addr, remote_hlr_up_yield, remote_hlr);
 }
 
 /* Return true when the message has been handled by D-GSM. */
@@ -398,22 +398,10 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 	struct proxy_subscr proxy_subscr_new;
 	struct gsup_route *route;
 	struct osmo_gsup_message gsup_copy;
-	struct proxy *proxy;
+	struct proxy *proxy = g_hlr->proxy;
 	struct osmo_mslookup_query query;
 	struct osmo_mslookup_query_handling handling;
 	uint32_t request_handle;
-
-	switch (gsup->cn_domain) {
-	case OSMO_GSUP_CN_DOMAIN_CS:
-		proxy = g_hlr->gsup_proxy.cs;
-		break;
-	case OSMO_GSUP_CN_DOMAIN_PS:
-		proxy = g_hlr->gsup_proxy.ps;
-		break;
-	default:
-		LOG_GSUPCONN_MSG(conn, gsup, LOGL_ERROR, "D-GSM: Unknown cn_domain: %d\n", gsup->cn_domain);
-		return -GMM_CAUSE_INV_MAND_INFO;
-	}
 
 	/* To forward to a remote HLR, we need to indicate the source MSC's name to make sure the reply can be routed
 	 * back. Store the sender MSC in gsup->source_name -- the remote HLR is required to return this as
@@ -468,7 +456,6 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_conn *conn, const struct osmo_
 	/* Add a proxy entry without a remote address to indicate that we are busy querying for a remote HLR. */
 	proxy_subscr_new = (struct proxy_subscr){};
 	OSMO_STRLCPY_ARRAY(proxy_subscr_new.imsi, gsup->imsi);
-	global_title_set(&proxy_subscr_new.vlr_name, route->addr, talloc_total_size(route->addr));
 	proxy_subscr = &proxy_subscr_new;
 	proxy_subscr_update(proxy, proxy_subscr);
 
@@ -499,9 +486,9 @@ void dgsm_init(void *ctx)
 
 	g_hlr->mslookup.client.result_timeout_milliseconds = 2000;
 
-	g_hlr->gsup_proxy.gsup_client_name.unit_name = "HLR";
-	g_hlr->gsup_proxy.gsup_client_name.serno = "unnamed-HLR";
-	g_hlr->gsup_proxy.gsup_client_name.swversion = PACKAGE_NAME "-" PACKAGE_VERSION;
+	g_hlr->gsup_unit_name.unit_name = "HLR";
+	g_hlr->gsup_unit_name.serno = "unnamed-HLR";
+	g_hlr->gsup_unit_name.swversion = PACKAGE_NAME "-" PACKAGE_VERSION;
 
 	osmo_sockaddr_str_from_str(&g_hlr->mslookup.vty.server.mdns.bind_addr,
 				   OSMO_MSLOOKUP_MDNS_IP4, OSMO_MSLOOKUP_MDNS_PORT);

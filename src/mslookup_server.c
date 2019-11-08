@@ -171,7 +171,8 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 		return false;
 	}
 
-	age = timestamp_age(&subscr->last_lu);
+	/* We only need to care about CS LU, since only CS services need D-GSM routing. */
+	age = timestamp_age(&subscr->cs.last_lu);
 
 	if (age > g_hlr->mslookup.server.max_age) {
 		LOGP(DDGSM, LOGL_ERROR, "%s: last attach was here (proxy), but too long ago: %us > %us\n",
@@ -181,7 +182,7 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 	}
 
 	*lu_age = age;
-	*local_msc_name = subscr->vlr_name;
+	*local_msc_name = subscr->cs.vlr_name;
 	LOGP(DDGSM, LOGL_DEBUG, "%s: attached %u seconds ago at local MSC %s; proxying for remote HLR "
 	     OSMO_SOCKADDR_STR_FMT "\n",
 	     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),

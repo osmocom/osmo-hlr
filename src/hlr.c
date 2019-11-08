@@ -842,8 +842,7 @@ int main(int argc, char **argv)
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
 
-	g_hlr->gsup_proxy.cs = proxy_init(g_hlr);
-	g_hlr->gsup_proxy.ps = proxy_init(g_hlr);
+	g_hlr->proxy = proxy_init(g_hlr);
 
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {
