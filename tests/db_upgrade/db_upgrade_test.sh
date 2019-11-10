@@ -11,21 +11,21 @@ cfg="$srcdir/osmo-hlr.cfg"
 
 dump_sorted_schema(){
 	db_file="$1"
-	tables="$(sqlite3 "$db_file" "SELECT name FROM sqlite_master WHERE type = 'table' order by name")"
+	tables="$(sqlite3 -batch -noheader "$db_file" "SELECT name FROM sqlite_master WHERE type = 'table' order by name")"
 	for table in $tables; do
 		echo
 		echo "Table: $table"
-		sqlite3 -header "$db_file" "SELECT name,type,\"notnull\",dflt_value,pk FROM PRAGMA_TABLE_INFO('$table') order by name;"
+		sqlite3 -batch -header "$db_file" "SELECT name,type,\"notnull\",dflt_value,pk FROM PRAGMA_TABLE_INFO('$table') order by name;"
 		echo
 		echo "Table $table contents:"
-		columns="$(sqlite3 "$db_file" "SELECT name FROM PRAGMA_TABLE_INFO('$table') order by name;")"
-		sqlite3 -header "$db_file" "SELECT $(echo $columns | sed 's/ /,/g') from $table;"
+		columns="$(sqlite3 -batch -noheader "$db_file" "SELECT name FROM PRAGMA_TABLE_INFO('$table') order by name;")"
+		sqlite3 -batch -header "$db_file" "SELECT $(echo $columns | sed 's/ /,/g') from $table;"
 	done
 }
 
 rm -f "$db"
 echo "Creating db in schema version 0"
-sqlite3 "$db" < "$srcdir/hlr_db_v0.sql"
+sqlite3 -batch "$db" < "$srcdir/hlr_db_v0.sql"
 
 echo
 echo "Version 0 db:"
@@ -61,7 +61,7 @@ if [ -n "$do_equivalence_test" ]; then
 		-n OsmoHLR -p 4258 \
 		-r "$osmo_hlr -c $cfg -l $mint_db" \
 		"$srcdir/create_subscribers.vty"
-	sqlite3 "$mint_db" < "$srcdir/create_subscribers_step2.sql"
+	sqlite3 -batch "$mint_db" < "$srcdir/create_subscribers_step2.sql"
 
 	set +x
 	test_dump="$builddir/test.dump"
