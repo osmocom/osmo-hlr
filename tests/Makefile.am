@@ -52,6 +52,7 @@ python-tests:
 endif
 
 VTY_TEST_DB = hlr_vty_test.db
+VTY_TEST ?= *.vty
 
 # To update the VTY script from current application behavior,
 # pass -u to vty_script_runner.py by doing:
@@ -63,9 +64,8 @@ vty-test:
 	osmo_verify_transcript_vty.py -v \
 		-n OsmoHLR -p 4258 \
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
-		$(U) $(srcdir)/*.vty
-	-rm -f $(VTY_TEST_DB)
-	-rm $(VTY_TEST_DB)-*
+		$(U) $(srcdir)/$(VTY_TEST)
+	-rm -f $(VTY_TEST_DB) $(VTY_TEST_DB)-*
 
 CTRL_TEST_DB = hlr_ctrl_test.db
 
