@@ -172,7 +172,7 @@ int remote_hlr_msgb_send(struct remote_hlr *remote_hlr, struct msgb *msg)
 	return rc;
 }
 
-void remote_hlr_gsup_send(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req)
+void remote_hlr_gsup_forward(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req)
 {
 	int rc;
 	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP proxy to remote HLR");

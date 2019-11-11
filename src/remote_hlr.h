@@ -24,4 +24,4 @@ struct remote_hlr {
 struct remote_hlr *remote_hlr_get(const struct osmo_sockaddr_str *addr, bool create);
 void remote_hlr_destroy(struct remote_hlr *remote_hlr);
 int remote_hlr_msgb_send(struct remote_hlr *remote_hlr, struct msgb *msg);
-void remote_hlr_gsup_send(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req);
+void remote_hlr_gsup_forward(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req);

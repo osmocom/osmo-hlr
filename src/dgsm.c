@@ -180,7 +180,7 @@ static void defer_gsup_message_err(struct pending_gsup_message *m)
 /* Forward spooled message for this IMSI to remote HLR. */
 static void defer_gsup_message_send(struct pending_gsup_message *m, struct remote_hlr *remote_hlr)
 {
-	LOG_GSUP_REQ(m->req, LOGL_DEBUG, "Forwarding deferred message to " OSMO_SOCKADDR_STR_FMT "\n",
+	LOG_GSUP_REQ(m->req, LOGL_INFO, "Forwarding deferred message to " OSMO_SOCKADDR_STR_FMT "\n",
 		     OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
 
 	/* If sending fails, still discard. */
@@ -191,9 +191,7 @@ static void defer_gsup_message_send(struct pending_gsup_message *m, struct remot
 		return;
 	}
 
-	remote_hlr_msgb_send(remote_hlr, m->req->msg);
-	m->req->msg = NULL;
-	osmo_gsup_req_free(m->req);
+	remote_hlr_gsup_forward(remote_hlr, m->req);
 	m->req = NULL;
 }
 
@@ -202,7 +200,7 @@ static void defer_gsup_message_pop(const char *imsi, struct remote_hlr *remote_h
 {
 	struct pending_gsup_message *m, *n;
 
-	if (remote_hlr) 
+	if (remote_hlr)
 		LOG_DGSM(imsi, LOGL_DEBUG, "Sending spooled GSUP messages to remote HLR at " OSMO_SOCKADDR_STR_FMT "\n",
 			 OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
 	else
@@ -233,7 +231,7 @@ void dgsm_send_to_remote_hlr(const struct proxy_subscr *proxy_subscr, struct osm
 		return;
 	}
 
-	LOG_GSUP_REQ(req, LOGL_DEBUG, "Proxy: forwarding to " OSMO_SOCKADDR_STR_FMT "\n",
+	LOG_GSUP_REQ(req, LOGL_INFO, "Proxy: forwarding to " OSMO_SOCKADDR_STR_FMT "\n",
 		 OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr));
 	
 	remote_hlr = remote_hlr_get(&proxy_subscr->remote_hlr_addr, true);
@@ -251,7 +249,7 @@ void dgsm_send_to_remote_hlr(const struct proxy_subscr *proxy_subscr, struct osm
 		return;
 	}
 
-	remote_hlr_gsup_send(remote_hlr, req);
+	remote_hlr_gsup_forward(remote_hlr, req);
 }
 
 static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
