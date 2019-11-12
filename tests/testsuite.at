@@ -37,7 +37,10 @@ sqlite3 db_test.db < $abs_top_srcdir/sql/hlr.sql
 AT_CHECK([$abs_top_builddir/tests/db/db_test], [], [expout], [experr])
 AT_CLEANUP
 
+# AT_SKIP_IF: disable for old sqlite versions, because the way we dump tables in the test doesn't work with it.
+# https://lists.osmocom.org/pipermail/openbsc/2019-November/013063.html
 AT_SETUP([db_upgrade])
+AT_SKIP_IF([ ! pkg-config sqlite3 --exists --atleast-version=3.16.2 ])
 AT_KEYWORDS([db_upgrade])
 cat $abs_srcdir/db_upgrade/db_upgrade_test.ok > expout
 cat $abs_srcdir/db_upgrade/db_upgrade_test.err > experr
