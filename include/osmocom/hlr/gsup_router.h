@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "gsup_server.h"
+#include <osmocom/hlr/gsup_server.h>
 
 struct gsup_route {
 	struct llist_head list;

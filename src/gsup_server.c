@@ -27,8 +27,8 @@
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/apn.h>
 
-#include "gsup_server.h"
-#include "gsup_router.h"
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
 
 static void osmo_gsup_server_send(struct osmo_gsup_conn *conn,
 			     int proto_ext, struct msgb *msg_tx)

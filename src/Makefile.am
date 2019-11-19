@@ -11,6 +11,7 @@ AM_CFLAGS = \
 	$(NULL)
 
 AM_CPPFLAGS = -I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -24,18 +25,6 @@ BUILT_SOURCES = \
 CLEANFILES = $(BUILT_SOURCES)
 
 noinst_HEADERS = \
-	auc.h \
-	db.h \
-	hlr.h \
-	luop.h \
-	gsup_router.h \
-	gsup_server.h \
-	logging.h \
-	rand.h \
-	ctrl.h \
-	hlr_vty.h \
-	hlr_vty_subscr.h \
-	hlr_ussd.h \
 	db_bootstrap.h \
 	$(NULL)
 

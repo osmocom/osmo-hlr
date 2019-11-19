@@ -23,9 +23,9 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/core/talloc.h>
 
-#include "logging.h"
-#include "gsup_server.h"
-#include "gsup_router.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
 
 /*! Find a route for the given address.
  * \param[in] gs gsup server

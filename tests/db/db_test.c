@@ -27,8 +27,8 @@
 #include <osmocom/core/utils.h>
 #include <osmocom/core/logging.h>
 
-#include "db.h"
-#include "logging.h"
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/logging.h>
 
 #define comment_start() fprintf(stderr, "\n===== %s\n", __func__);
 #define comment(fmt, args...) fprintf(stderr, "\n--- " fmt "\n\n", ## args);

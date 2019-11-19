@@ -44,7 +44,7 @@
 
 #include <osmocom/gsupclient/gsup_client.h>
 
-#include "logging.h"
+#include <osmocom/hlr/logging.h>
 
 static struct osmo_gsup_client *g_gc;
 

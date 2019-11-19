@@ -28,10 +28,10 @@
 #include <osmocom/gsm/gsup.h>
 #include <osmocom/gsm/apn.h>
 
-#include "gsup_server.h"
-#include "gsup_router.h"
-#include "logging.h"
-#include "luop.h"
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/luop.h>
 
 const struct value_string lu_state_names[] = {
 	{ LU_S_NULL,			"NULL" },

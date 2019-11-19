@@ -23,8 +23,8 @@
 #include <sqlite3.h>
 #include <string.h>
 
-#include "logging.h"
-#include "db.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/db.h>
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */

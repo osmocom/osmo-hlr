@@ -26,10 +26,10 @@
 
 #include <sqlite3.h>
 
-#include "logging.h"
-#include "db.h"
-#include "auc.h"
-#include "rand.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/auc.h>
+#include <osmocom/hlr/rand.h>
 
 #define LOGAUC(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 

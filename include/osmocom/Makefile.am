@@ -1,0 +1,3 @@
+SUBDIRS = \
+	hlr \
+	$(NULL)

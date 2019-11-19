@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <osmocom/core/utils.h>
-#include "gsup_server.h"
+#include <osmocom/hlr/gsup_server.h>
 
 #define comment_start() printf("\n===== %s\n", __func__)
 #define comment_end() printf("===== %s: SUCCESS\n\n", __func__)

@@ -1,5 +1,5 @@
 #include <osmocom/core/utils.h>
-#include "logging.h"
+#include <osmocom/hlr/logging.h>
 
 const struct log_info_cat hlr_log_info_cat[] = {
 	[DMAIN] = {

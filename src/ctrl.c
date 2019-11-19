@@ -28,9 +28,9 @@
 #include <osmocom/gsm/gsm23003.h>
 #include <osmocom/ctrl/ports.h>
 
-#include "hlr.h"
-#include "ctrl.h"
-#include "db.h"
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/ctrl.h>
+#include <osmocom/hlr/db.h>
 
 #define SEL_BY "by-"
 #define SEL_BY_IMSI SEL_BY "imsi-"

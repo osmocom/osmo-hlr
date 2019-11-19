@@ -28,8 +28,8 @@
 #include <osmocom/vty/command.h>
 #include <osmocom/core/utils.h>
 
-#include "hlr.h"
-#include "db.h"
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/db.h>
 
 struct vty;
 

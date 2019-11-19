@@ -25,7 +25,7 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
-#include "hlr.h"
+#include <osmocom/hlr/hlr.h>
 
 enum hlr_vty_node {
 	HLR_NODE = _LAST_OSMOVTY_NODE + 1,

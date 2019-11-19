@@ -29,9 +29,9 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
 
-#include "logging.h"
-#include "db.h"
-#include "rand.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/rand.h>
 
 struct hlr_db_tool_ctx {
 	/* DB context */

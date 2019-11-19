@@ -37,16 +37,16 @@
 #include <osmocom/gsm/gsm_utils.h>
 #include <osmocom/gsm/protocol/gsm_23_003.h>
 
-#include "db.h"
-#include "hlr.h"
-#include "ctrl.h"
-#include "logging.h"
-#include "gsup_server.h"
-#include "gsup_router.h"
-#include "rand.h"
-#include "luop.h"
-#include "hlr_vty.h"
-#include "hlr_ussd.h"
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/ctrl.h>
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
+#include <osmocom/hlr/rand.h>
+#include <osmocom/hlr/luop.h>
+#include <osmocom/hlr/hlr_vty.h>
+#include <osmocom/hlr/hlr_ussd.h>
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;

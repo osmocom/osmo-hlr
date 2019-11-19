@@ -29,12 +29,12 @@
 #include <string.h>
 #include <errno.h>
 
-#include "hlr.h"
-#include "hlr_ussd.h"
-#include "gsup_server.h"
-#include "gsup_router.h"
-#include "logging.h"
-#include "db.h"
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/db.h>
 
 /***********************************************************************
  * core data structures expressing config from VTY
@@ -317,7 +317,7 @@ static int ss_tx_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id,
  * Internal USSD Handlers
  ***********************************************************************/
 
-#include "db.h"
+#include <osmocom/hlr/db.h>
 
 static int handle_ussd_own_msisdn(struct osmo_gsup_conn *conn, struct ss_session *ss,
 				  const struct osmo_gsup_message *gsup, const struct ss_request *req)

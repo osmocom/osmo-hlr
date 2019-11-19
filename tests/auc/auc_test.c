@@ -29,8 +29,8 @@
 
 #include <osmocom/crypt/auth.h>
 
-#include "logging.h"
-#include "auc.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/auc.h>
 
 #define comment_start() fprintf(stderr, "\n===== %s\n", __func__);
 #define comment_end() fprintf(stderr, "===== %s: SUCCESS\n\n", __func__);

@@ -175,6 +175,8 @@ AC_OUTPUT(
 	src/Makefile
 	src/gsupclient/Makefile
 	include/Makefile
+	include/osmocom/Makefile
+	include/osmocom/hlr/Makefile
 	libosmo-gsup-client.pc
 	sql/Makefile
 	doc/manuals/Makefile

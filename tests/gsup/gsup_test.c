@@ -24,8 +24,8 @@
 #include <osmocom/core/application.h>
 #include <osmocom/gsm/gsup.h>
 
-#include "logging.h"
-#include "luop.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/luop.h>
 
 struct osmo_gsup_server;
 

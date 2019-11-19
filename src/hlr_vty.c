@@ -33,12 +33,12 @@
 #include <osmocom/vty/misc.h>
 #include <osmocom/abis/ipa.h>
 
-#include "db.h"
-#include "hlr.h"
-#include "hlr_vty.h"
-#include "hlr_vty_subscr.h"
-#include "hlr_ussd.h"
-#include "gsup_server.h"
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/hlr_vty.h>
+#include <osmocom/hlr/hlr_vty_subscr.h>
+#include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/gsup_server.h>
 
 struct cmd_node hlr_node = {
 	HLR_NODE,
@@ -150,7 +150,7 @@ DEFUN(cfg_hlr_gsup_bind_ip,
  * USSD Entity
  ***********************************************************************/
 
-#include "hlr_ussd.h"
+#include <osmocom/hlr/hlr_ussd.h>
 
 #define USSD_STR "USSD Configuration\n"
 #define UROUTE_STR "Routing Configuration\n"

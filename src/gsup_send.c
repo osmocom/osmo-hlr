@@ -21,8 +21,8 @@
 
 #include <errno.h>
 
-#include "gsup_server.h"
-#include "gsup_router.h"
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/gsup_router.h>
 
 #include <osmocom/core/logging.h>
 

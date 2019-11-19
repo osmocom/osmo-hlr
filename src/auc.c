@@ -23,8 +23,8 @@
 #include <osmocom/core/utils.h>
 #include <osmocom/crypt/auth.h>
 
-#include "logging.h"
-#include "rand.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/rand.h>
 
 #define hexb(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 #define hex(buf,sz) osmo_hexdump_nospc((void*)buf, sz)

@@ -27,8 +27,8 @@
 #include <osmocom/core/timer.h>
 #include <osmocom/gsm/gsup.h>
 
-#include "db.h"
-#include "gsup_server.h"
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/gsup_server.h>
 
 #define CANCEL_TIMEOUT_SECS	30
 #define ISD_TIMEOUT_SECS	30

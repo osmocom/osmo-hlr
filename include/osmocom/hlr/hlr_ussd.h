@@ -5,7 +5,7 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/gsup.h>
 
-#include "gsup_server.h"
+#include <osmocom/hlr/gsup_server.h>
 
 #define NCSS_GUARD_TIMEOUT_DEFAULT 30
 

@@ -33,11 +33,11 @@
 
 #include <sqlite3.h>
 
-#include "logging.h"
-#include "hlr.h"
-#include "db.h"
-#include "gsup_server.h"
-#include "luop.h"
+#include <osmocom/hlr/logging.h>
+#include <osmocom/hlr/hlr.h>
+#include <osmocom/hlr/db.h>
+#include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/luop.h>
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
