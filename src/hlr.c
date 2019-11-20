@@ -695,6 +695,7 @@ int main(int argc, char **argv)
 	INIT_LLIST_HEAD(&g_hlr->euse_list);
 	INIT_LLIST_HEAD(&g_hlr->ss_sessions);
 	INIT_LLIST_HEAD(&g_hlr->ussd_routes);
+	INIT_LLIST_HEAD(&g_hlr->mslookup.server.local_site_services);
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
 
 	/* Init default (call independent) SS session guard timeout value */
