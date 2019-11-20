@@ -11,6 +11,7 @@ noinst_HEADERS = \
 	logging.h \
 	lu_fsm.h \
 	mslookup_server.h \
+	mslookup_server_mdns.h \
 	rand.h \
 	timestamp.h \
 	$(NULL)

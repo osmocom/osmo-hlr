@@ -1,9 +1,6 @@
-/* OsmoHLR VTY implementation */
-
-/* (C) 2016 sysmocom s.f.m.c. GmbH <info@sysmocom.de>
- * All Rights Reserved
+/* Copyright 2019 by sysmocom s.f.m.c. GmbH <info@sysmocom.de>
  *
- * Author: Neels Hofmeyr <nhofmeyr@sysmocom.de>
+ * All Rights Reserved
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,21 +19,16 @@
 
 #pragma once
 
-#include <osmocom/core/logging.h>
-#include <osmocom/vty/vty.h>
-#include <osmocom/vty/command.h>
-#include <osmocom/hlr/hlr.h>
+#include <stdbool.h>
+#include <osmocom/core/sockaddr_str.h>
+#include <osmocom/mslookup/mdns_sock.h>
 
-enum hlr_vty_node {
-	HLR_NODE = _LAST_OSMOVTY_NODE + 1,
-	GSUP_NODE,
-	EUSE_NODE,
-	MSLOOKUP_NODE,
-	MSLOOKUP_SERVER_NODE,
-	MSLOOKUP_SERVER_MSC_NODE,
+struct osmo_mslookup_server_mdns {
+	struct osmo_mslookup_server *mslookup;
+	struct osmo_sockaddr_str bind_addr;
+	struct osmo_mdns_sock *sock;
 };
 
-int hlr_vty_is_config_node(struct vty *vty, int node);
-int hlr_vty_go_parent(struct vty *vty);
-void hlr_vty_init(void);
-void dgsm_vty_init(void);
+struct osmo_mslookup_server_mdns *osmo_mslookup_server_mdns_start(void *ctx, const struct osmo_sockaddr_str *bind_addr);
+void osmo_mslookup_server_mdns_stop(struct osmo_mslookup_server_mdns *server);
+void mslookup_server_mdns_config_apply();

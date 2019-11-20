@@ -26,6 +26,7 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/ipa.h>
 #include <osmocom/core/tdef.h>
+#include <osmocom/core/sockaddr_str.h>
 
 #define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
 
@@ -70,9 +71,19 @@ struct hlr {
 	unsigned int subscr_create_on_demand_rand_msisdn_len;
 
 	struct {
+		bool allow_startup;
 		struct {
+			/* Whether the mslookup server should be active in general (all lookup methods) */
+			bool enable;
 			uint32_t local_attach_max_age;
 			struct llist_head local_site_services;
+			struct {
+				/* Whether the mDNS method of the mslookup server should be active. */
+				bool enable;
+				/* The mDNS bind address as set by the VTY, not necessarily in use. */
+				struct osmo_sockaddr_str bind_addr;
+				struct osmo_mslookup_server_mdns *running;
+			} mdns;
 		} server;
 	} mslookup;
 };

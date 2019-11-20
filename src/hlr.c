@@ -708,6 +708,7 @@ int main(int argc, char **argv)
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
 	hlr_vty_init();
+	dgsm_vty_init();
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {

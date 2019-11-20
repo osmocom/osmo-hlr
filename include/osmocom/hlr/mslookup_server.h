@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <osmocom/gsupclient/gsup_peer_id.h>
+#include <osmocom/mslookup/mslookup.h>
+
 struct osmo_mslookup_query;
 struct osmo_mslookup_result;
 
@@ -59,7 +62,6 @@ int mslookup_server_msc_service_del(struct mslookup_server_msc_cfg *msc, const c
 
 extern const struct osmo_ipa_name mslookup_server_msc_wildcard;
 struct mslookup_server_msc_cfg *mslookup_server_msc_get(const struct osmo_ipa_name *msc_name, bool create);
-
 
 struct mslookup_service_host *mslookup_server_get_local_gsup_addr();
 void mslookup_server_rx(const struct osmo_mslookup_query *query,

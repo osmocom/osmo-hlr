@@ -15,6 +15,7 @@ OsmoHLR> list
   show gsup-connections
   subscriber (imsi|msisdn|id|imei) IDENT show
   show subscriber (imsi|msisdn|id|imei) IDENT
+  show mslookup services
 
 OsmoHLR> enable
 OsmoHLR# ?
@@ -25,9 +26,11 @@ OsmoHLR# configure terminal
 OsmoHLR(config)# ?
 ...
   hlr       Configure the HLR
+  mslookup  Configure Distributed GSM mslookup
 OsmoHLR(config)# list
 ...
   hlr
+  mslookup
 
 OsmoHLR(config)# hlr
 OsmoHLR(config-hlr)# ?
