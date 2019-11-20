@@ -1,0 +1,485 @@
+== Distributed GSM / Multicast MS Lookup
+
+Distributed GSM (D-GSM) allows independent mobile core network stacks to provide voice, SMS and Roaming services to each
+other, without the need for centralised entities or administration authority, and in a way that is resilient against
+unstable network links between sites.
+
+D-GSM aims at communal networks, where several independent sites, let's call them villages, each have a full mobile core
+network infrastructure. It elegantly provides ad-hoc service for subscribers moving across villages, and allows villages
+to dynamically join or leave the cooperative network without the need for configuration changes at other sites.
+
+A challenge for linking separate sites is to find the current location of a subscriber. Typically, in mobile networks, a
+centralized entity keeps track of where to Page for subscribers. Running several fully independent sites with unreliable
+links between them makes it hard to provide such centralisation.
+
+D-GSM finds subscribers by mslookup, a service provided by OsmoHLR, typically using multicast DNS queries.  This allows
+routing Location Updating requests, calls, and SMS to the right site without administrative delay nor the need for a
+reliable link to a central database.
+
+D-GSM is highly resilient against single sites or links becoming temporarily unavailable. Service between still
+reachable sites simply continues; Service to a disconnected site resumes as soon as it becomes reachable again.
+
+This brings an entirely new paradigm to mobile core network infrastructure: as sites become reachable on the IP network
+and join the common IP multicast group, services between them become available immediately. Basically, the only premise
+is that IP routing and multicast works across sites, and that each site uses unique IPA names in the GSUP config.
+
+This chapter describes how D-GSM and mslookup work, and how to configure sites to use D-GSM, using Osmocom core network
+infrastructure.
+
+=== Finding Subscribers: mslookup Clients
+
+There are two fundamentally distinct subscriber lookups provided by the mslookup service.
+
+==== Find the Current Location of an MSISDN
+
+[[fig_dgsm_connect]]
+.mslookup for connecting subscribers: Alice is visiting village C; a phone call gets routed directly to her current location independently from her resident village infrastructure
+[graphviz]
+----
+digraph G {
+rankdir=LR
+	
+subgraph cluster_village_b {
+	label="Village B"
+	ms_bob [label="Bob\n(from village B)",shape=box]
+	pbx_b [label="SIP B"]
+}
+
+subgraph cluster_village_c {
+	label="Village C"
+	ms_alice [label="Alice\n(from village A)",shape=box]
+	msc_c [label="MSC C"]
+	hlr_c [label="HLR C"]
+	sip_c [label="SIP C"]
+}
+
+ms_alice -> msc_c [style=dashed,arrowhead=none]
+msc_c -> hlr_c [label="attached",style=dashed,arrowhead=none]
+ms_bob -> pbx_b [label="call Alice"]
+pbx_b -> hlr_c [label="mslookup by MSISDN",style=dotted,dir=both]
+pbx_b -> sip_c -> msc_c -> ms_alice [label="call"]
+}
+----
+
+For example, if a subscriber is currently visiting another village, establish a phone call / send SMS towards that
+village.
+
+- To deliver a phone call, a SIP agent integrates an mslookup client to request the SIP service of an MSISDN's current
+  location (example: <<dgsm_conf_dialplan>>). It receives an IP address and port to send the SIP Invite to.
+
+- To deliver an SMS, an ESME integrates an mslookup client to request the SMPP service of an MSISDN's current location
+  (example: <<dgsm_conf_esme_smpp>>).
+
+The current location of a subscriber may change at any time, and, when moving across locations, a subscriber may
+suddenly lose reception to the previous location without explicitly detaching. Hence an mslookup request for the current
+location of an MSISDN may get numerous responses. To find the currently valid location, mslookup includes the age of the
+subscriber record, i.e. how long ago the subscriber was last reached. The one response with the youngest age reflects
+the current location.
+
+In order to evaluate several responses, mslookup always waits for a fixed amount of time (1 second), and then evaluates
+the available responses.
+
+Services are not limited to SIP and SMPP, arbitrarily named services can be added to the mslookup configuration.
+
+.Message sequence for locating an MSISDN to deliver a voice call
+["mscgen"]
+----
+msc {
+  hscale="2";
+  moms[label="MS,BSS\nvillage A"],momsc[label="MSC,MGW\nvillage A"],mosipcon[label="osmo-sip-connector\nvillage A"],mopbx[label="PBX\nvillage A"],mthlr[label="OsmoHLR\nvillage B"],mtsipcon[label="osmo-sip-connector\nvillage B"],mtmsc[label="MGW,MSC\nvillage B"],mtms[label="RAN,MS\nvillage B"];
+
+  moms =>> momsc [label="CC Setup"];
+  momsc =>> mosipcon [label="MNCC_SETUP_IND"];
+  mosipcon =>> mopbx [label="SIP INVITE"];
+  mopbx rbox mopbx [label="dialplan: launch mslookup by MSISDN"];
+  --- [label="multicast-DNS query to all connected sites"];
+  ...;
+  mopbx <<= mthlr [label="mDNS response\n(age)"];
+  mopbx rbox mopbx [label="wait ~ 1s for more mDNS responses"];
+  ...;
+  mopbx =>> mtsipcon [label="SIP INVITE (MT)"];
+  mtmsc <<= mtsipcon [label="MNCC_SETUP_REQ"];
+  mtms <<= mtmsc [label="Paging (CC)"];
+  moms rbox mtms [label="voice call commences"];
+
+}
+----
+
+==== Find the Home HLR for an IMSI
+
+[[fig_dgsm_roaming]]
+.mslookup for Roaming: Alice visits village B; she can attach to the local mobile network, which proxies HLR administration to her home village.
+[graphviz]
+----
+digraph G {
+rankdir=LR
+	
+subgraph cluster_village_b {
+	label="Village B"
+
+	ms_alice [label="Alice\n(from village A)",shape=box]
+	msc_b [label="MSC B"]
+	hlr_b [label="HLR B"]
+}
+
+subgraph cluster_village_a {
+	label="Village A"
+	hlr_alice [label="Alice's home HLR"]
+}
+
+ms_alice -> msc_b -> hlr_b [label="Location\nUpdating"]
+hlr_b -> hlr_alice [label="mslookup by IMSI",style=dotted,dir=both]
+hlr_b -> hlr_alice [label="GSUP proxy forwarding"]
+}
+----
+
+For example, when attaching to a local network, a local resident gets serviced directly by the local village's HLR,
+while a visitor from another village gets serviced by the remote village's HLR (Roaming).
+
+A home HLR typically stays the same for a given IMSI. If the home site is reachable, there should be exactly one
+response to an mslookup request asking for it. The age of such a home-HLR response is always sent as zero.
+
+If a response's age is zero, mslookup does not wait for further responses and immediately uses the result.
+
+If there were more than one HLR accepting service for an IMSI, the one with the shortest response latency is used.
+
+=== mslookup Configuration
+
+OsmoHLR the main mslookup agent. It provides the responses for both current location services as well as for locating
+the fixed home-HLR. But naturally, depending on the mslookup request's purpose, different OsmoHLR instances will respond
+for a given subscriber.
+
+- When querying the home HLR, it is always the (typically single) home HLR instance that sends the mslookup response. As
+  soon as it finds the queried IMSI in the local HLR database, an OsmoHLR will respond to home-HLR requests.
+  In <<fig_dgsm_roaming>>, Alice's home HLR responds to the Roaming request ("where is the home HLR?").
+
+- When querying the location of an MSISDN, it is always the HLR proxy nearest to the servicing MSC that sends the
+  mslookup response. Even though the home HLR keeps the Location Updating record also for Roaming cases, it will only
+  respond to an mslookup service request if the subscriber has attached at a directly connected MSC. If attached at a
+  remote MSC, that MSC's remote HLR will be the GSUP proxy for the home HLR, and the remote HLR is responsible for
+  responding to service requests.
+  In <<fig_dgsm_roaming>>, HLR B is the nearest proxy and will answer all service requests ("where is this MSISDN?").
+  Alice's home HLR will not answer service requests, because it detects that the servicing MSC is connected via another
+  HLR proxy.
+
+[[dgsm_example_config]]
+==== Example
+
+Here is an osmo-hlr.cfg mslookup configuration example for one site, which is explained in subsequent chapters.
+
+ hlr
+  gsup
+   bind ip 10.9.8.7
+   ipa-name hlr-23
+ mslookup
+  mdns bind
+  server
+   service sip.voice at 10.9.8.7 5060
+   service smpp.sms at 10.9.8.7 2775
+
+OsmoHLR has both an mslookup server and a client.
+
+- The server responds to incoming service and home-HLR requests, when the local HLR is responsible.
+- The client is used as GSUP proxy to a remote home HLR (found by mslookup upon a locally unknown IMSI).
+- The client may also be used for forwarding SMS-over-GSUP.
+
+The mslookup service can be implemented by various methods.
+At the time of writing, the only method implemented is mDNS.
+
+==== mDNS
+
+The stock mslookup method is mDNS, multicast DNS. It consists of standard DNS encoding according to <<ietf-rfc1035>> and
+<<ietf-rfc3596>>, but sent and received on IP multicast. In the response, standard A and AAAA records return the
+service's IP address, while additional TXT records provide the service's port number and the MS attach age.
+
+TIP: To watch D-GSM mDNS conversations in wireshark, select "udp.port == 4266" (the default mslookup mDNS port
+number), right click on the packet to "Decode as...", and select "DNS".
+
+In OsmoHLR, the mDNS server and client are typically both enabled at the same time:
+
+ mslookup
+  mdns bind
+
+Server and client can also be enabled/disabled individually:
+
+ mslookup
+  server
+   mdns bind
+  client
+   mdns bind
+
+These examples use the default mslookup multicast IP address and port. It is possible to configure custom IP address and
+port, but beware that the IP address must be from a multicast range, see <<ietf-rfc5771>>:
+
+ mslookup
+  mdns bind 239.192.23.42 4266
+
+==== Server: Site Services
+
+The mslookup server requires a list of service addresses provided at the local site, in order to respond to service
+requests matching locally attached subscribers.
+
+ mslookup
+  server
+   service sip.voice at 10.9.8.7 5060
+   service smpp.sms at 10.9.8.7 2775
+
+In this example:
+
+- "10.9.8.7 5060" are the IP address and port on which the local site's osmo-sip-connector is bound to receive SIP
+  Invite requests.
+- "10.9.8.7 2775" are the local site's OsmoMSC SMPP bind address and port.
+
+Obviously, these IP addresses must be routable back to this site from all other sites. Using link-local or "ANY"
+addresses, like 127.0.0.1 or 0.0.0.0, will not work here. Instead, each service config requires a public IP address that
+all remote requestors are able to reach (not necessarily on the host that osmo-hlr is running on).
+
+If a site has more than one MSC, services can also be configured for each MSC individually, keyed by the IPA unit name
+that each MSC sends on the GSUP link:
+
+ mslookup
+  server
+   msc ipa-name msc-262-42-0
+    service sip.voice at 10.11.12.13 5060
+    service smpp.sms at 10.11.12.13 2775
+   msc ipa-name msc-901-70-0
+    service sip.voice at 10.9.8.7 5060
+    service smpp.sms at 10.9.8.7 2775
+
+Here, "msc-262-42-0" is the IPA name of a local OsmoMSC instance. To configure an OsmoMSC's IPA name on the GSUP link,
+see osmo-msc.cfg, setting `hlr` / `ipa-name`.
+
+For mslookup service responses, only Location Updatings in the Circuit Switched domain are relevant. OsmoHLR does manage
+IMSIs attaching in the Packet Switched domain (via an SGSN) similarly to Circuit Switched (via an MSC), but mslookup
+completely ignores the Packet Switched attach status.
+
+==== Server: Own GSUP Address
+
+When responding to home-HLR requests, OsmoHLR implicitly by default responds with its locally configured GSUP bind
+address (setting `hlr` / `gsup` / `bind ip`). If required, an explicit local GSUP address and port can be configured,
+for example:
+
+ hlr
+  gsup
+   bind ip 0.0.0.0
+   ipa-name hlr-23
+ mslookup
+  server
+   # osmo-hlr's own GSUP address to send in mslookup responses:
+   service gsup.hlr at 10.9.8.7 4222
+
+The gsup.hlr service can only be configured globally (because requests come from arbitrary mDNS clients, before a
+Location Updating has associated the IMSI with the requesting MSC).
+
+==== Client IPA Naming
+
+For reliable GSUP proxy routing to a remote HLR (Roaming), it is important that each GSUP client, i.e. each HLR, MSC and
+SGSN instance, has a unique IPA name.
+
+Example for configuring an OsmoHLR instance's IPA name:
+
+ hlr
+  gsup
+   ipa-name hlr-23
+
+Here, "hlr-23" is the unique identification of this OsmoHLR instance across all potentially connected D-GSM sites.
+
+Furthermore, each MSC and SGSN must have a uniquely distinct IPA name across all sites (here "msc-262-42-0" and
+"msc-901-70-0" are used as example IPA names for local MSCs).
+
+When this OsmoHLR connects to a remote HLR, be it for GSUP proxying or SMS-over-GSUP, it communicates its own IPA name
+(on GSUP link-up) as well as the IPA name of the requesting client MSC/SGSN (as Source Name in each message) to the
+remote OsmoHLR GSUP server. These names are used to route GSUP responses back to the respective requesting peer.
+
+If two MSCs were accidentally configured with identical names, a problem will occur as soon as both MSCs attempt to
+attach to the same OsmoHLR (either directly or via GSUP proxying). The MSC that shows up first will work normally, but
+any duplicate that shows up later will be rejected, since a route for its name already exists.
+
+=== Queries
+
+In URL notation, typical mslookup queries look like:
+
+ gsup.hlr.123456789.imsi
+ sip.voice.123.msisdn
+ smpp.sms.123.msisdn
+
+A query consists of
+
+- a service name ("gsup.hlr"),
+- an id ("123456789"),
+- the id type ("imsi").
+
+The calling client also defines a timeout to wait for responses.
+
+The mslookup ID types are fixed, while service names can be chosen arbitrarily.
+
+.mslookup ID types, no other ID types are understood by mslookup
+[options="header",width="100%",cols="20%,80%"]
+|===
+|ID Type|Description
+|imsi|An IMSI as existing in an OsmoHLR subscriber database
+|msisdn|A phone number as configured in an OsmoHLR subscriber database
+|===
+
+.mslookup service name conventions, arbitrary service names can be added as required
+[options="header",width="100%",cols="20%,20%,60%"]
+|===
+|Service Name|Protocol|Description
+|gsup.hlr | GSUP | Home HLR's GSUP server, to handle Location Updating related procedures
+|sip.voice | SIP | OsmoSIPConnector, to receive a SIP Invite (MT side of a call)
+|smpp.sms | SMPP | Destination OsmoMSC (or other SMPP server) to deliver an SMS to the recipient
+|gsup.sms | GSUP | GSUP peer to deliver an SMS to the recipient using SMS-over-GSUP
+|===
+
+Arbitrarily named services can be added to the mslookup configuration and queried by mslookup clients; as soon as a
+service name is present in osmo-hlr.cfg, it can be queried from any mslookup client.
+
+Service names should consist of a protocol name (like "sip", "gsup", "english") and an intended action/entity (like
+"voice", "hlr", "greeting").
+
+=== Service Client Implementation
+
+In principle, arbitrary services could query target addresses via mslookup, leaving it up to any and all kinds of
+clients to find their respective destination addresses. But of course, mslookup was designed with specific services in
+mind, namely:
+
+- SIP call agents and
+- SMS delivery (an ESME or SMSC)
+
+The following chapters describe examples of setting up a working distributed core network providing SIP voice calls and
+SMS forwarding across sites.
+
+==== mslookup Library
+
+The OsmoHLR provides an mslookup client C library, libosmo-mslookup. Service lookups can be integrated directly
+in client programs using this library. However, its mDNS implementation requires the libosmocore select() loop, which
+can be challenging to integrate in practice. An alternative solution is the osmo-mslookup-client tool.
+
+[[dgsm_osmo_mslookup_client]]
+==== osmo-mslookup-client
+
+The mslookup C library is available, but often, a simpler approach for client implementations is desirable:
+
+- When querying for a service address, the client is typically interested in the single final best result (youngest age
+  / first responding home HLR).
+- Voice call and SMS clients typically would block until an mslookup result is known. For example, the FreeSwitch
+  dialplan integration expects a result synchronously, i.e. without waiting for mslookup responses via a select() loop.
+- Integrating the libosmocore select() loop required for mDNS can break the already existing socket handling in the
+  client program.
+
+The osmo-mslookup-client cmdline tool provides a trivial way to synchronously acquire the single result for an mslookup
+request. The service client can invoke an osmo-mslookup-client process per request and read the result from stdout.
+
+Each invocation obviously spawns a separate process and opens a multicast socket for mDNS. For better scalability,
+osmo-mslookup-client can also be run as a daemon, providing results via a unix domain socket. Using synchronous write()
+and recv() allows blocking until a result is received without interfering with the client program's select() setup.
+
+By itself, osmo-mslookup-client is also helpful as a diagnostic tool:
+
+----
+$ osmo-mslookup-client sip.voice.1001.msisdn
+sip.voice.1001.msisdn	ok	10.9.8.7	5060
+
+$ osmo-mslookup-client gsup.hlr.901700000014701.imsi
+gsup.hlr.901700000014701.imsi	ok	10.9.8.7	4222
+
+$ osmo-mslookup-client gsup.hlr.111111.imsi
+gsup.hlr.111111.imsi	not-found
+
+$ osmo-mslookup-client gsup.hlr.1001.msisdn sip.voice.1001.msisdn smpp.sms.1001.msisdn foo.1001.msisdn
+gsup.hlr.1001.msisdn	ok	10.9.8.7	4222
+foo.1001.msisdn	not-found
+smpp.sms.1001.msisdn	ok	10.9.8.7	2775
+sip.voice.1001.msisdn	ok	10.9.8.7	5060
+
+$ osmo-mslookup-client --csv-headers gsup.hlr.901700000014701.imsi
+QUERY	RESULT	V4_IP	V4_PORT	V6_IP	V6_PORT
+gsup.hlr.901700000014701.imsi	ok	10.9.8.7	4222
+
+$ osmo-mslookup-client -f json gsup.hlr.901700000014701.imsi
+{"query": "gsup.hlr.901700000014701.imsi", "result": "ok", "v4": ["10.9.8.7", "4222"]}
+----
+
+For full help including example client invocations in Python, see the output of:
+
+ osmo-mslookup-client -h
+
+==== SIP Service Client
+
+[[dgsm_conf_dialplan]]
+===== FreeSwitch dialplan.py
+
+The FreeSWITCH PBX software <<freeswitch_pbx>> offers a Python integration to determine a SIP call recipient by a custom
+dialplan implementation. An example dialplan implementation for FreeSWITCH that uses D-GSM mslookup is provided in the
+osmo-hlr source tree under `contrib`, called `freeswitch_dialplan_dgsm.py`.
+
+To integrate it with your FREESWITCH setup, add a new `extension` block to your `dialplan/public.xml`:
+
+----
+    <extension name="outbound">
+      <condition field="destination_number" expression=".*">
+	<action application="set" data="hangup_after_bridge=true"/>
+	<action application="set" data="session_in_hangup_hook=true"/>
+	<action application="set" data="ringback=%(2000, 4000, 440.0, 480.0)"/>
+	<action application="python" data="freeswitch_dialplan_dgsm"/>
+      </condition>
+    </extension>
+----
+
+Make sure that the dir containing `freeswitch_dialplan_dgsm.py` is in your `PYTHONPATH` environment variable, and start
+the server:
+
+----
+$ export PYTHONPATH="$PYTHONPATH:/home/user/code/osmo-hlr/contrib/dgsm"
+$ freeswitch -nf -nonat -nonatmap -nocal -nort -c
+----
+
+==== SMS Service Client
+
+[[dgsm_conf_esme_smpp]]
+===== SMS via SMPP Port
+
+An example ESME using D-GSM mslookup, `esme_dgsm.py`, is provided in the osmo-hlr source tree under `contrib`. It
+attaches to OsmoMSC's SMPP port to send SMS to recipients determined by mslookup.
+
+OsmoMSC should be configured as "smpp-first", so that all SMS routing is determined by mslookup. If configured without
+smpp-first, OsmoMSC may try to deliver an SMS locally, even though the recipient has recently moved to a different site.
+
+An example OsmoMSC configuration to work with esme_dgsm.py:
+
+----
+smpp
+ local-tcp-ip 127.0.0.1 2775
+ system-id test-msc
+ policy closed
+ smpp-first
+ # outgoing to esme_dgsm.py
+ esme OSMPP
+  no alert-notifications
+  password foo
+  default-route
+ # incoming from esme_dgsm.py
+ esme ISMPP
+  no alert-notifications
+  password foo
+----
+
+Launch esme_dgsm.py alongside OsmoMSC:
+
+----
+./esme_dgsm.py --src-host 127.0.0.1
+----
+
+esme_dgsm.py will be notified via SMPP for each SMS to be delivered, and will forward them either to a remote
+recipient, or back to the same OsmoMSC, depending on the mslookup result. If the MSISDN is not reachable (or
+esme_dgsm.py can't handle the message for other reasons), it returns the RSYSERR code back to OsmoMSC.
+
+Note that the esme_dgsm.py is a proof of concept and should not be used in production. It has several limitations, such
+as not supporting multipart SMS messages.
+
+===== SMS-Over-GSUP
+
+The GSUP protocol defines SMS delivery messages. When OsmoMSC is configured to deliver SMS via GSUP, MO SMS are directly
+forwarded to the HLR, which will determine where to forward the SMS-over-GSUP messages using its mslookup client.
+
+FIXME implement this
