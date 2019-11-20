@@ -27,6 +27,9 @@ struct osmo_gsup_server {
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
 	struct llist_head routes;
+
+	/* Proxy requests from this server's clients to remote GSUP servers. */
+	struct proxy *proxy;
 };
 
 
@@ -71,3 +74,5 @@ int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, 
 					    uint8_t *msisdn_enc, size_t msisdn_enc_size,
 				            uint8_t *apn_buf, size_t apn_buf_size,
 					    enum osmo_gsup_cn_domain cn_domain);
+int osmo_gsup_forward_to_local_peer(struct osmo_gsup_server *server, const struct osmo_cni_peer_id *to_peer,
+				    struct osmo_gsup_req *req, struct osmo_gsup_message *modified_gsup);

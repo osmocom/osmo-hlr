@@ -36,6 +36,7 @@
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/gsm_utils.h>
 #include <osmocom/gsm/gsm23003.h>
+#include <osmocom/mslookup/mslookup_client.h>
 
 #include <osmocom/gsupclient/cni_peer_id.h>
 #include <osmocom/hlr/db.h>
@@ -47,6 +48,8 @@
 #include <osmocom/hlr/rand.h>
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/dgsm.h>
+#include <osmocom/hlr/proxy.h>
 #include <osmocom/hlr/lu_fsm.h>
 #include <osmocom/mslookup/mdns.h>
 
@@ -500,6 +503,16 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		}
 	}
 
+	/* Distributed GSM: check whether to proxy for / lookup a remote HLR.
+	 * It would require less database hits to do this only if a local-only operation fails with "unknown IMSI", but
+	 * it becomes semantically easier if we do this once-off ahead of time. */
+	if (osmo_mslookup_client_active(g_hlr->mslookup.client.client)
+	    || osmo_sockaddr_str_is_nonzero(&g_hlr->mslookup.client.gsup_gateway_proxy)) {
+		if (dgsm_check_forward_gsup_msg(req))
+			return 0;
+	}
+
+	/* HLR related messages that are handled at this HLR instance */
 	switch (req->gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:
@@ -699,6 +712,7 @@ int main(int argc, char **argv)
 	INIT_LLIST_HEAD(&g_hlr->mslookup.server.local_site_services);
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
 	g_hlr->mslookup.server.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
+	g_hlr->mslookup.client.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
 
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
@@ -708,6 +722,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Error initializing logging\n");
 		exit(1);
 	}
+
+	/* Set up llists and objects, startup is happening from VTY commands. */
+	dgsm_init(hlr_ctx);
 
 	osmo_stats_init(hlr_ctx);
 	vty_init(&vty_info);
@@ -764,9 +781,12 @@ int main(int argc, char **argv)
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
 	}
+	proxy_init(g_hlr->gs);
 
 	g_hlr->ctrl_bind_addr = ctrl_vty_get_bind_addr();
 	g_hlr->ctrl = hlr_controlif_setup(g_hlr);
+
+	dgsm_start(hlr_ctx);
 
 	osmo_init_ignore_signals();
 	signal(SIGINT, &signal_hdlr);
@@ -784,6 +804,7 @@ int main(int argc, char **argv)
 	while (!quit)
 		osmo_select_main_ctx(0);
 
+	dgsm_stop();
 
 	osmo_gsup_server_destroy(g_hlr->gs);
 	db_close(g_hlr->dbc);
