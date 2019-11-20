@@ -1,0 +1,5 @@
+usr/include/osmocom/mslookup
+usr/lib/*/libosmo-mslookup*.a
+usr/lib/*/libosmo-mslookup*.so
+usr/lib/*/libosmo-mslookup*.la
+usr/lib/*/pkgconfig/libosmo-mslookup.pc

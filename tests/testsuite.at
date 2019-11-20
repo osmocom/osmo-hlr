@@ -39,3 +39,15 @@ cat $abs_srcdir/db_upgrade/db_upgrade_test.ok > expout
 cat $abs_srcdir/db_upgrade/db_upgrade_test.err > experr
 AT_CHECK([$abs_srcdir/db_upgrade/db_upgrade_test.sh $abs_srcdir/db_upgrade $abs_builddir/db_upgrade], [], [expout], [experr])
 AT_CLEANUP
+
+AT_SETUP([mslookup])
+AT_KEYWORDS([mslookup])
+cat $abs_srcdir/mslookup/mslookup_test.err > experr
+AT_CHECK([$abs_top_builddir/tests/mslookup/mslookup_test], [0], [ignore], [experr])
+AT_CLEANUP
+
+AT_SETUP([mslookup_client])
+AT_KEYWORDS([mslookup_client])
+cat $abs_srcdir/mslookup/mslookup_client_test.err > experr
+AT_CHECK([$abs_top_builddir/tests/mslookup/mslookup_client_test], [0], [ignore], [experr])
+AT_CLEANUP

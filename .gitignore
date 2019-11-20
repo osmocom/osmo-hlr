@@ -51,6 +51,8 @@ tests/gsup/gsup_test
 tests/db/db_test
 tests/hlr_vty_test.db*
 tests/db_upgrade/*.dump
+tests/mslookup/mslookup_client_test
+tests/mslookup/mslookup_test
 
 # manuals
 doc/manuals/*.html

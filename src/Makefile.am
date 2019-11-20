@@ -1,4 +1,7 @@
-SUBDIRS = gsupclient
+SUBDIRS = \
+	gsupclient \
+	mslookup \
+	$(NULL)
 
 AM_CFLAGS = \
 	-Wall \
