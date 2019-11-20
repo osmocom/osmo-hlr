@@ -1,1 +1,4 @@
-SUBDIRS = systemd
+SUBDIRS = \
+	systemd \
+	dgsm \
+	$(NULL)

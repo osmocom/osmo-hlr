@@ -185,6 +185,7 @@ AC_OUTPUT(
 	doc/manuals/Makefile
 	contrib/Makefile
 	contrib/systemd/Makefile
+	contrib/dgsm/Makefile
 	tests/Makefile
 	tests/auc/Makefile
 	tests/auc/gen_ts_55_205_test_sets/Makefile
