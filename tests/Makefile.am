@@ -3,6 +3,7 @@ SUBDIRS = \
 	gsup_server \
 	db \
 	db_upgrade \
+	mslookup \
 	$(NULL)
 
 # The `:;' works around a Bash 3.2 bug when the output is not writeable.

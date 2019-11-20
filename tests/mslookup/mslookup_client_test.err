@@ -1,0 +1,47 @@
+Total time passed: 0.000000 s
+fake_lookup_request(gsup.hlr.1234567.imsi)
+fake_lookup_request(sip.voice.112.msisdn)
+fake_lookup_request(smpp.sms.00000.msisdn)
+fake_lookup_request(gsup.hlr.666.msisdn)
+Total time passed: 0.200000 s
+Total time passed: 0.400000 s
+Total time passed: 0.600000 s
+osmo_mslookup_client_rx_result(): sip.voice.112.msisdn -> ipv4: 66.66.66.66:666 -> ipv6: 6666:6666:6666::6:666 (age=423) (not-last)
+Total time passed: 0.800000 s
+osmo_mslookup_client_rx_result(): sip.voice.112.msisdn -> ipv4: 112.112.112.112:23 (age=235) (not-last)
+Total time passed: 1.000000 s
+osmo_mslookup_client_rx_result(): gsup.hlr.1234567.imsi -> ipv4: 12.34.56.7:42 -> ipv6: [be:ef:ed:ca:fe:fa:ce::1]:42 (age=0) (not-last)
+result_cb(): gsup.hlr.1234567.imsi -> ipv4: 12.34.56.7:42 -> ipv6: [be:ef:ed:ca:fe:fa:ce::1]:42 (age=0) (last)
+fake_lookup_request_cleanup() ok
+Total time passed: 1.200000 s
+osmo_mslookup_client_rx_result(): sip.voice.112.msisdn -> ipv4: 99.99.99.99:999 -> ipv6: 9999:9999:9999::9:999 (age=335) (not-last)
+Total time passed: 1.400000 s
+Total time passed: 1.600000 s
+osmo_mslookup_client_rx_result(): sip.voice.112.msisdn -> ipv4: 99.99.99.99:999 (age=999) (not-last)
+Total time passed: 1.800000 s
+Total time passed: 2.000000 s
+Total time passed: 2.200000 s
+Total time passed: 2.400000 s
+Total time passed: 2.600000 s
+Total time passed: 2.800000 s
+Total time passed: 3.000000 s
+result_cb(): sip.voice.112.msisdn -> ipv4: 112.112.112.112:23 (age=235) (last)
+fake_lookup_request_cleanup() ok
+Total time passed: 3.200000 s
+Total time passed: 3.400000 s
+Total time passed: 3.600000 s
+Total time passed: 3.800000 s
+Total time passed: 4.000000 s
+Total time passed: 4.200000 s
+Total time passed: 4.400000 s
+Total time passed: 4.600000 s
+Total time passed: 4.800000 s
+Total time passed: 5.000000 s
+result_cb(): smpp.sms.00000.msisdn not-found (last)
+fake_lookup_request_cleanup() ok
+Total time passed: 5.200000 s
+Total time passed: 5.400000 s
+Total time passed: 5.600000 s
+Total time passed: 5.800000 s
+Total time passed: 6.000000 s
+fake_lookup_request_cleanup() ok
