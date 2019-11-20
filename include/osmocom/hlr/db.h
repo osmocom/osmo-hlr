@@ -28,6 +28,7 @@ enum stmt_idx {
 	DB_STMT_AUC_3G_INSERT,
 	DB_STMT_AUC_3G_DELETE,
 	DB_STMT_SET_LAST_LU_SEEN,
+	DB_STMT_SET_LAST_LU_SEEN_PS,
 	DB_STMT_EXISTS_BY_IMSI,
 	DB_STMT_EXISTS_BY_MSISDN,
 	_NUM_DB_STMT
@@ -95,6 +96,7 @@ struct hlr_subscriber {
 	bool		ms_purged_cs;
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
+	time_t		last_lu_seen_ps;
 };
 
 /* A format string for use with strptime(3). This format string is

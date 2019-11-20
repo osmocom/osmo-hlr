@@ -47,12 +47,20 @@ get_datestr(const time_t *t, char *datebuf)
 	return s;
 }
 
+static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen)
+{
+	char datebuf[26]; /* for ctime_r(3) */
+	if (!last_lu_seen)
+		return;
+	vty_out(vty, "    last LU seen on %s: %s UTC%s", domain_label, get_datestr(&last_lu_seen, datebuf),
+		VTY_NEWLINE);
+}
+
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
 	struct osmo_sub_auth_data aud2g;
 	struct osmo_sub_auth_data aud3g;
-	char datebuf[26]; /* for ctime_r(3) */
 
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
@@ -87,8 +95,8 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS disabled%s", VTY_NEWLINE);
 	if (subscr->ms_purged_ps)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
-	if (subscr->last_lu_seen)
-		vty_out(vty, "    last LU seen: %s UTC%s", get_datestr(&subscr->last_lu_seen, datebuf), VTY_NEWLINE);
+	dump_last_lu_seen(vty, "CS", subscr->last_lu_seen);
+	dump_last_lu_seen(vty, "PS", subscr->last_lu_seen_ps);
 
 	if (!*subscr->imsi)
 		return;

@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	3
+#define CURRENT_SCHEMA_VERSION	4
 
 #define SEL_COLUMNS \
 	"id," \
@@ -45,7 +45,8 @@
 	"lmsi," \
 	"ms_purged_cs," \
 	"ms_purged_ps," \
-	"last_lu_seen"
+	"last_lu_seen," \
+	"last_lu_seen_ps" \
 
 static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
@@ -79,6 +80,7 @@ static const char *stmt_sql[] = {
 		" VALUES($subscriber_id, $algo_id_3g, $k, $op, $opc, $ind_bitlen)",
 	[DB_STMT_AUC_3G_DELETE] = "DELETE FROM auc_3g WHERE subscriber_id = $subscriber_id",
 	[DB_STMT_SET_LAST_LU_SEEN] = "UPDATE subscriber SET last_lu_seen = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
+	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
 };
@@ -423,11 +425,28 @@ static int db_upgrade_v3(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v4(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN last_lu_seen_ps TIMESTAMP default NULL",
+		"PRAGMA user_version = 4",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 4\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
 	db_upgrade_v2,
 	db_upgrade_v3,
+	db_upgrade_v4,
 };
 
 static int db_get_user_version(struct db_context *dbc)

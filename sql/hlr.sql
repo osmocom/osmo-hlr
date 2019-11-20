@@ -42,7 +42,8 @@ CREATE TABLE subscriber (
 
 	-- Timestamp of last location update seen from subscriber
 	-- The value is a string which encodes a UTC timestamp in granularity of seconds.
-	last_lu_seen TIMESTAMP default NULL
+	last_lu_seen TIMESTAMP default NULL,
+	last_lu_seen_ps TIMESTAMP default NULL
 );
 
 CREATE TABLE subscriber_apn (
@@ -77,4 +78,4 @@ CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 3;
+PRAGMA user_version = 4;

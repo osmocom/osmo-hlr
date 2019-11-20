@@ -438,14 +438,36 @@ out:
 	return ret;
 }
 
+static void parse_last_lu_seen(time_t *dst, const char *last_lu_seen_str, const char *imsi, const char *label)
+{
+	struct tm tm = {0};
+	time_t val;
+	if (!last_lu_seen_str || last_lu_seen_str[0] == '\0')
+		return;
+
+	if (strptime(last_lu_seen_str, DB_LAST_LU_SEEN_FMT, &tm) == NULL) {
+		LOGP(DAUC, LOGL_ERROR, "IMSI-%s: Last LU Seen %s: Cannot parse timestamp '%s'\n",
+		     imsi, label, last_lu_seen_str);
+		return;
+	}
+
+	errno = 0;
+	val = mktime(&tm);
+	if (val == -1) {
+		LOGP(DAUC, LOGL_ERROR, "IMSI-%s: Last LU Seen %s: Cannot convert timestamp '%s' to time_t: %s\n",
+		     imsi, label, last_lu_seen_str, strerror(errno));
+		val = 0;
+	}
+
+	*dst = val;
+}
+
 /* Common code for db_subscr_get_by_*() functions. */
 static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscriber *subscr,
 		  const char **err)
 {
 	int rc;
 	int ret = 0;
-	const char *last_lu_seen_str;
-	struct tm tm = {0};
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
@@ -479,20 +501,10 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 	subscr->lmsi = sqlite3_column_int(stmt, 11);
 	subscr->ms_purged_cs = sqlite3_column_int(stmt, 12);
 	subscr->ms_purged_ps = sqlite3_column_int(stmt, 13);
-	last_lu_seen_str = (const char *)sqlite3_column_text(stmt, 14);
-	if (last_lu_seen_str && last_lu_seen_str[0] != '\0') {
-		if (strptime(last_lu_seen_str, DB_LAST_LU_SEEN_FMT, &tm) == NULL) {
-			LOGP(DAUC, LOGL_ERROR, "Cannot parse last LU timestamp '%s' of subscriber with IMSI='%s': %s\n",
-			     last_lu_seen_str, subscr->imsi, strerror(errno));
-		} else {
-			subscr->last_lu_seen = mktime(&tm);
-			if (subscr->last_lu_seen == -1) {
-				LOGP(DAUC, LOGL_ERROR, "Cannot convert LU timestamp '%s' to time_t: %s\n",
-				     last_lu_seen_str, strerror(errno));
-				subscr->last_lu_seen = 0;
-			}
-		}
-	}
+	parse_last_lu_seen(&subscr->last_lu_seen, (const char *)sqlite3_column_text(stmt, 14),
+			   subscr->imsi, "CS");
+	parse_last_lu_seen(&subscr->last_lu_seen_ps, (const char *)sqlite3_column_text(stmt, 15),
+			   subscr->imsi, "PS");
 
 out:
 	db_remove_reset(stmt);
@@ -770,7 +782,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 		goto out;
 	}
 
-	stmt = dbc->stmt[DB_STMT_SET_LAST_LU_SEEN];
+	stmt = dbc->stmt[is_ps? DB_STMT_SET_LAST_LU_SEEN_PS : DB_STMT_SET_LAST_LU_SEEN];
 
 	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
 		return -EIO;
