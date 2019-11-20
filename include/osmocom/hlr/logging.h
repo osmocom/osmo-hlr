@@ -8,6 +8,7 @@ enum {
 	DGSUP,
 	DAUC,
 	DSS,
+	DMSLOOKUP,
 };
 
 extern const struct log_info hlr_log_info;
