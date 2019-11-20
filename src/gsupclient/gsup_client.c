@@ -291,14 +291,15 @@ struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 	if (rc != 0)
 		goto failed;
 
-	gsupc->link = ipa_client_conn_create(gsupc,
-					     /* no e1inp */ NULL,
-					     0,
-					     ip_addr, tcp_port,
-					     gsup_client_updown_cb,
-					     gsup_client_read_cb,
-					     /* default write_cb */ NULL,
-					     gsupc);
+	gsupc->link = ipa_client_conn_create2(gsupc,
+					      /* no e1inp */ NULL,
+					      0,
+					      /* no specific local IP:port */ NULL, 0,
+					      ip_addr, tcp_port,
+					      gsup_client_updown_cb,
+					      gsup_client_read_cb,
+					      /* default write_cb */ NULL,
+					      gsupc);
 	if (!gsupc->link)
 		goto failed;
 

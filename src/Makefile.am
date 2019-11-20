@@ -41,7 +41,6 @@ osmo_hlr_SOURCES = \
 	auc.c \
 	ctrl.c \
 	db.c \
-	luop.c \
 	db_auc.c \
 	db_hlr.c \
 	gsup_router.c \
@@ -53,9 +52,11 @@ osmo_hlr_SOURCES = \
 	hlr_vty_subscr.c \
 	gsup_send.c \
 	hlr_ussd.c \
+	lu_fsm.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
+	$(top_builddir)/src/gsupclient/libosmo-gsup-client.la \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOVTY_LIBS) \
@@ -71,6 +72,7 @@ osmo_hlr_db_tool_SOURCES = \
 	logging.c \
 	rand_urandom.c \
 	dbd_decode_binary.c \
+	$(srcdir)/gsupclient/ipa_name.c \
 	$(NULL)
 
 osmo_hlr_db_tool_LDADD = \
