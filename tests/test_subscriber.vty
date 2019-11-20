@@ -13,6 +13,7 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
+  show mslookup services
 
 OsmoHLR# subscriber?
   subscriber  Subscriber management commands
