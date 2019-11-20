@@ -28,6 +28,7 @@
 #include <time.h>
 
 #include <osmocom/core/utils.h>
+#include <osmocom/core/timer.h>
 #include <osmocom/crypt/auth.h>
 #include <osmocom/gsm/gsm23003.h>
 
@@ -36,8 +37,7 @@
 #include <osmocom/hlr/logging.h>
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/db.h>
-#include <osmocom/hlr/gsup_server.h>
-#include <osmocom/hlr/luop.h>
+#include <osmocom/gsupclient/ipa_name.h>
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
@@ -734,7 +734,8 @@ out:
  *         -EIO on database errors.
  */
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps)
+		 const struct osmo_ipa_name *vlr_name, bool is_ps,
+		 const struct osmo_ipa_name *via_proxy)
 {
 	sqlite3_stmt *stmt;
 	int rc, ret = 0;
@@ -746,7 +747,7 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 	if (!db_bind_int64(stmt, "$subscriber_id", subscr_id))
 		return -EIO;
 
-	if (!db_bind_text(stmt, "$number", vlr_or_sgsn_number))
+	if (!db_bind_text(stmt, "$number", (char*)vlr_name->val))
 		return -EIO;
 
 	/* execute the statement */
@@ -872,52 +873,4 @@ out:
 	db_remove_reset(stmt);
 
 	return ret;
-}
-
-/*! Update nam_cs/nam_ps in the db and trigger notifications to GSUP clients.
- * \param[in,out] hlr  Global hlr context.
- * \param[in] subscr   Subscriber from a fresh db_subscr_get_by_*() call.
- * \param[in] nam_val  True to enable CS/PS, false to disable.
- * \param[in] is_ps    True to enable/disable PS, false for CS.
- * \returns 0 on success, ENOEXEC if there is no need to change, a negative
- *          value on error.
- */
-int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps)
-{
-	int rc;
-        struct lu_operation *luop;
-        struct osmo_gsup_conn *co;
-	bool is_val = is_ps? subscr->nam_ps : subscr->nam_cs;
-
-	if (is_val == nam_val) {
-		LOGHLR(subscr->imsi, LOGL_DEBUG, "Already has the requested value when asked to %s %s\n",
-		       nam_val ? "enable" : "disable", is_ps ? "PS" : "CS");
-		return ENOEXEC;
-	}
-
-	rc = db_subscr_nam(hlr->dbc, subscr->imsi, nam_val, is_ps);
-	if (rc)
-		return rc > 0? -rc : rc;
-
-	/* If we're disabling, send a notice out to the GSUP client that is
-	 * responsible. Otherwise no need. */
-	if (nam_val)
-		return 0;
-
-	/* FIXME: only send to single SGSN where latest update for IMSI came from */
-	llist_for_each_entry(co, &hlr->gs->clients, list) {
-		luop = lu_op_alloc_conn(co);
-		if (!luop) {
-			LOGHLR(subscr->imsi, LOGL_ERROR,
-			       "Cannot notify GSUP client, cannot allocate lu_operation,"
-			       " for %s:%u\n",
-			       co && co->conn && co->conn->server? co->conn->server->addr : "unset",
-			       co && co->conn && co->conn->server? co->conn->server->port : 0);
-			continue;
-		}
-		luop->subscr = *subscr;
-		lu_op_tx_del_subscr_data(luop);
-		lu_op_free(luop);
-	}
-	return 0;
 }

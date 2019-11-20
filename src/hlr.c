@@ -35,8 +35,9 @@
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/gsm_utils.h>
-#include <osmocom/gsm/protocol/gsm_23_003.h>
+#include <osmocom/gsm/gsm23003.h>
 
+#include <osmocom/gsupclient/ipa_name.h>
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/ctrl.h>
@@ -44,13 +45,19 @@
 #include <osmocom/hlr/gsup_server.h>
 #include <osmocom/hlr/gsup_router.h>
 #include <osmocom/hlr/rand.h>
-#include <osmocom/hlr/luop.h>
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/lu_fsm.h>
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;
 static int quit = 0;
+
+struct osmo_tdef g_hlr_tdefs[] = {
+	/* 4222 is also the OSMO_GSUP_PORT */
+	{ .T = -4222, .default_val = 30, .desc = "GSUP Update Location timeout" },
+	{}
+};
 
 /* Trigger 'Insert Subscriber Data' messages to all connected GSUP clients.
  *
@@ -68,6 +75,8 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		     subscr->imsi);
 		return;
 	}
+
+	/* FIXME: send only to current vlr_number and sgsn_number */
 
 	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
 		struct osmo_gsup_message gsup = { };
@@ -222,145 +231,102 @@ static int subscr_create_on_demand(const char *imsi)
 	return 0;
 }
 
+/*! Update nam_cs/nam_ps in the db and trigger notifications to GSUP clients.
+ * \param[in,out] hlr  Global hlr context.
+ * \param[in] subscr   Subscriber from a fresh db_subscr_get_by_*() call.
+ * \param[in] nam_val  True to enable CS/PS, false to disable.
+ * \param[in] is_ps    True to enable/disable PS, false for CS.
+ * \returns 0 on success, ENOEXEC if there is no need to change, a negative
+ *          value on error.
+ */
+int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps)
+{
+	int rc;
+	bool is_val = is_ps? subscr->nam_ps : subscr->nam_cs;
+	struct osmo_ipa_name vlr_name;
+	struct osmo_gsup_message gsup_del_data = {
+		.message_type = OSMO_GSUP_MSGT_DELETE_DATA_REQUEST,
+	};
+	OSMO_STRLCPY_ARRAY(gsup_del_data.imsi, subscr->imsi);
+
+	if (is_val == nam_val) {
+		LOGP(DAUC, LOGL_DEBUG, "IMSI-%s: Already has the requested value when asked to %s %s\n",
+		     subscr->imsi, nam_val ? "enable" : "disable", is_ps ? "PS" : "CS");
+		return ENOEXEC;
+	}
+
+	rc = db_subscr_nam(hlr->dbc, subscr->imsi, nam_val, is_ps);
+	if (rc)
+		return rc > 0? -rc : rc;
+
+	/* If we're disabling, send a notice out to the GSUP client that is
+	 * responsible. Otherwise no need. */
+	if (nam_val)
+		return 0;
+
+	if (subscr->vlr_number && osmo_ipa_name_set_str(&vlr_name, subscr->vlr_number))
+		osmo_gsup_enc_send_to_ipa_name(g_hlr->gs, &vlr_name, &gsup_del_data);
+	if (subscr->sgsn_number && osmo_ipa_name_set_str(&vlr_name, subscr->sgsn_number))
+		osmo_gsup_enc_send_to_ipa_name(g_hlr->gs, &vlr_name, &gsup_del_data);
+	return 0;
+}
+
 /***********************************************************************
  * Send Auth Info handling
  ***********************************************************************/
 
 /* process an incoming SAI request */
-static int rx_send_auth_info(struct osmo_gsup_conn *conn,
-			     const struct osmo_gsup_message *gsup,
-			     struct db_context *dbc)
+static int rx_send_auth_info(unsigned int auc_3g_ind, struct osmo_gsup_req *req)
 {
-	struct osmo_gsup_message gsup_out;
-	struct msgb *msg_out;
+	struct osmo_gsup_message gsup_out = {
+		.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT,
+	};
 	bool separation_bit = false;
 	int num_auth_vectors = OSMO_GSUP_MAX_NUM_AUTH_INFO;
 	int rc;
 
-	subscr_create_on_demand(gsup->imsi);
+	subscr_create_on_demand(req->gsup.imsi);
 
-	/* initialize return message structure */
-	memset(&gsup_out, 0, sizeof(gsup_out));
-	memcpy(&gsup_out.imsi, &gsup->imsi, sizeof(gsup_out.imsi));
-
-	if (gsup->current_rat_type == OSMO_RAT_EUTRAN_SGS)
+	if (req->gsup.current_rat_type == OSMO_RAT_EUTRAN_SGS)
 		separation_bit = true;
 
-	if (gsup->num_auth_vectors > 0 &&
-			gsup->num_auth_vectors <= OSMO_GSUP_MAX_NUM_AUTH_INFO)
-		num_auth_vectors = gsup->num_auth_vectors;
+	if (req->gsup.num_auth_vectors > 0 &&
+			req->gsup.num_auth_vectors <= OSMO_GSUP_MAX_NUM_AUTH_INFO)
+		num_auth_vectors = req->gsup.num_auth_vectors;
 
-	rc = db_get_auc(dbc, gsup->imsi, conn->auc_3g_ind,
+	rc = db_get_auc(g_hlr->dbc, req->gsup.imsi, auc_3g_ind,
 			gsup_out.auth_vectors,
 			num_auth_vectors,
-			gsup->rand, gsup->auts, separation_bit);
+			req->gsup.rand, req->gsup.auts, separation_bit);
+
 	if (rc <= 0) {
-		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
 		switch (rc) {
 		case 0:
 			/* 0 means "0 tuples generated", which shouldn't happen.
 			 * Treat the same as "no auth data". */
 		case -ENOKEY:
-			LOGP(DAUC, LOGL_NOTICE, "%s: IMSI known, but has no auth data;"
-			     " Returning slightly inaccurate cause 'IMSI Unknown' via GSUP\n",
-			     gsup->imsi);
-			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
-			break;
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN,
+						  "IMSI known, but has no auth data;"
+						  " Returning slightly inaccurate cause 'IMSI Unknown' via GSUP");
+			return rc;
 		case -ENOENT:
-			LOGP(DAUC, LOGL_NOTICE, "%s: IMSI not known\n", gsup->imsi);
-			gsup_out.cause = GMM_CAUSE_IMSI_UNKNOWN;
-			break;
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "IMSI unknown");
+			return rc;
 		default:
-			LOGP(DAUC, LOGL_ERROR, "%s: failure to look up IMSI in db\n", gsup->imsi);
-			gsup_out.cause = GMM_CAUSE_NET_FAIL;
-			break;
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "failure to look up IMSI in db");
+			return rc;
 		}
-	} else {
-		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT;
-		gsup_out.num_auth_vectors = rc;
 	}
+	gsup_out.num_auth_vectors = rc;
 
-	msg_out = osmo_gsup_msgb_alloc("GSUP AUC response");
-	osmo_gsup_encode(msg_out, &gsup_out);
-	return osmo_gsup_conn_send(conn, msg_out);
+	osmo_gsup_req_respond(req, &gsup_out, false, true);
+	return 0;
 }
 
-/***********************************************************************
- * LU Operation State / Structure
- ***********************************************************************/
-
-static LLIST_HEAD(g_lu_ops);
-
-/*! Receive Cancel Location Result from old VLR/SGSN */
-void lu_op_rx_cancel_old_ack(struct lu_operation *luop,
-			     const struct osmo_gsup_message *gsup)
+/*! Receive Update Location Request, creates new lu_operation */
+static int rx_upd_loc_req(struct osmo_gsup_conn *conn, struct osmo_gsup_req *req)
 {
-	OSMO_ASSERT(luop->state == LU_S_CANCEL_SENT);
-	/* FIXME: Check for spoofing */
-
-	osmo_timer_del(&luop->timer);
-
-	/* FIXME */
-
-	lu_op_tx_insert_subscr_data(luop);
-}
-
-/*! Receive Insert Subscriber Data Result from new VLR/SGSN */
-static void lu_op_rx_insert_subscr_data_ack(struct lu_operation *luop,
-				    const struct osmo_gsup_message *gsup)
-{
-	OSMO_ASSERT(luop->state == LU_S_ISD_SENT);
-	/* FIXME: Check for spoofing */
-
-	osmo_timer_del(&luop->timer);
-
-	/* Subscriber_Present_HLR */
-	/* CS only: Check_SS_required? -> MAP-FW-CHECK_SS_IND.req */
-
-	/* Send final ACK towards inquiring VLR/SGSN */
-	lu_op_tx_ack(luop);
-}
-
-/*! Receive GSUP message for given \ref lu_operation */
-void lu_op_rx_gsup(struct lu_operation *luop,
-		  const struct osmo_gsup_message *gsup)
-{
-	switch (gsup->message_type) {
-	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
-		/* FIXME */
-		break;
-	case OSMO_GSUP_MSGT_INSERT_DATA_RESULT:
-		lu_op_rx_insert_subscr_data_ack(luop, gsup);
-		break;
-	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
-		/* FIXME */
-		break;
-	case OSMO_GSUP_MSGT_LOCATION_CANCEL_RESULT:
-		lu_op_rx_cancel_old_ack(luop, gsup);
-		break;
-	default:
-		LOGP(DMAIN, LOGL_ERROR, "Unhandled GSUP msg_type 0x%02x\n",
-			gsup->message_type);
-		break;
-	}
-}
-
-/*! Receive Update Location Request, creates new \ref lu_operation */
-static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
-			  const struct osmo_gsup_message *gsup)
-{
-	struct hlr_subscriber *subscr;
-	struct lu_operation *luop = lu_op_alloc_conn(conn);
-	if (!luop) {
-		LOGP(DMAIN, LOGL_ERROR, "LU REQ from conn without addr?\n");
-		return -EINVAL;
-	}
-
-	subscr = &luop->subscr;
-
-	lu_op_statechg(luop, LU_S_LU_RECEIVED);
-
-	switch (gsup->cn_domain) {
+	switch (req->gsup.cn_domain) {
 	case OSMO_GSUP_CN_DOMAIN_CS:
 		conn->supports_cs = true;
 		break;
@@ -371,143 +337,64 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 		 * a request, the PS Domain is assumed." */
 	case OSMO_GSUP_CN_DOMAIN_PS:
 		conn->supports_ps = true;
-		luop->is_ps = true;
 		break;
 	}
-	llist_add(&luop->list, &g_lu_ops);
 
-	subscr_create_on_demand(gsup->imsi);
+	subscr_create_on_demand(req->gsup.imsi);
 
-	/* Roughly follwing "Process Update_Location_HLR" of TS 09.02 */
-
-	/* check if subscriber is known at all */
-	if (!lu_op_fill_subscr(luop, g_hlr->dbc, gsup->imsi)) {
-		/* Send Error back: Subscriber Unknown in HLR */
-		osmo_strlcpy(luop->subscr.imsi, gsup->imsi, sizeof(luop->subscr.imsi));
-		lu_op_tx_error(luop, GMM_CAUSE_IMSI_UNKNOWN);
-		return 0;
-	}
-
-	/* Check if subscriber is generally permitted on CS or PS
-	 * service (as requested) */
-	if (!luop->is_ps && !luop->subscr.nam_cs) {
-		lu_op_tx_error(luop, GMM_CAUSE_PLMN_NOTALLOWED);
-		return 0;
-	} else if (luop->is_ps && !luop->subscr.nam_ps) {
-		lu_op_tx_error(luop, GMM_CAUSE_GPRS_NOTALLOWED);
-		return 0;
-	}
-
-	/* TODO: Set subscriber tracing = deactive in VLR/SGSN */
-
-#if 0
-	/* Cancel in old VLR/SGSN, if new VLR/SGSN differs from old (FIXME: OS#4491) */
-	if (luop->is_ps == false &&
-	    strcmp(subscr->vlr_number, vlr_number)) {
-		lu_op_tx_cancel_old(luop);
-	} else if (luop->is_ps == true &&
-		   strcmp(subscr->sgsn_number, sgsn_number)) {
-		lu_op_tx_cancel_old(luop);
-	} else
-#endif
-
-	/* Store the VLR / SGSN number with the subscriber, so we know where it was last seen. */
-	LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing %s = %s\n",
-	     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number",
-	     osmo_quote_str((const char*)luop->peer, -1));
-	if (db_subscr_lu(g_hlr->dbc, subscr->id, (const char *)luop->peer, luop->is_ps))
-		LOGP(DAUC, LOGL_ERROR, "IMSI='%s': Cannot update %s in the database\n",
-		     subscr->imsi, luop->is_ps ? "SGSN number" : "VLR number");
-
-	/* TODO: Subscriber allowed to roam in PLMN? */
-	/* TODO: Update RoutingInfo */
-	/* TODO: Reset Flag MS Purged (cs/ps) */
-	/* TODO: Control_Tracing_HLR / Control_Tracing_HLR_with_SGSN */
-	lu_op_tx_insert_subscr_data(luop);
-
+	lu_rx_gsup(req);
 	return 0;
 }
 
-static int rx_purge_ms_req(struct osmo_gsup_conn *conn,
-			   const struct osmo_gsup_message *gsup)
+static int rx_purge_ms_req(struct osmo_gsup_req *req)
 {
-	struct osmo_gsup_message gsup_reply = {0};
-	struct msgb *msg_out;
-	bool is_ps = false;
+	bool is_ps = (req->gsup.cn_domain != OSMO_GSUP_CN_DOMAIN_CS);
 	int rc;
 
-	LOGP(DAUC, LOGL_INFO, "%s: Purge MS (%s)\n", gsup->imsi,
-		is_ps ? "PS" : "CS");
-
-	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
-
-	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS)
-		is_ps = true;
+	LOG_GSUP_REQ_CAT(req, DAUC, LOGL_INFO, "Purge MS (%s)\n", is_ps ? "PS" : "CS");
 
 	/* FIXME: check if the VLR that sends the purge is the same that
 	 * we have on record. Only update if yes */
 
 	/* Perform the actual update of the DB */
-	rc = db_subscr_purge(g_hlr->dbc, gsup->imsi, true, is_ps);
+	rc = db_subscr_purge(g_hlr->dbc, req->gsup.imsi, true, is_ps);
 
 	if (rc == 0)
-		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_RESULT;
-	else if (rc == -ENOENT) {
-		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_ERROR;
-		gsup_reply.cause = GMM_CAUSE_IMSI_UNKNOWN;
-	} else {
-		gsup_reply.message_type = OSMO_GSUP_MSGT_PURGE_MS_ERROR;
-		gsup_reply.cause = GMM_CAUSE_NET_FAIL;
-	}
-
-	msg_out = osmo_gsup_msgb_alloc("GSUP AUC response");
-	osmo_gsup_encode(msg_out, &gsup_reply);
-	return osmo_gsup_conn_send(conn, msg_out);
+		osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_PURGE_MS_RESULT, true);
+	else if (rc == -ENOENT)
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "IMSI unknown");
+	else
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "db error");
+	return rc;
 }
 
-static int gsup_send_err_reply(struct osmo_gsup_conn *conn, const char *imsi,
-				enum osmo_gsup_message_type type_in, uint8_t err_cause)
+static int rx_check_imei_req(struct osmo_gsup_req *req)
 {
-	int type_err = OSMO_GSUP_TO_MSGT_ERROR(type_in);
-	struct osmo_gsup_message gsup_reply = {0};
-	struct msgb *msg_out;
-
-	OSMO_STRLCPY_ARRAY(gsup_reply.imsi, imsi);
-	gsup_reply.message_type = type_err;
-	gsup_reply.cause = err_cause;
-	msg_out = osmo_gsup_msgb_alloc("GSUP ERR response");
-	osmo_gsup_encode(msg_out, &gsup_reply);
-	LOGP(DMAIN, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(type_err));
-	return osmo_gsup_conn_send(conn, msg_out);
-}
-
-static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup)
-{
-	struct osmo_gsup_message gsup_reply = {0};
-	struct msgb *msg_out;
+	struct osmo_gsup_message gsup_reply;
 	char imei[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1] = {0};
+	const struct osmo_gsup_message *gsup = &req->gsup;
 	int rc;
 
 	/* Require IMEI */
 	if (!gsup->imei_enc) {
-		LOGP(DMAIN, LOGL_ERROR, "%s: missing IMEI\n", gsup->imsi);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO, "missing IMEI");
 		return -1;
 	}
 
 	/* Decode IMEI (fails if IMEI is too long) */
 	rc = gsm48_decode_bcd_number2(imei, sizeof(imei), gsup->imei_enc, gsup->imei_enc_len, 0);
 	if (rc < 0) {
-		LOGP(DMAIN, LOGL_ERROR, "%s: failed to decode IMEI (rc: %i)\n", gsup->imsi, rc);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO,
+					  "failed to decode IMEI %s (rc: %d)",
+					  osmo_hexdump_c(OTC_SELECT, gsup->imei_enc, gsup->imei_enc_len),
+					  rc);
 		return -1;
 	}
 
 	/* Check if IMEI is too short */
-	if (strlen(imei) != GSM23003_IMEI_NUM_DIGITS_NO_CHK) {
-		LOGP(DMAIN, LOGL_ERROR, "%s: wrong encoded IMEI length (IMEI: '%s', %lu, %i)\n", gsup->imsi, imei,
-		     strlen(imei), GSM23003_IMEI_NUM_DIGITS_NO_CHK);
-		gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+	if (!osmo_imei_str_valid(imei, false)) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO,
+					  "invalid IMEI: %s", osmo_quote_str_c(OTC_SELECT, imei, -1));
 		return -1;
 	}
 
@@ -517,7 +404,7 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 	if (g_hlr->store_imei) {
 		LOGP(DAUC, LOGL_DEBUG, "IMSI='%s': storing IMEI = %s\n", gsup->imsi, imei);
 		if (db_subscr_update_imei_by_imsi(g_hlr->dbc, gsup->imsi, imei) < 0) {
-			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO, "Failed to store IMEI in HLR db");
 			return -1;
 		}
 	} else {
@@ -525,18 +412,17 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 		LOGP(DMAIN, LOGL_INFO, "IMSI='%s': has IMEI = %s (consider setting 'store-imei')\n", gsup->imsi, imei);
 		struct hlr_subscriber subscr;
 		if (db_subscr_get_by_imsi(g_hlr->dbc, gsup->imsi, &subscr) < 0) {
-			gsup_send_err_reply(conn, gsup->imsi, gsup->message_type, GMM_CAUSE_INV_MAND_INFO);
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO, "IMSI unknown");
 			return -1;
 		}
 	}
 
 	/* Accept all IMEIs */
-	gsup_reply.imei_result = OSMO_GSUP_IMEI_RESULT_ACK;
-	gsup_reply.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_RESULT;
-	msg_out = osmo_gsup_msgb_alloc("GSUP Check_IMEI response");
-	memcpy(gsup_reply.imsi, gsup->imsi, sizeof(gsup_reply.imsi));
-	osmo_gsup_encode(msg_out, &gsup_reply);
-	return osmo_gsup_conn_send(conn, msg_out);
+	gsup_reply = (struct osmo_gsup_message){
+		.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_RESULT,
+		.imei_result = OSMO_GSUP_IMEI_RESULT_ACK,
+	};
+	return osmo_gsup_req_respond(req, &gsup_reply, false, true);
 }
 
 static char namebuf[255];
@@ -549,151 +435,112 @@ static char namebuf[255];
 	     osmo_quote_str_buf2(namebuf, sizeof(namebuf), (const char *)(gsup)->destination_name, (gsup)->destination_name_len), \
 	     ## args)
 
-static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const struct osmo_gsup_message *gsup)
+static int read_cb_forward(struct osmo_gsup_req *req)
 {
 	int ret = -EINVAL;
-	struct osmo_gsup_message *gsup_err;
-
-	/* FIXME: it would be better if the msgb never were deallocated immediately by osmo_gsup_addr_send(), which a
-	 * select-loop volatile talloc context could facilitate. Then we would still be able to access gsup-> members
-	 * (pointing into the msgb) even after sending failed, and we wouldn't need to copy this data before sending: */
-	/* Prepare error message (before IEs get deallocated) */
-	gsup_err = talloc_zero(hlr_ctx, struct osmo_gsup_message);
-	OSMO_STRLCPY_ARRAY(gsup_err->imsi, gsup->imsi);
-	gsup_err->message_class = gsup->message_class;
-	gsup_err->destination_name = talloc_memdup(gsup_err, gsup->destination_name, gsup->destination_name_len);
-	gsup_err->destination_name_len = gsup->destination_name_len;
-	gsup_err->message_type = gsup->message_type;
-	gsup_err->session_state = gsup->session_state;
-	gsup_err->session_id = gsup->session_id;
-	gsup_err->source_name = talloc_memdup(gsup_err, gsup->source_name, gsup->source_name_len);
-	gsup_err->source_name_len = gsup->source_name_len;
+	const struct osmo_gsup_message *gsup = &req->gsup;
+	struct osmo_gsup_message gsup_err;
+	struct msgb *forward_msg;
+	struct osmo_ipa_name destination_name;
 
 	/* Check for routing IEs */
-	if (!gsup->source_name || !gsup->source_name_len || !gsup->destination_name || !gsup->destination_name_len) {
-		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "missing routing IEs\n");
-		goto end;
+	if (!req->gsup.source_name || !req->gsup.source_name_len
+	    || !req->gsup.destination_name || !req->gsup.destination_name_len) {
+		LOGP_GSUP_FWD(&req->gsup, LOGL_ERROR, "missing routing IEs\n");
+		goto routing_error;
 	}
 
-	/* Verify source name (e.g. "MSC-00-00-00-00-00-00") */
-	if (gsup_route_find(conn->server, gsup->source_name, gsup->source_name_len) != conn) {
-		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "mismatching source name\n");
-		goto end;
+	if (osmo_ipa_name_set(&destination_name, req->gsup.destination_name, req->gsup.destination_name_len)) {
+		LOGP_GSUP_FWD(&req->gsup, LOGL_ERROR, "invalid destination name\n");
+		goto routing_error;
 	}
 
-	/* Forward message without re-encoding (so we don't remove unknown IEs) */
-	LOGP_GSUP_FWD(gsup, LOGL_INFO, "checks passed, forwarding\n");
+	LOG_GSUP_REQ(req, LOGL_INFO, "Forwarding to %s\n", osmo_ipa_name_to_str(&destination_name));
 
-	/* Remove incoming IPA header to be able to prepend an outgoing IPA header */
-	msgb_pull_to_l2(msg);
-	ret = osmo_gsup_addr_send(g_hlr->gs, gsup->destination_name, gsup->destination_name_len, msg);
-	/* AT THIS POINT, THE msg MAY BE DEALLOCATED and the data like gsup->imsi, gsup->source_name etc may all be
-	 * invalid and cause segfaults. */
-	msg = NULL;
-	gsup = NULL;
-	if (ret == -ENODEV)
-		LOGP_GSUP_FWD(gsup_err, LOGL_ERROR, "destination not connected\n");
-	else if (ret)
-		LOGP_GSUP_FWD(gsup_err, LOGL_ERROR, "unknown error %i\n", ret);
-
-end:
-	/* Send error back to source */
+	/* Forward message without re-encoding (so we don't remove unknown IEs).
+	 * Copy GSUP part to forward, removing incoming IPA header to be able to prepend an outgoing IPA header */
+	forward_msg = osmo_gsup_msgb_alloc("GSUP forward");
+	forward_msg->l2h = msgb_put(forward_msg, msgb_l2len(req->msg));
+	memcpy(forward_msg->l2h, msgb_l2(req->msg), msgb_l2len(req->msg));
+	ret = osmo_gsup_send_to_ipa_name(g_hlr->gs, &destination_name, forward_msg);
 	if (ret) {
-		struct msgb *msg_err = osmo_gsup_msgb_alloc("GSUP forward ERR response");
-		gsup_err->message_type = OSMO_GSUP_MSGT_E_ROUTING_ERROR;
-		osmo_gsup_encode(msg_err, gsup_err);
-		LOGP_GSUP_FWD(gsup_err, LOGL_NOTICE, "Tx %s\n", osmo_gsup_message_type_name(gsup_err->message_type));
-		osmo_gsup_conn_send(conn, msg_err);
+		LOGP_GSUP_FWD(gsup, LOGL_ERROR, "%s (rc=%d)\n",
+			      ret == -ENODEV ? "destination not connected" : "unknown error",
+			      ret);
+		goto routing_error;
 	}
-	talloc_free(gsup_err);
-	if (msg)
-		msgb_free(msg);
-	return ret;
+	osmo_gsup_req_free(req);
+	return 0;
+
+routing_error:
+	gsup_err = (struct osmo_gsup_message){
+		.message_type = OSMO_GSUP_MSGT_ROUTING_ERROR,
+		.source_name = gsup->destination_name,
+		.source_name_len = gsup->destination_name_len,
+	};
+	osmo_gsup_req_respond(req, &gsup_err, true, true);
+	return -1;
 }
 
 static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
-	static struct osmo_gsup_message gsup;
-	int rc;
-
-	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
-		LOGP(DMAIN, LOGL_ERROR, "missing or empty L2 data\n");
-		msgb_free(msg);
+	struct osmo_gsup_req *req = osmo_gsup_conn_rx(conn, msg);
+	if (!req)
 		return -EINVAL;
+
+	/* If the GSUP recipient is other than this HLR, forward. */
+	if (req->gsup.destination_name_len) {
+		struct osmo_ipa_name destination_name;
+		struct osmo_ipa_name my_name;
+		osmo_ipa_name_set_str(&my_name, g_hlr->gsup_unit_name.serno);
+		if (!osmo_ipa_name_set(&destination_name, req->gsup.destination_name, req->gsup.destination_name_len)
+		    && osmo_ipa_name_cmp(&destination_name, &my_name)) {
+			return read_cb_forward(req);
+		}
 	}
 
-	rc = osmo_gsup_decode(msgb_l2(msg), msgb_l2len(msg), &gsup);
-	if (rc < 0) {
-		LOGP(DMAIN, LOGL_ERROR, "error in GSUP decode: %d\n", rc);
-		msgb_free(msg);
-		return rc;
-	}
-
-	/* 3GPP TS 23.003 Section 2.2 clearly states that an IMSI with less than 5
-	 * digits is impossible.  Even 5 digits is a highly theoretical case */
-	if (strlen(gsup.imsi) < 5) { /* TODO: move this check to libosmogsm/gsup.c? */
-		LOGP(DMAIN, LOGL_ERROR, "IMSI too short: %s\n", osmo_quote_str(gsup.imsi, -1));
-		gsup_send_err_reply(conn, gsup.imsi, gsup.message_type, GMM_CAUSE_INV_MAND_INFO);
-		msgb_free(msg);
-		return -EINVAL;
-	}
-
-	if (gsup.destination_name_len)
-		return read_cb_forward(conn, msg, &gsup);
-
-	switch (gsup.message_type) {
+	switch (req->gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:
-		rx_send_auth_info(conn, &gsup, g_hlr->dbc);
+		rx_send_auth_info(conn->auc_3g_ind, req);
 		break;
 	case OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST:
-		rx_upd_loc_req(conn, &gsup);
+		rx_upd_loc_req(conn, req);
 		break;
 	case OSMO_GSUP_MSGT_PURGE_MS_REQUEST:
-		rx_purge_ms_req(conn, &gsup);
+		rx_purge_ms_req(req);
 		break;
 	/* responses to requests sent by us */
 	case OSMO_GSUP_MSGT_DELETE_DATA_ERROR:
-		LOGP(DMAIN, LOGL_ERROR, "Error while deleting subscriber data "
-		     "for IMSI %s\n", gsup.imsi);
+		LOG_GSUP_REQ(req, LOGL_ERROR, "Peer responds with: Error while deleting subscriber data\n");
+		osmo_gsup_req_free(req);
 		break;
 	case OSMO_GSUP_MSGT_DELETE_DATA_RESULT:
-		LOGP(DMAIN, LOGL_ERROR, "Deleting subscriber data for IMSI %s\n",
-		     gsup.imsi);
+		LOG_GSUP_REQ(req, LOGL_DEBUG, "Peer responds with: Subscriber data deleted\n");
+		osmo_gsup_req_free(req);
 		break;
 	case OSMO_GSUP_MSGT_PROC_SS_REQUEST:
 	case OSMO_GSUP_MSGT_PROC_SS_RESULT:
-		rx_proc_ss_req(conn, &gsup);
+		rx_proc_ss_req(req);
 		break;
 	case OSMO_GSUP_MSGT_PROC_SS_ERROR:
-		rx_proc_ss_error(conn, &gsup);
+		rx_proc_ss_error(req);
 		break;
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
 	case OSMO_GSUP_MSGT_INSERT_DATA_RESULT:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
 	case OSMO_GSUP_MSGT_LOCATION_CANCEL_RESULT:
-		{
-			struct lu_operation *luop = lu_op_by_imsi(gsup.imsi,
-								  &g_lu_ops);
-			if (!luop) {
-				LOGP(DMAIN, LOGL_ERROR, "GSUP message %s for "
-				     "unknown IMSI %s\n",
-				     osmo_gsup_message_type_name(gsup.message_type),
-					gsup.imsi);
-				break;
-			}
-			lu_op_rx_gsup(luop, &gsup);
-		}
+		lu_rx_gsup(req);
 		break;
 	case OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST:
-		rx_check_imei_req(conn, &gsup);
+		rx_check_imei_req(req);
 		break;
 	default:
 		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
-		     osmo_gsup_message_type_name(gsup.message_type));
+		     osmo_gsup_message_type_name(req->gsup.message_type));
+		osmo_gsup_req_free(req);
 		break;
 	}
-	msgb_free(msg);
 	return 0;
 }
 
@@ -908,7 +755,7 @@ int main(int argc, char **argv)
 
 
 	g_hlr->gs = osmo_gsup_server_create(hlr_ctx, g_hlr->gsup_bind_addr, OSMO_GSUP_PORT,
-					    read_cb, &g_lu_ops, g_hlr);
+					    read_cb, g_hlr);
 	if (!g_hlr->gs) {
 		LOGP(DMAIN, LOGL_FATAL, "Error starting GSUP server\n");
 		exit(1);
@@ -931,7 +778,8 @@ int main(int argc, char **argv)
 	}
 
 	while (!quit)
-		osmo_select_main(0);
+		osmo_select_main_ctx(0);
+
 
 	osmo_gsup_server_destroy(g_hlr->gs);
 	db_close(g_hlr->dbc);

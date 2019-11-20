@@ -42,7 +42,8 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 
 	conn = gsup_route_find(gs, addr, addrlen);
 	if (!conn) {
-		DEBUGP(DLGSUP, "Cannot find route for addr %s\n", osmo_quote_str((const char*)addr, addrlen));
+		LOGP(DLGSUP, LOGL_ERROR,
+		     "Cannot find route for addr %s\n", osmo_quote_str((const char*)addr, addrlen));
 		msgb_free(msg);
 		return -ENODEV;
 	}
@@ -50,3 +51,41 @@ int osmo_gsup_addr_send(struct osmo_gsup_server *gs,
 	return osmo_gsup_conn_send(conn, msg);
 }
 
+/*! Send a msgb to a given address using routing.
+ * \param[in] gs  gsup server
+ * \param[in] ipa_name  IPA unit name of the client (SGSN, MSC/VLR, proxy).
+ * \param[in] msg  message buffer
+ */
+int osmo_gsup_send_to_ipa_name(struct osmo_gsup_server *gs, const struct osmo_ipa_name *ipa_name, struct msgb *msg)
+{
+	if (ipa_name->val[ipa_name->len - 1]) {
+		/* Is not nul terminated. But for legacy reasons we (still) require that. */
+		if (ipa_name->len >= sizeof(ipa_name->val)) {
+			LOGP(DLGSUP, LOGL_ERROR, "IPA unit name is too long: %s\n",
+			     osmo_ipa_name_to_str(ipa_name));
+			return -EINVAL;
+		}
+		struct osmo_ipa_name ipa_name2 = *ipa_name;
+		ipa_name2.val[ipa_name->len] = '\0';
+		ipa_name2.len++;
+		return osmo_gsup_addr_send(gs, ipa_name2.val, ipa_name2.len, msg);
+	}
+	return osmo_gsup_addr_send(gs, ipa_name->val, ipa_name->len, msg);
+}
+
+int osmo_gsup_enc_send_to_ipa_name(struct osmo_gsup_server *gs, const struct osmo_ipa_name *ipa_name,
+			  const struct osmo_gsup_message *gsup)
+{
+	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP Tx");
+	int rc;
+	rc = osmo_gsup_encode(msg, gsup);
+	if (rc) {
+		LOGP(DLGSUP, LOGL_ERROR, "IMSI-%s: Cannot encode GSUP: %s\n",
+		     gsup->imsi, osmo_gsup_message_type_name(gsup->message_type));
+		msgb_free(msg);
+		return -EINVAL;
+	}
+
+	LOGP(DLGSUP, LOGL_DEBUG, "IMSI-%s: Tx: %s\n", gsup->imsi, osmo_gsup_message_type_name(gsup->message_type));
+	return osmo_gsup_send_to_ipa_name(gs, ipa_name, msg);
+}
