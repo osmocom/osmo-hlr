@@ -8,7 +8,11 @@ AM_CFLAGS = -Wall $(all_includes) -I$(top_srcdir)/include -I$(top_builddir)/incl
 
 lib_LTLIBRARIES = libosmo-gsup-client.la
 
-libosmo_gsup_client_la_SOURCES = gsup_client.c
+libosmo_gsup_client_la_SOURCES = \
+	ipa_name.c \
+	gsup_client.c \
+	gsup_req.c \
+	$(NULL)
 
 libosmo_gsup_client_la_LDFLAGS = -version-info $(LIBVERSION) -no-undefined
 libosmo_gsup_client_la_LIBADD = $(TALLOC_LIBS) $(LIBOSMOCORE_LIBS) $(LIBOSMOABIS_LIBS)
