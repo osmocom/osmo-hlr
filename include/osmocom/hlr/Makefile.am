@@ -2,6 +2,7 @@ noinst_HEADERS = \
 	auc.h \
 	ctrl.h \
 	db.h \
+	dgsm.h \
 	gsup_router.h \
 	gsup_server.h \
 	hlr.h \
@@ -12,6 +13,8 @@ noinst_HEADERS = \
 	lu_fsm.h \
 	mslookup_server.h \
 	mslookup_server_mdns.h \
+	proxy.h \
 	rand.h \
+	remote_hlr.h \
 	timestamp.h \
 	$(NULL)
