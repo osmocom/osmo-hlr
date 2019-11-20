@@ -48,6 +48,7 @@
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
 #include <osmocom/hlr/lu_fsm.h>
+#include <osmocom/mslookup/mdns.h>
 
 struct hlr *g_hlr;
 static void *hlr_ctx = NULL;
@@ -697,6 +698,7 @@ int main(int argc, char **argv)
 	INIT_LLIST_HEAD(&g_hlr->ussd_routes);
 	INIT_LLIST_HEAD(&g_hlr->mslookup.server.local_site_services);
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
+	g_hlr->mslookup.server.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
 
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
@@ -712,6 +714,7 @@ int main(int argc, char **argv)
 	ctrl_vty_init(hlr_ctx);
 	handle_options(argc, argv);
 	hlr_vty_init();
+	dgsm_vty_init();
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {
