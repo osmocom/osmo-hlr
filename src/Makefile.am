@@ -9,6 +9,7 @@ AM_CFLAGS = \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(LIBOSMOVTY_CFLAGS) \
 	$(LIBOSMOCTRL_CFLAGS) \
+	$(LIBOSMOMSLOOKUP_CFLAGS) \
 	$(LIBOSMOABIS_CFLAGS) \
 	$(SQLITE3_CFLAGS) \
 	$(NULL)
@@ -53,14 +54,18 @@ osmo_hlr_SOURCES = \
 	gsup_send.c \
 	hlr_ussd.c \
 	lu_fsm.c \
+	mslookup_server.c \
+	timestamp.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \
 	$(top_builddir)/src/gsupclient/libosmo-gsup-client.la \
+	$(top_builddir)/src/mslookup/libosmo-mslookup.la \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOVTY_LIBS) \
 	$(LIBOSMOCTRL_LIBS) \
+	$(LIBOSMOMSLOOKUP_LIBS) \
 	$(LIBOSMOABIS_LIBS) \
 	$(SQLITE3_LIBS) \
 	$(NULL)

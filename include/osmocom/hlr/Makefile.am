@@ -10,5 +10,7 @@ noinst_HEADERS = \
 	hlr_vty_subscr.h \
 	logging.h \
 	lu_fsm.h \
+	mslookup_server.h \
 	rand.h \
+	timestamp.h \
 	$(NULL)
