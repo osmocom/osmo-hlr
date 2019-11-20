@@ -60,11 +60,56 @@ static int mslookup_server_mdns_bind(struct vty *vty, int argc, const char **arg
 	return CMD_SUCCESS;
 }
 
+static int mslookup_client_mdns_to(struct vty *vty, int argc, const char **argv)
+{
+	const char *ip_str = argc > 0? argv[0] : g_hlr->mslookup.client.mdns.query_addr.ip;
+	const char *port_str = argc > 1? argv[1] : NULL;
+	uint16_t port_nr = port_str ? atoi(port_str) : g_hlr->mslookup.client.mdns.query_addr.port;
+	struct osmo_sockaddr_str addr;
+	if (osmo_sockaddr_str_from_str(&addr, ip_str, port_nr)
+	    || !osmo_sockaddr_str_is_nonzero(&addr)) {
+		vty_out(vty, "%% mslookup client: Invalid mDNS target address: %s %u%s",
+			ip_str, port_nr, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	g_hlr->mslookup.client.mdns.query_addr = addr;
+	g_hlr->mslookup.client.mdns.enable = true;
+	g_hlr->mslookup.client.enable = true;
+	dgsm_mdns_client_config_apply();
+	return CMD_SUCCESS;
+}
+
 #define MDNS_IP46_STR "multicast IPv4 address like " OSMO_MSLOOKUP_MDNS_IP4 \
 			" or IPv6 address like " OSMO_MSLOOKUP_MDNS_IP6 "\n"
 #define MDNS_PORT_STR "mDNS UDP Port number\n"
 #define IP46_STR "IPv4 address like 1.2.3.4 or IPv6 address like a:b:c:d::1\n"
 #define PORT_STR "Service-specific port number\n"
+
+DEFUN(cfg_mslookup_mdns,
+      cfg_mslookup_mdns_cmd,
+      "mdns [IP] [<1-65535>]",
+      "Convenience shortcut: enable and configure both server and client for mDNS mslookup\n"
+      MDNS_IP46_STR MDNS_PORT_STR)
+{
+	int rc1 = mslookup_server_mdns_bind(vty, argc, argv);
+	int rc2 = mslookup_client_mdns_to(vty, argc, argv);
+	if (rc1 != CMD_SUCCESS)
+		return rc1;
+	return rc2;
+}
+
+DEFUN(cfg_mslookup_no_mdns,
+      cfg_mslookup_no_mdns_cmd,
+      "no mdns",
+      NO_STR "Disable both server and client for mDNS mslookup\n")
+{
+	g_hlr->mslookup.server.mdns.enable = false;
+	g_hlr->mslookup.client.mdns.enable = false;
+	mslookup_server_mdns_config_apply();
+	dgsm_mdns_client_config_apply();
+	return CMD_SUCCESS;
+}
 
 struct cmd_node mslookup_server_node = {
 	MSLOOKUP_SERVER_NODE,
@@ -246,6 +291,68 @@ DEFUN(cfg_mslookup_server_msc_no_service_addr,
 	return CMD_SUCCESS;
 }
 
+struct cmd_node mslookup_client_node = {
+	MSLOOKUP_CLIENT_NODE,
+	"%s(config-mslookup-client)# ",
+	1,
+};
+
+DEFUN(cfg_mslookup_client,
+      cfg_mslookup_client_cmd,
+      "client",
+      "Enable and configure Distributed GSM mslookup client")
+{
+	vty->node = MSLOOKUP_CLIENT_NODE;
+	g_hlr->mslookup.client.enable = true;
+	dgsm_mdns_client_config_apply();
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_no_client,
+      cfg_mslookup_no_client_cmd,
+      "no client",
+      NO_STR "Disable Distributed GSM mslookup client")
+{
+	g_hlr->mslookup.client.enable = false;
+	dgsm_mdns_client_config_apply();
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_client_timeout,
+      cfg_mslookup_client_timeout_cmd,
+      "timeout <1-100000>",
+      "How long should the mslookup client wait for remote responses before evaluating received results\n"
+      "timeout in milliseconds\n")
+{
+	uint32_t val = atol(argv[0]);
+	g_hlr->mslookup.client.result_timeout_milliseconds = val;
+	return CMD_SUCCESS;
+}
+
+#define EXIT_HINT() \
+	if (vty->type != VTY_FILE) \
+		vty_out(vty, "%% 'exit' this node to apply changes%s", VTY_NEWLINE)
+
+
+DEFUN(cfg_mslookup_client_mdns,
+      cfg_mslookup_client_mdns_cmd,
+      "mdns [IP] [<1-65535>]",
+      "Enable mDNS client, and configure multicast address to send mDNS mslookup requests to\n"
+      MDNS_IP46_STR MDNS_PORT_STR)
+{
+	return mslookup_client_mdns_to(vty, argc, argv);
+}
+
+DEFUN(cfg_mslookup_client_no_mdns,
+      cfg_mslookup_client_no_mdns_cmd,
+      "no mdns",
+      NO_STR "Disable mDNS client, do not query remote services by mDNS\n")
+{
+	g_hlr->mslookup.client.mdns.enable = false;
+	dgsm_mdns_client_config_apply();
+	return CMD_SUCCESS;
+}
+
 void config_write_msc_services(struct vty *vty, const char *indent, struct mslookup_server_msc_cfg *msc)
 {
 	struct mslookup_service_host *e;
@@ -263,7 +370,8 @@ void config_write_msc_services(struct vty *vty, const char *indent, struct msloo
 int config_write_mslookup(struct vty *vty)
 {
 	if (!g_hlr->mslookup.server.enable
-	    && llist_empty(&g_hlr->mslookup.server.local_site_services))
+	    && llist_empty(&g_hlr->mslookup.server.local_site_services)
+	    && !g_hlr->mslookup.client.enable)
 		return CMD_SUCCESS;
 
 	vty_out(vty, "mslookup%s", VTY_NEWLINE);
@@ -296,6 +404,53 @@ int config_write_mslookup(struct vty *vty)
 			vty_out(vty, " no server%s", VTY_NEWLINE);
 	}
 
+	if (g_hlr->mslookup.client.enable) {
+		vty_out(vty, " client%s", VTY_NEWLINE);
+
+		if (osmo_sockaddr_str_is_nonzero(&g_hlr->mslookup.client.gsup_gateway_proxy))
+			vty_out(vty, "  gateway-proxy %s %u%s",
+				g_hlr->mslookup.client.gsup_gateway_proxy.ip,
+				g_hlr->mslookup.client.gsup_gateway_proxy.port,
+				VTY_NEWLINE);
+
+		if (g_hlr->mslookup.client.mdns.enable
+		    && osmo_sockaddr_str_is_nonzero(&g_hlr->mslookup.client.mdns.query_addr))
+			vty_out(vty, "  mdns to %s %u%s",
+				g_hlr->mslookup.client.mdns.query_addr.ip,
+				g_hlr->mslookup.client.mdns.query_addr.port,
+				VTY_NEWLINE);
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_client_gateway_proxy,
+      cfg_mslookup_client_gateway_proxy_cmd,
+      "gateway-proxy IP [<1-65535>]",
+      "Configure a fixed IP address to send all GSUP requests for unknown IMSIs to, without invoking a lookup for IMSI\n"
+      "IP address of the remote HLR\n" "GSUP port number (omit for default " OSMO_STRINGIFY_VAL(OSMO_GSUP_PORT) ")\n")
+{
+	const char *ip_str = argv[0];
+	const char *port_str = argc > 1 ? argv[1] : NULL;
+	struct osmo_sockaddr_str addr;
+
+	if (osmo_sockaddr_str_from_str(&addr, ip_str, port_str ? atoi(port_str) : OSMO_GSUP_PORT)
+	    || !osmo_sockaddr_str_is_nonzero(&addr)) {
+		vty_out(vty, "%% mslookup client: Invalid address for gateway-proxy: %s %s%s",
+			ip_str, port_str ? : "", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	g_hlr->mslookup.client.gsup_gateway_proxy = addr;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_client_no_gateway_proxy,
+      cfg_mslookup_client_no_gateway_proxy_cmd,
+      "no gateway-proxy",
+      NO_STR "Disable gateway proxy for GSUP with unknown IMSIs\n")
+{
+	g_hlr->mslookup.client.gsup_gateway_proxy = (struct osmo_sockaddr_str){};
 	return CMD_SUCCESS;
 }
 
@@ -335,6 +490,8 @@ void dgsm_vty_init(void)
 	install_element(CONFIG_NODE, &cfg_mslookup_cmd);
 
 	install_node(&mslookup_node, config_write_mslookup);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_mdns_cmd);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_mdns_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_server_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_server_cmd);
 
@@ -350,6 +507,15 @@ void dgsm_vty_init(void)
 	install_element(MSLOOKUP_SERVER_MSC_NODE, &cfg_mslookup_server_msc_service_cmd);
 	install_element(MSLOOKUP_SERVER_MSC_NODE, &cfg_mslookup_server_msc_no_service_cmd);
 	install_element(MSLOOKUP_SERVER_MSC_NODE, &cfg_mslookup_server_msc_no_service_addr_cmd);
+
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_client_cmd);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_client_cmd);
+	install_node(&mslookup_client_node, NULL);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_timeout_cmd);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_mdns_cmd);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_no_mdns_cmd);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_gateway_proxy_cmd);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_no_gateway_proxy_cmd);
 
 	install_element_ve(&do_mslookup_show_services_cmd);
 }

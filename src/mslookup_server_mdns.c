@@ -124,10 +124,9 @@ void mslookup_server_mdns_config_apply()
 	/* Check whether to start/stop/restart mDNS server */
 	bool should_run;
 	bool should_stop;
-	if (!g_hlr->mslookup.allow_startup)
-		return;
 
-	should_run = g_hlr->mslookup.server.enable && g_hlr->mslookup.server.mdns.enable;
+	should_run = g_hlr->mslookup.allow_startup
+		&& g_hlr->mslookup.server.enable && g_hlr->mslookup.server.mdns.enable;
 	should_stop = g_hlr->mslookup.server.mdns.running
 		&& (!should_run
 		    || osmo_sockaddr_str_cmp(&g_hlr->mslookup.server.mdns.bind_addr,

@@ -61,10 +61,12 @@ OsmoHLR(config-hlr)# list
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# ?
 ...
-  bind   Listen/Bind related socket option
+  bind      Listen/Bind related socket option
+  ipa-name  Set the IPA name of this HLR, for proxying to remote HLRs
 OsmoHLR(config-hlr-gsup)# list
 ...
   bind ip A.B.C.D
+  ipa-name NAME
 
 OsmoHLR(config-hlr-gsup)# exit
 OsmoHLR(config-hlr)# exit
@@ -89,6 +91,7 @@ log stderr
  logging level auc notice
  logging level ss info
  logging level lu notice
+ logging level dgsm notice
 ...
 hlr
  store-imei
@@ -98,3 +101,324 @@ hlr
  ussd route prefix *#100# internal own-msisdn
  ussd route prefix *#101# internal own-imsi
 end
+
+OsmoHLR# configure terminal
+
+OsmoHLR(config)# mslookup
+OsmoHLR(config-mslookup)# ?
+...
+  mdns    Convenience shortcut: enable and configure both server and client for mDNS mslookup
+  no      Negate a command or set its defaults
+  server  Enable and configure Distributed GSM mslookup server
+  client  Enable and configure Distributed GSM mslookup client
+OsmoHLR(config-mslookup)# list
+...
+  mdns [IP] [<1-65535>]
+  no mdns
+  server
+  no server
+  client
+  no client
+
+OsmoHLR(config-mslookup)# ?
+...
+  mdns    Convenience shortcut: enable and configure both server and client for mDNS mslookup
+  no      Negate a command or set its defaults
+  server  Enable and configure Distributed GSM mslookup server
+  client  Enable and configure Distributed GSM mslookup client
+OsmoHLR(config-mslookup)# no?
+  no  Negate a command or set its defaults
+OsmoHLR(config-mslookup)# no ?
+  mdns    Disable both server and client for mDNS mslookup
+  server  Disable Distributed GSM mslookup server
+  client  Disable Distributed GSM mslookup client
+OsmoHLR(config-mslookup)# mdns ?
+  [IP]  multicast IPv4 address like 239.192.23.42 or IPv6 address like ff08::23:42
+OsmoHLR(config-mslookup)# mdns 1.2.3.4 ?
+  [<1-65535>]  mDNS UDP Port number
+
+OsmoHLR(config-mslookup)# server
+OsmoHLR(config-mslookup-server)# ?
+...
+  mdns     Configure where the mDNS server listens for mslookup requests
+  no       Negate a command or set its defaults
+  service  Configure addresses of local services, as sent in replies to remote mslookup requests.
+  msc      Configure services for individual local MSCs
+OsmoHLR(config-mslookup-server)# list
+...
+  mdns [IP] [<1-65535>]
+  no mdns
+  service NAME at IP <1-65535>
+  no service NAME
+  no service NAME at IP <1-65535>
+  msc .UNIT_NAME
+
+OsmoHLR(config-mslookup-server)# mdns?
+  mdns  Configure where the mDNS server listens for mslookup requests
+OsmoHLR(config-mslookup-server)# mdns ?
+  [IP]  multicast IPv4 address like 239.192.23.42 or IPv6 address like ff08::23:42
+OsmoHLR(config-mslookup-server)# mdns bind ?
+  [<1-65535>]  mDNS UDP Port number
+OsmoHLR(config-mslookup-server)# mdns bind 1.2.3.4 ?
+% There is no matched command.
+OsmoHLR(config-mslookup-server)# mdns bind 1.2.3.4 ?
+% There is no matched command.
+
+OsmoHLR(config-mslookup-server)# service?
+  service  Configure addresses of local services, as sent in replies to remote mslookup requests.
+OsmoHLR(config-mslookup-server)# service ?
+  NAME  mslookup service name, e.g. sip.voice or smpp.sms
+OsmoHLR(config-mslookup-server)# service foo ?
+  at  at
+OsmoHLR(config-mslookup-server)# service foo at ?
+  IP  IPv4 address like 1.2.3.4 or IPv6 address like a:b:c:d::1
+OsmoHLR(config-mslookup-server)# service foo at 1.2.3.4 ?
+  <1-65535>  Service-specific port number
+
+OsmoHLR(config-mslookup-server)# no ?
+  mdns     Disable server for mDNS mslookup (do not answer remote requests)
+  service  Remove one or more service address entries
+OsmoHLR(config-mslookup-server)# no service ?
+  NAME  mslookup service name, e.g. sip.voice or smpp.sms
+OsmoHLR(config-mslookup-server)# no service foo ?
+  at    at
+  <cr>  
+OsmoHLR(config-mslookup-server)# no service foo at ?
+  IP  IPv4 address like 1.2.3.4 or IPv6 address like a:b:c:d::1
+OsmoHLR(config-mslookup-server)# no service foo at 1.2.3.4 ?
+  <1-65535>  Service-specific port number
+
+OsmoHLR(config-mslookup-server)# msc?
+  msc  Configure services for individual local MSCs
+OsmoHLR(config-mslookup-server)# msc ?
+  UNIT_NAME  IPA Unit Name of the local MSC to configure
+
+OsmoHLR(config-mslookup-server)# msc MSC-1
+OsmoHLR(config-mslookup-server-msc)# ?
+...
+  service  Configure addresses of local services, as sent in replies to remote mslookup requests.
+  no       Negate a command or set its defaults
+OsmoHLR(config-mslookup-server-msc)# list
+...
+  service NAME at IP <1-65535>
+  no service NAME
+  no service NAME at IP <1-65535>
+
+OsmoHLR(config-mslookup-server-msc)# service?
+  service  Configure addresses of local services, as sent in replies to remote mslookup requests.
+OsmoHLR(config-mslookup-server-msc)# service ?
+  NAME  mslookup service name, e.g. sip.voice or smpp.sms
+OsmoHLR(config-mslookup-server-msc)# service foo ?
+  at  at
+OsmoHLR(config-mslookup-server-msc)# service foo at ?
+  IP  IPv4 address like 1.2.3.4 or IPv6 address like a:b:c:d::1
+OsmoHLR(config-mslookup-server-msc)# service foo at 1.2.3.4 ?
+  <1-65535>  Service-specific port number
+
+OsmoHLR(config-mslookup-server-msc)# no ?
+  service  Remove one or more service address entries
+OsmoHLR(config-mslookup-server-msc)# no service ?
+  NAME  mslookup service name, e.g. sip.voice or smpp.sms
+OsmoHLR(config-mslookup-server-msc)# no service foo ?
+  at    at
+  <cr>  
+OsmoHLR(config-mslookup-server-msc)# no service foo at ?
+  IP  IPv4 address like 1.2.3.4 or IPv6 address like a:b:c:d::1
+OsmoHLR(config-mslookup-server-msc)# no service foo at 1.2.3.4 ?
+  <1-65535>  Service-specific port number
+
+OsmoHLR(config-mslookup-server-msc)# exit
+OsmoHLR(config-mslookup-server)# exit
+OsmoHLR(config-mslookup)# client
+OsmoHLR(config-mslookup-client)# ?
+...
+  timeout        How long should the mslookup client wait for remote responses before evaluating received results
+  mdns           Enable mDNS client, and configure multicast address to send mDNS mslookup requests to
+  no             Negate a command or set its defaults
+  gateway-proxy  Configure a fixed IP address to send all GSUP requests for unknown IMSIs to, without invoking a lookup for IMSI
+OsmoHLR(config-mslookup-client)# list
+...
+  timeout <1-100000>
+  mdns [IP] [<1-65535>]
+  no mdns
+  gateway-proxy IP [<1-65535>]
+  no gateway-proxy
+
+OsmoHLR(config-mslookup-client)# timeout?
+  timeout  How long should the mslookup client wait for remote responses before evaluating received results
+OsmoHLR(config-mslookup-client)# timeout ?
+  <1-100000>  timeout in milliseconds
+
+OsmoHLR(config-mslookup-client)# mdns?
+  mdns  Enable mDNS client, and configure multicast address to send mDNS mslookup requests to
+OsmoHLR(config-mslookup-client)# mdns to ?
+  [<1-65535>]  mDNS UDP Port number
+OsmoHLR(config-mslookup-client)# mdns to 1.2.3.4 ?
+% There is no matched command.
+
+OsmoHLR(config-mslookup-client)# gateway-proxy?
+  gateway-proxy  Configure a fixed IP address to send all GSUP requests for unknown IMSIs to, without invoking a lookup for IMSI
+OsmoHLR(config-mslookup-client)# gateway-proxy ?
+  IP  IP address of the remote HLR
+OsmoHLR(config-mslookup-client)# gateway-proxy 1.2.3.4 ?
+  [<1-65535>]  GSUP port number (omit for default 4222)
+
+OsmoHLR(config-mslookup-client)# no?
+  no  Negate a command or set its defaults
+OsmoHLR(config-mslookup-client)# no ?
+  mdns           Disable mDNS client, do not query remote services by mDNS
+  gateway-proxy  Disable gateway proxy for GSUP with unknown IMSIs
+
+OsmoHLR(config-mslookup-client)# gateway-proxy ?
+  IP  IP address of the remote HLR
+OsmoHLR(config-mslookup-client)# gateway-proxy 1.2.3.4 ?
+  [<1-65535>]  GSUP port number (omit for default 4222)
+
+OsmoHLR(config-mslookup-client)# do show mslookup?
+  mslookup  Distributed GSM / mslookup related information
+OsmoHLR(config-mslookup-client)# do show mslookup ?
+  services  List configured service addresses as sent to remote mslookup requests
+
+OsmoHLR(config-mslookup-client)# gateway-proxy 1.2.3.4
+
+OsmoHLR(config-mslookup-client)# exit
+
+OsmoHLR(config-mslookup)# mdns
+OsmoHLR(config-mslookup)# server
+OsmoHLR(config-mslookup-server)# service qwert at 123.45.67.89 qwert
+% Unknown command.
+OsmoHLR(config-mslookup-server)# service qwert at qwert 1234
+% mslookup server: Invalid address for service qwert: qwert 1234
+OsmoHLR(config-mslookup-server)# service foo.bar at 123.45.67.89 1011
+OsmoHLR(config-mslookup-server)# service baz.bar at 121.31.41.5 1617
+OsmoHLR(config-mslookup-server)# service baz.bar at a:b:c::d 1819
+OsmoHLR(config-mslookup-server)# msc msc-901-70-23
+OsmoHLR(config-mslookup-server-msc)# service foo.bar at 76.54.32.10 1234
+OsmoHLR(config-mslookup-server-msc)# service baz.bar at 12.11.10.98 7654
+OsmoHLR(config-mslookup-server-msc)# service baz.bar at 999:999:999::999 9999
+OsmoHLR(config-mslookup-server-msc)# service baz.bar at dd:cc:bb::a 3210
+OsmoHLR(config-mslookup-server-msc)# exit
+OsmoHLR(config-mslookup-server)# msc msc-901-70-42
+OsmoHLR(config-mslookup-server-msc)# service foo.bar at 1.1.1.1 1111
+OsmoHLR(config-mslookup-server-msc)# service baz.bar at 2.2.2.2 2222
+OsmoHLR(config-mslookup-server-msc)# service baz.bar at 2222:2222:2222::2 2222
+OsmoHLR(config-mslookup-server-msc)# do show mslookup services
+Local GSUP HLR address returned in mslookup responses for local IMSIs: 127.0.0.1:4222
+service foo.bar at 123.45.67.89 1011
+service baz.bar at 121.31.41.5 1617
+service baz.bar at a:b:c::d 1819
+msc MSC-1
+msc msc-901-70-23
+ service foo.bar at 76.54.32.10 1234
+ service baz.bar at 12.11.10.98 7654
+ service baz.bar at dd:cc:bb::a 3210
+msc msc-901-70-42
+ service foo.bar at 1.1.1.1 1111
+ service baz.bar at 2.2.2.2 2222
+ service baz.bar at 2222:2222:2222::2 2222
+
+OsmoHLR(config-mslookup-server-msc)# show running-config
+...
+mslookup
+ server
+  mdns bind 239.192.23.42 4266
+ service foo.bar at 123.45.67.89 1011
+ service baz.bar at 121.31.41.5 1617
+ service baz.bar at a:b:c::d 1819
+ msc MSC-1
+ msc msc-901-70-23
+  service foo.bar at 76.54.32.10 1234
+  service baz.bar at 12.11.10.98 7654
+  service baz.bar at dd:cc:bb::a 3210
+ msc msc-901-70-42
+  service foo.bar at 1.1.1.1 1111
+  service baz.bar at 2.2.2.2 2222
+  service baz.bar at 2222:2222:2222::2 2222
+ client
+  gateway-proxy 1.2.3.4 4222
+  mdns to 239.192.23.42 4266
+...
+
+OsmoHLR(config-mslookup-server-msc)# no service baz.bar
+OsmoHLR(config-mslookup-server-msc)# no service asdf
+% mslookup server: cannot remove service 'asdf'
+OsmoHLR(config-mslookup-server-msc)# exit
+OsmoHLR(config-mslookup-server)# msc msc-901-70-23
+OsmoHLR(config-mslookup-server-msc)# no service baz.bar at dd:cc:bb::a 3210
+% mslookup server: cannot remove service 'baz.bar' to dd:cc:bb::a 3210
+OsmoHLR(config-mslookup-server-msc)# no service asdf at asdf asdf
+% Unknown command.
+OsmoHLR(config-mslookup-server-msc)# no service asdf at asdf 3210
+% mslookup server: Invalid address for 'no service' asdf: asdf 3210
+OsmoHLR(config-mslookup-server-msc)# no service asdf at dd:cc:bb::a 3210
+% mslookup server: cannot remove service 'asdf' to dd:cc:bb::a 3210
+OsmoHLR(config-mslookup-server-msc)# exit
+OsmoHLR(config-mslookup-server)# no service baz.bar at 2.2.2.2 2222
+% mslookup server: cannot remove service 'baz.bar' to 2.2.2.2 2222
+OsmoHLR(config-mslookup-server)# no service baz.bar at a:b:c::d 1819
+% mslookup server: cannot remove service 'baz.bar' to a:b:c::d 1819
+
+OsmoHLR(config-mslookup-server)# exit
+OsmoHLR(config-mslookup)# client
+OsmoHLR(config-mslookup-client)# no gateway-proxy
+
+OsmoHLR(config-mslookup-client)# do show mslookup services
+Local GSUP HLR address returned in mslookup responses for local IMSIs: 127.0.0.1:4222
+service foo.bar at 123.45.67.89 1011
+service baz.bar at 121.31.41.5 1617
+msc MSC-1
+msc msc-901-70-23
+ service foo.bar at 76.54.32.10 1234
+ service baz.bar at 12.11.10.98 7654
+msc msc-901-70-42
+ service foo.bar at 1.1.1.1 1111
+
+OsmoHLR(config-mslookup-client)# show running-config
+...
+mslookup
+ server
+  mdns bind 239.192.23.42 4266
+ service foo.bar at 123.45.67.89 1011
+ service baz.bar at 121.31.41.5 1617
+ msc MSC-1
+ msc msc-901-70-23
+  service foo.bar at 76.54.32.10 1234
+  service baz.bar at 12.11.10.98 7654
+ msc msc-901-70-42
+  service foo.bar at 1.1.1.1 1111
+ client
+  mdns to 239.192.23.42 4266
+...
+
+OsmoHLR(config-mslookup-client)# exit
+OsmoHLR(config-mslookup)# server
+OsmoHLR(config-mslookup-server)# service gsup.hlr at 23.42.17.11 4223
+OsmoHLR(config-mslookup-server)# do show mslookup services
+Local GSUP HLR address returned in mslookup responses for local IMSIs: 23.42.17.11:4223
+service foo.bar at 123.45.67.89 1011
+service baz.bar at 121.31.41.5 1617
+service gsup.hlr at 23.42.17.11 4223
+msc MSC-1
+msc msc-901-70-23
+ service foo.bar at 76.54.32.10 1234
+ service baz.bar at 12.11.10.98 7654
+msc msc-901-70-42
+ service foo.bar at 1.1.1.1 1111
+
+OsmoHLR(config-mslookup-server)# show running-config
+...
+mslookup
+ server
+  mdns bind 239.192.23.42 4266
+ service foo.bar at 123.45.67.89 1011
+ service baz.bar at 121.31.41.5 1617
+ service gsup.hlr at 23.42.17.11 4223
+ msc MSC-1
+ msc msc-901-70-23
+  service foo.bar at 76.54.32.10 1234
+  service baz.bar at 12.11.10.98 7654
+ msc msc-901-70-42
+  service foo.bar at 1.1.1.1 1111
+ client
+  mdns to 239.192.23.42 4266
+...

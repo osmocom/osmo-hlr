@@ -27,6 +27,9 @@ struct osmo_gsup_server {
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
 	struct llist_head routes;
+
+	/* Proxy requests from this server's clients to remote GSUP servers. */
+	struct proxy *proxy;
 };
 
 
