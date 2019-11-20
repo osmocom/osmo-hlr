@@ -1,0 +1,22 @@
+"gsup.hlr.123456789012345.imsi" -> "gsup.hlr" "123456789012345" imsi
+"gsup.hlr.1.imsi" -> rc = -5
+"sip.voice.1.msisdn" -> "sip.voice" "1" msisdn
+"a.b.c.imsi" -> rc = -5
+"" -> rc = -2
+"." -> rc = -3
+"..." -> rc = -4
+"....." -> rc = -4
+".....1.msisdn" -> "...." "1" msisdn
+"fofdndsf. d.ads ofdsf. ads.kj.1243455132.msisdn" -> "fofdndsf. d.ads ofdsf. ads.kj" "1243455132" msisdn
+"foo.12345678901234567890.imsi" -> rc = -11
+"gsup.hlr.123456789012345.what" -> rc = -7
+NULL -> rc = -1
+"blarg" -> rc = -2
+"blarg." -> rc = -3
+"blarg.1." -> rc = -4
+"blarg.1.msisdn" -> "blarg" "1" msisdn
+"blarg.1.msisdn." -> rc = -4
+".1.msisdn" -> rc = -3
+"1.msisdn" -> rc = -3
+"qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmm.1.msisdn" -> rc = -11
+"qwerty.1.qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmm" -> rc = -7

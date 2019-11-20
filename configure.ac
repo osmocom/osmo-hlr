@@ -174,10 +174,12 @@ AC_OUTPUT(
 	doc/examples/Makefile
 	src/Makefile
 	src/gsupclient/Makefile
+	src/mslookup/Makefile
 	include/Makefile
 	include/osmocom/Makefile
 	include/osmocom/hlr/Makefile
 	libosmo-gsup-client.pc
+	libosmo-mslookup.pc
 	sql/Makefile
 	doc/manuals/Makefile
 	contrib/Makefile
@@ -188,4 +190,5 @@ AC_OUTPUT(
 	tests/gsup_server/Makefile
 	tests/db/Makefile
 	tests/db_upgrade/Makefile
+	tests/mslookup/Makefile
 	)
