@@ -1,0 +1,32 @@
+
+test_gsup_make_response()
+rx = Subscriber-Management OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST: imsi="1234567" source_name="incoming-source-name\0" session_id=42 session_state=BEGIN sm_rp_mr=23
+
+writing to an empty struct osmo_gsup_message should populate values as needed:
+- args (error=0, final=0)
+  Subscriber-Management OSMO_GSUP_MSGT_UPDATE_LOCATION_RESULT: imsi="1234567" destination_name="incoming-source-name\0" session_id=42 session_state=CONTINUE sm_rp_mr=23
+  rc = 0
+- args (error=0, final=1)
+  Subscriber-Management OSMO_GSUP_MSGT_UPDATE_LOCATION_RESULT: imsi="1234567" destination_name="incoming-source-name\0" session_id=42 session_state=END sm_rp_mr=23
+  rc = 0
+- args (error=1, final=0)
+  Subscriber-Management OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR: imsi="1234567" destination_name="incoming-source-name\0" session_id=42 session_state=CONTINUE sm_rp_mr=23
+  rc = 0
+- args (error=1, final=1)
+  Subscriber-Management OSMO_GSUP_MSGT_UPDATE_LOCATION_ERROR: imsi="1234567" destination_name="incoming-source-name\0" session_id=42 session_state=END sm_rp_mr=23
+  rc = 0
+
+writing to an already populated struct osmo_gsup_message, should have no effect:
+- args (error=0, final=0)
+  Inter-MSC OSMO_GSUP_MSGT_ROUTING_ERROR: imsi="987654321" destination_name="preset-destination-name\0" session_id=11 session_state=END sm_rp_mr=17
+  rc = 15
+- args (error=0, final=1)
+  Inter-MSC OSMO_GSUP_MSGT_ROUTING_ERROR: imsi="987654321" destination_name="preset-destination-name\0" session_id=11 session_state=END sm_rp_mr=17
+  rc = 15
+- args (error=1, final=0)
+  Inter-MSC OSMO_GSUP_MSGT_ROUTING_ERROR: imsi="987654321" destination_name="preset-destination-name\0" session_id=11 session_state=END sm_rp_mr=17
+  rc = 15
+- args (error=1, final=1)
+  Inter-MSC OSMO_GSUP_MSGT_ROUTING_ERROR: imsi="987654321" destination_name="preset-destination-name\0" session_id=11 session_state=END sm_rp_mr=17
+  rc = 15
+Done.

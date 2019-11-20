@@ -190,6 +190,7 @@ AC_OUTPUT(
 	tests/auc/Makefile
 	tests/auc/gen_ts_55_205_test_sets/Makefile
 	tests/gsup_server/Makefile
+	tests/gsup/Makefile
 	tests/db/Makefile
 	tests/db_upgrade/Makefile
 	tests/mslookup/Makefile

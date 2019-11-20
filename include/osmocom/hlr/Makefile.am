@@ -9,6 +9,6 @@ noinst_HEADERS = \
 	hlr_vty.h \
 	hlr_vty_subscr.h \
 	logging.h \
-	luop.h \
+	lu_fsm.h \
 	rand.h \
 	$(NULL)

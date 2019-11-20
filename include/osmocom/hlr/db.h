@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 
+#include <osmocom/gsupclient/ipa_name.h>
+
 struct hlr;
 
 enum stmt_idx {
@@ -151,12 +153,11 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_subscriber *subscr);
 int db_subscr_nam(struct db_context *dbc, const char *imsi, bool nam_val, bool is_ps);
 int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
-		 const char *vlr_or_sgsn_number, bool is_ps);
+		 const struct osmo_ipa_name *vlr_name, bool is_ps,
+		 const struct osmo_ipa_name *via_proxy);
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
-
-int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
 
 /*! Call sqlite3_column_text() and copy result to a char[].
  * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.
@@ -167,4 +168,15 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 	do { \
 		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
 		osmo_strlcpy(buf, _txt, sizeof(buf)); \
+	} while (0)
+
+/*! Call sqlite3_column_text() and copy result to a struct osmo_ipa_name.
+ * \param[out] ipa_name  A struct osmo_ipa_name* to write to.
+ * \param[in] stmt  An sqlite3_stmt*.
+ * \param[in] idx  Index in stmt's returned columns.
+ */
+#define copy_sqlite3_text_to_ipa_name(ipa_name, stmt, idx) \
+	do { \
+		const char *_txt = (const char *) sqlite3_column_text(stmt, idx); \
+		osmo_ipa_name_set_str(ipa_name, _txt); \
 	} while (0)
