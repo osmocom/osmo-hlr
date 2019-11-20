@@ -1,3 +1,4 @@
 SUBDIRS = \
 	hlr \
+	mslookup \
 	$(NULL)
