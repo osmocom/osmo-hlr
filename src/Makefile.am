@@ -53,6 +53,9 @@ osmo_hlr_SOURCES = \
 	hlr_vty_subscr.c \
 	gsup_send.c \
 	hlr_ussd.c \
+	proxy.c \
+	dgsm.c \
+	remote_hlr.c \
 	lu_fsm.c \
 	timestamp.c \
 	mslookup_server.c \

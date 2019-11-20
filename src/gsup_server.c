@@ -503,3 +503,39 @@ int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, 
 
        return 0;
 }
+
+int osmo_gsup_forward_to_local_peer(struct osmo_gsup_server *server, const struct osmo_gsup_peer_id *to_peer,
+				    struct osmo_gsup_req *req, struct osmo_gsup_message *modified_gsup)
+{
+	int rc;
+	/* To forward to a remote entity (HLR, SMSC,...), we need to indicate the original source name in the Source
+	 * Name IE to make sure the reply can be routed back. Store the sender in gsup->source_name -- the remote entity
+	 * is required to return this as gsup->destination_name so that the reply gets routed to the original sender. */
+	struct osmo_gsup_message forward = *(modified_gsup? : &req->gsup);
+
+	if (req->source_name.type != OSMO_GSUP_PEER_ID_IPA_NAME) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Unsupported GSUP peer id type: %s",
+					  osmo_gsup_peer_id_type_name(req->source_name.type));
+		rc = -ENOTSUP;
+		goto routing_error;
+	}
+	forward.source_name = req->source_name.ipa_name.val;
+	forward.source_name_len = req->source_name.ipa_name.len;
+
+	if (to_peer->type != OSMO_GSUP_PEER_ID_IPA_NAME) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Unsupported GSUP peer id type: %s",
+					  osmo_gsup_peer_id_type_name(to_peer->type));
+		rc = -ENOTSUP;
+		goto routing_error;
+	}
+	LOG_GSUP_REQ(req, LOGL_INFO, "Forwarding to %s\n", osmo_gsup_peer_id_to_str(to_peer));
+	rc = osmo_gsup_enc_send_to_ipa_name(server, &to_peer->ipa_name, &forward);
+	if (rc)
+		goto routing_error;
+	osmo_gsup_req_free(req);
+	return 0;
+
+routing_error:
+	osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_ROUTING_ERROR, true);
+	return rc;
+}

@@ -34,6 +34,7 @@ enum hlr_vty_node {
 	MSLOOKUP_NODE,
 	MSLOOKUP_SERVER_NODE,
 	MSLOOKUP_SERVER_MSC_NODE,
+	MSLOOKUP_CLIENT_NODE,
 };
 
 int hlr_vty_is_config_node(struct vty *vty, int node);
