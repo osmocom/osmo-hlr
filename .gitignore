@@ -36,6 +36,7 @@ src/osmo-hlr
 src/osmo-hlr-db-tool
 src/osmo-euse-demo
 src/gsupclient/gsup-test-client
+src/mslookup/osmo-mslookup-client
 
 tests/atconfig
 tests/testsuite
