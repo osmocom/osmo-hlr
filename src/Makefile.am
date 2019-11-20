@@ -54,8 +54,10 @@ osmo_hlr_SOURCES = \
 	gsup_send.c \
 	hlr_ussd.c \
 	lu_fsm.c \
-	mslookup_server.c \
 	timestamp.c \
+	mslookup_server.c \
+	mslookup_server_mdns.c \
+	dgsm_vty.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \

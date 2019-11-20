@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <osmocom/gsupclient/cni_peer_id.h>
+#include <osmocom/mslookup/mslookup.h>
+
 struct osmo_mslookup_query;
 struct osmo_mslookup_result;
 
