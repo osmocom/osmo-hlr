@@ -67,6 +67,13 @@ struct hlr {
 	/* Bitmask of DB_SUBSCR_FLAG_* */
 	uint8_t subscr_create_on_demand_flags;
 	unsigned int subscr_create_on_demand_rand_msisdn_len;
+
+	struct {
+		struct {
+			uint32_t local_attach_max_age;
+			struct llist_head local_site_services;
+		} server;
+	} mslookup;
 };
 
 extern struct hlr *g_hlr;
