@@ -27,6 +27,7 @@
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/timestamp.h>
 #include <osmocom/hlr/mslookup_server.h>
+#include <osmocom/hlr/proxy.h>
 
 static const struct osmo_mslookup_result not_found = {
 		.rc = OSMO_MSLOOKUP_RC_NOT_FOUND,
@@ -290,6 +291,68 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
 	return true;
 }
 
+
+/* Determine whether the subscriber with the given ID has routed a Location Updating via this HLR as first hop. Return
+ * true if it is attached at a local VLR, and we are serving as proxy for a remote home HLR.
+ */
+static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *query,
+					      uint32_t *lu_age,
+					      struct osmo_ipa_name *local_msc_name)
+{
+	struct proxy_subscr proxy_subscr;
+	uint32_t age;
+	int rc;
+
+	/* See the local HLR record. If the subscriber is "at home" in this HLR and is also currently located here, we
+	 * will find a valid location updating and no vlr_via_proxy entry. */
+	switch (query->id.type) {
+	case OSMO_MSLOOKUP_ID_IMSI:
+		rc = proxy_subscr_get_by_imsi(&proxy_subscr, g_hlr->gs->proxy, query->id.imsi);
+		break;
+	case OSMO_MSLOOKUP_ID_MSISDN:
+		rc = proxy_subscr_get_by_msisdn(&proxy_subscr, g_hlr->gs->proxy, query->id.msisdn);
+		break;
+	default:
+		LOGP(DDGSM, LOGL_ERROR, "%s: unknown ID type\n",
+		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
+		return false;
+	}
+
+	if (rc) {
+		LOGP(DDGSM, LOGL_DEBUG, "%s: does not exist in GSUP proxy\n",
+		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
+		return false;
+	}
+
+	/* We only need to care about CS LU, since only CS services need D-GSM routing. */
+	if (!timestamp_age(&proxy_subscr.cs.last_lu, &age)
+	    || age > g_hlr->mslookup.server.local_attach_max_age) {
+		LOGP(DDGSM, LOGL_ERROR,
+		     "%s: last attach was at local VLR (proxying for remote HLR), but too long ago: %us > %us\n",
+		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
+		     age, g_hlr->mslookup.server.local_attach_max_age);
+		return false;
+	}
+
+	if (proxy_subscr.cs.vlr_via_proxy.len) {
+		LOGP(DDGSM, LOGL_DEBUG, "%s: last attach is not at local VLR, but at VLR '%s' via proxy '%s'\n",
+		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
+		     osmo_ipa_name_to_str(&proxy_subscr.cs.vlr_name),
+		     osmo_ipa_name_to_str(&proxy_subscr.cs.vlr_via_proxy));
+		return false;
+	}
+
+	*lu_age = age;
+	*local_msc_name = proxy_subscr.cs.vlr_name;
+	LOGP(DDGSM, LOGL_DEBUG, "%s: attached %u seconds ago at local VLR %s; proxying for remote HLR "
+	     OSMO_SOCKADDR_STR_FMT "\n",
+	     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
+	     age, osmo_ipa_name_to_str(local_msc_name),
+	     OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr.remote_hlr_addr));
+
+	return true;
+}
+
 static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 					uint32_t *lu_age_p,
 					struct osmo_ipa_name *local_msc_name)
@@ -297,6 +360,9 @@ static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 	bool attached_here;
 	uint32_t lu_age = 0;
 	struct osmo_ipa_name msc_name = {};
+	bool attached_here_proxy;
+	uint32_t proxy_lu_age = 0;
+	struct osmo_ipa_name proxy_msc_name = {};
 
 	/* First ask the local HLR db, but if the local proxy record indicates a more recent LU, use that instead.
 	 * For all usual cases, only one of these will reflect a LU, even if a subscriber had more than one home HLR:
@@ -307,8 +373,14 @@ static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 	 * situations, compare the two entries.
 	 */
 	attached_here = subscriber_has_done_lu_here_hlr(query, &lu_age, &msc_name);
+	attached_here_proxy = subscriber_has_done_lu_here_proxy(query, &proxy_lu_age, &proxy_msc_name);
 
-	/* Future: If proxy has a younger lu, replace. */
+	/* If proxy has a younger lu, replace. */
+	if (attached_here_proxy && (!attached_here || (proxy_lu_age < lu_age))) {
+		attached_here = true;
+		lu_age = proxy_lu_age;
+		msc_name = proxy_msc_name;
+	}
 
 	if (attached_here && !msc_name.len) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "%s: attached here, but no VLR name known\n",

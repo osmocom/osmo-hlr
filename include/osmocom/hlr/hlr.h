@@ -28,6 +28,8 @@
 #include <osmocom/core/tdef.h>
 #include <osmocom/core/sockaddr_str.h>
 
+#include <osmocom/hlr/dgsm.h>
+
 #define HLR_DEFAULT_DB_FILE_PATH "hlr.db"
 
 struct hlr_euse;
@@ -86,6 +88,29 @@ struct hlr {
 				struct osmo_mslookup_server_mdns *running;
 			} mdns;
 		} server;
+
+		/* The mslookup client in osmo-hlr is used to find out which remote HLRs service a locally unknown IMSI.
+		 * (It may also be used to resolve recipients for SMS-over-GSUP in the future.) */
+		struct {
+			/* Whether to proxy/forward to remote HLRs */
+			bool enable;
+
+			/* If this is set, all GSUP for unknown IMSIs is forwarded directly to this GSUP address,
+			 * unconditionally. */
+			struct osmo_sockaddr_str gsup_gateway_proxy;
+
+			/* mslookup client request handling */
+			unsigned int result_timeout_milliseconds;
+
+			struct osmo_mslookup_client *client;
+			struct {
+				/* Whether to use mDNS for IMSI MS Lookup */
+				bool enable;
+				struct osmo_sockaddr_str query_addr;
+				char *domain_suffix;
+				struct osmo_mslookup_client_method *running;
+			} mdns;
+		} client;
 	} mslookup;
 };
 
