@@ -178,6 +178,7 @@ AC_OUTPUT(
 	include/Makefile
 	include/osmocom/Makefile
 	include/osmocom/hlr/Makefile
+	include/osmocom/mslookup/Makefile
 	libosmo-gsup-client.pc
 	libosmo-mslookup.pc
 	sql/Makefile
