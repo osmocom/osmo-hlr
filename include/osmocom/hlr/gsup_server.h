@@ -5,6 +5,8 @@
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
 #include <osmocom/gsm/gsup.h>
+#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_req.h>
 
 #ifndef OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN
 #define OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN	43 /* TS 24.008 10.5.4.7 */
@@ -21,9 +23,6 @@ struct osmo_gsup_server {
 
 	/* list of osmo_gsup_conn */
 	struct llist_head clients;
-
-	/* lu_operations list */
-	struct llist_head *luop;
 
 	struct ipa_server_link *link;
 	osmo_gsup_read_cb_t read_cb;
@@ -45,10 +44,15 @@ struct osmo_gsup_conn {
 	/* Set when Location Update is received: */
 	bool supports_cs; /* client supports OSMO_GSUP_CN_DOMAIN_CS */
 	bool supports_ps; /* client supports OSMO_GSUP_CN_DOMAIN_PS */
+
+	/* The IPA unit name received on this link. Routes with more unit names serviced by this link may exist in
+	 * osmo_gsup_server->routes, but this is the name the immediate peer identified as in the IPA handshake. */
+	struct osmo_ipa_name peer_name;
 };
 
 struct msgb *osmo_gsup_msgb_alloc(const char *label);
 
+struct osmo_gsup_req *osmo_gsup_conn_rx(struct osmo_gsup_conn *conn, struct msgb *msg);
 int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg);
 int osmo_gsup_conn_ccm_get(const struct osmo_gsup_conn *clnt, uint8_t **addr,
 			   uint8_t tag);
@@ -57,7 +61,6 @@ struct osmo_gsup_server *osmo_gsup_server_create(void *ctx,
 						 const char *ip_addr,
 						 uint16_t tcp_port,
 						 osmo_gsup_read_cb_t read_cb,
-						 struct llist_head *lu_op_lst,
 						 void *priv);
 
 void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);

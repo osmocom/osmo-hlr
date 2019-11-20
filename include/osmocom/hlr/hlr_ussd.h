@@ -46,8 +46,8 @@ struct hlr_ussd_route *ussd_route_prefix_alloc_ext(struct hlr *hlr, const char *
 						   struct hlr_euse *euse);
 void ussd_route_del(struct hlr_ussd_route *rt);
 
-int rx_proc_ss_req(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
-int rx_proc_ss_error(struct osmo_gsup_conn *conn, const struct osmo_gsup_message *gsup);
+void rx_proc_ss_req(struct osmo_gsup_req *req);
+void rx_proc_ss_error(struct osmo_gsup_req *req);
 
 struct ss_session;
 struct ss_request;
@@ -56,6 +56,5 @@ struct ss_request;
 struct hlr_iuse {
 	const char *name;
 	/* call-back to be called for any incoming USSD messages for this IUSE */
-	int (*handle_ussd)(struct osmo_gsup_conn *conn, struct ss_session *ss,
-			   const struct osmo_gsup_message *gsup, const struct ss_request *req);
+	int (*handle_ussd)(struct ss_session *ss, const struct osmo_gsup_message *gsup, const struct ss_request *req);
 };

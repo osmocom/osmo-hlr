@@ -2,6 +2,7 @@ SUBDIRS = \
 	auc \
 	gsup_server \
 	db \
+	gsup \
 	db_upgrade \
 	mslookup \
 	$(NULL)

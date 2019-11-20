@@ -148,6 +148,8 @@ log stderr
  logging level db notice
  logging level auc notice
  logging level ss info
+ logging level mslookup notice
+ logging level lu notice
 ...
 hlr
  store-imei
