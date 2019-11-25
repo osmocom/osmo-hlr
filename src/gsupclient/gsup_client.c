@@ -97,6 +97,12 @@ static void connect_timer_cb(void *gsupc_)
 	if (gsupc->is_connected)
 		return;
 
+	if (gsupc->up_down_cb) {
+		/* When the up_down_cb() returns false, the user asks us not to retry connecting. */
+		if (!gsupc->up_down_cb(gsupc, false))
+			return;
+	}
+
 	gsup_client_connect(gsupc);
 }
 
@@ -139,8 +145,17 @@ static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 			gsup_client_oap_register(gsupc);
 
 		osmo_timer_del(&gsupc->connect_timer);
+
+		if (gsupc->up_down_cb)
+			gsupc->up_down_cb(gsupc, true);
 	} else {
 		osmo_timer_del(&gsupc->ping_timer);
+
+		if (gsupc->up_down_cb) {
+			/* When the up_down_cb() returns false, the user asks us not to retry connecting. */
+			if (!gsupc->up_down_cb(gsupc, false))
+				return;
+		}
 
 		osmo_timer_schedule(&gsupc->connect_timer,
 				    OSMO_GSUP_CLIENT_RECONNECT_INTERVAL, 0);
@@ -263,31 +278,28 @@ static void start_test_procedure(struct osmo_gsup_client *gsupc)
  * Use the provided ipaccess unit as the client-side identifier; ipa_dev should
  * be allocated in talloc_ctx talloc_ctx as well.
  * \param[in] talloc_ctx talloc context.
- * \param[in] ipa_dev IP access unit which contains client identification information; must be allocated
- *                    in talloc_ctx as well to ensure it lives throughout the lifetime of the connection.
- * \param[in] ip_addr GSUP server IP address.
- * \param[in] tcp_port GSUP server TCP port.
- * \param[in] read_cb callback for reading from the GSUP connection.
- * \param[in] oapc_config OPA client configuration.
- *  \returns a GSUP client connection or NULL on failure.
+ * \param[in] config  Parameters for setting up the GSUP client.
+ * \return a GSUP client connection, or NULL on failure.
  */
-struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
-						  struct ipaccess_unit *ipa_dev,
-						  const char *ip_addr,
-						  unsigned int tcp_port,
-						  osmo_gsup_client_read_cb_t read_cb,
-						  struct osmo_oap_client_config *oapc_config)
+struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx, struct osmo_gsup_client_config *config)
 {
 	struct osmo_gsup_client *gsupc;
 	int rc;
 
+	OSMO_ASSERT(config->ipa_dev->unit_name);
+
 	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
 	OSMO_ASSERT(gsupc);
-	gsupc->unit_name = (const char *)ipa_dev->unit_name; /* API backwards compat */
-	gsupc->ipa_dev = ipa_dev;
+	*gsupc = (struct osmo_gsup_client){
+		.unit_name = (const char *)config->ipa_dev->unit_name, /* API backwards compat */
+		.ipa_dev = config->ipa_dev,
+		.read_cb = config->read_cb,
+		.up_down_cb = config->up_down_cb,
+		.data = config->data,
+	};
 
 	/* a NULL oapc_config will mark oap_state disabled. */
-	rc = osmo_oap_client_init(oapc_config, &gsupc->oap_state);
+	rc = osmo_oap_client_init(config->oapc_config, &gsupc->oap_state);
 	if (rc != 0)
 		goto failed;
 
@@ -295,7 +307,7 @@ struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 					      /* no e1inp */ NULL,
 					      0,
 					      /* no specific local IP:port */ NULL, 0,
-					      ip_addr, tcp_port,
+					      config->ip_addr, config->tcp_port,
 					      gsup_client_updown_cb,
 					      gsup_client_read_cb,
 					      /* default write_cb */ NULL,
@@ -309,14 +321,31 @@ struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 
 	if (rc < 0)
 		goto failed;
-
-	gsupc->read_cb = read_cb;
-
 	return gsupc;
 
 failed:
 	osmo_gsup_client_destroy(gsupc);
 	return NULL;
+}
+
+/*! Like osmo_gsup_client_create3() but without the up_down_cb and data arguments, and with the oapc_config argument in
+ * a different position.
+ */
+struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
+						  struct ipaccess_unit *ipa_dev,
+						  const char *ip_addr,
+						  unsigned int tcp_port,
+						  osmo_gsup_client_read_cb_t read_cb,
+						  struct osmo_oap_client_config *oapc_config)
+{
+	struct osmo_gsup_client_config cfg = {
+		.ipa_dev = ipa_dev,
+		.ip_addr = ip_addr,
+		.tcp_port = tcp_port,
+		.oapc_config = oapc_config,
+		.read_cb = read_cb,
+	};
+	return osmo_gsup_client_create3(talloc_ctx, &cfg);
 }
 
 /**
