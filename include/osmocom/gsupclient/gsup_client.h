@@ -38,6 +38,8 @@ struct osmo_gsup_client;
 /* Expects message in msg->l2h */
 typedef int (*osmo_gsup_client_read_cb_t)(struct osmo_gsup_client *gsupc, struct msgb *msg);
 
+typedef bool (*osmo_gsup_client_up_down_cb_t)(struct osmo_gsup_client *gsupc, bool up);
+
 struct osmo_gsup_client {
 	const char *unit_name; /* same as ipa_dev->unit_name, for backwards compat */
 
@@ -53,7 +55,30 @@ struct osmo_gsup_client {
 	int got_ipa_pong;
 
 	struct ipaccess_unit *ipa_dev; /* identification information sent to IPA server */
+
+	osmo_gsup_client_up_down_cb_t up_down_cb;
 };
+
+struct osmo_gsup_client_config {
+	/*! IP access unit which contains client identification information; must be allocated in talloc_ctx as well to
+	 * ensure it lives throughout the lifetime of the connection. */
+	struct ipaccess_unit *ipa_dev;
+	/*! GSUP server IP address to connect to. */
+	const char *ip_addr;
+	/*! GSUP server TCP port to connect to. */
+	unsigned int tcp_port;
+	/*! OPA client configuration, or NULL. */
+	struct osmo_oap_client_config *oapc_config;
+	/*! callback for reading from the GSUP connection. */
+	osmo_gsup_client_read_cb_t read_cb;
+	/*! Invoked when the GSUP link is ready for communication, and when the link drops. */
+	osmo_gsup_client_up_down_cb_t up_down_cb;
+	/*! User data stored in the returned gsupc->data, as context for the callbacks. */
+	void *data;
+	/*! Marker for future extension, always pass this as false. */
+	bool more;
+};
+struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx, struct osmo_gsup_client_config *config);
 
 struct osmo_gsup_client *osmo_gsup_client_create2(void *talloc_ctx,
 						  struct ipaccess_unit *ipa_dev,
