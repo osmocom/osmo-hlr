@@ -1,3 +1,15 @@
+OsmoHLR> ?
+  show        Show running system information
+  list        Print command list
+  exit        Exit current mode and down to previous mode
+  help        Description of the interactive help system
+  enable      Turn on privileged mode command
+  terminal    Set terminal line parameters
+  who         Display who is on vty
+  logging     Configure logging
+  no          Negate a command or set its defaults
+  logp        Print a message on all log outputs; useful for placing markers in test logs
+  subscriber  Subscriber management commands
 OsmoHLR> list
   show version
   show online-help
@@ -25,6 +37,21 @@ OsmoHLR> list
   show subscriber (imsi|msisdn|id|imei) IDENT
 
 OsmoHLR> enable
+OsmoHLR# ?
+  help        Description of the interactive help system
+  list        Print command list
+  write       Write running configuration to memory, network, or terminal
+  show        Show running system information
+  exit        Exit current mode and down to previous mode
+  disable     Turn off privileged mode command
+  configure   Configuration from vty interface
+  copy        Copy configuration
+  terminal    Set terminal line parameters
+  who         Display who is on vty
+  logging     Configure logging
+  no          Negate a command or set its defaults
+  logp        Print a message on all log outputs; useful for placing markers in test logs
+  subscriber  Subscriber management commands
 OsmoHLR# list
   help
 ...
@@ -45,6 +72,15 @@ OsmoHLR# list
 ...
 
 OsmoHLR# configure terminal
+OsmoHLR(config)# ?
+...
+  banner    Set banner string
+  service   Set up miscellaneous service
+  line      Configure a terminal line
+  ctrl      Configure the Control Interface
+  log       Configure logging sub-system
+  stats     Configure stats sub-system
+  hlr       Configure the HLR
 OsmoHLR(config)# list
   help
 ...
@@ -54,6 +90,14 @@ OsmoHLR(config)# list
   hlr
 
 OsmoHLR(config)# hlr
+OsmoHLR(config-hlr)# ?
+...
+  euse                         Configure a particular External USSD Entity
+  no                           Negate a command or set its defaults
+  ussd                         USSD Configuration
+  ncss-guard-timeout           Set guard timer for NCSS (call independent SS) session activity
+  store-imei                   Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send Check IMEI requests (for OsmoMSC, you may want to set 'check-imei-rqd 1').
+  subscriber-create-on-demand  Make a new record when a subscriber is first seen.
 OsmoHLR(config-hlr)# list
   help
 ...
@@ -75,11 +119,11 @@ OsmoHLR(config-hlr)# list
   no subscriber-create-on-demand
 
 OsmoHLR(config-hlr)# gsup
-OsmoHLR(config-hlr-gsup)# list
-  help
+OsmoHLR(config-hlr-gsup)# ?
 ...
-  exit
-  end
+  bind   Listen/Bind related socket option
+OsmoHLR(config-hlr-gsup)# list
+...
   bind ip A.B.C.D
 
 OsmoHLR(config-hlr-gsup)# exit
