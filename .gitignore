@@ -50,6 +50,7 @@ tests/gsup_server/gsup_server_test
 tests/gsup/gsup_test
 tests/db/db_test
 tests/hlr_vty_test.db*
+tests/db_upgrade/*.dump
 
 # manuals
 doc/manuals/*.html
