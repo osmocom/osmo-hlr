@@ -568,7 +568,7 @@ int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 		return -EIO;
 
 	rc = db_sel(dbc, stmt, subscr, &err);
-	if (rc)
+	if (rc && rc != -ENOENT)
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: IMSI='%s': %s\n",
 		     imsi, err);
 	return rc;
@@ -619,7 +619,7 @@ int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 		return -EIO;
 
 	rc = db_sel(dbc, stmt, subscr, &err);
-	if (rc)
+	if (rc && rc != -ENOENT)
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: MSISDN='%s': %s\n",
 		     msisdn, err);
 	return rc;
@@ -643,7 +643,7 @@ int db_subscr_get_by_id(struct db_context *dbc, int64_t id,
 		return -EIO;
 
 	rc = db_sel(dbc, stmt, subscr, &err);
-	if (rc)
+	if (rc && rc != -ENOENT)
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: ID=%" PRId64 ": %s\n",
 		     id, err);
 	return rc;
@@ -666,7 +666,7 @@ int db_subscr_get_by_imei(struct db_context *dbc, const char *imei, struct hlr_s
 		return -EIO;
 
 	rc = db_sel(dbc, stmt, subscr, &err);
-	if (rc)
+	if (rc && rc != -ENOENT)
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscriber from db: IMEI=%s: %s\n", imei, err);
 	return rc;
 }
