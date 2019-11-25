@@ -84,6 +84,7 @@ DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 1
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 2
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 3
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 4
+DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 5
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.
 
 Resulting db:
@@ -137,17 +138,19 @@ periodic_lu_tmr|INTEGER|0||0
 periodic_rau_tau_tmr|INTEGER|0||0
 sgsn_address|VARCHAR|0||0
 sgsn_number|VARCHAR(15)|0||0
+sgsn_via_proxy|VARCHAR|0||0
 smsc_number|VARCHAR(15)|0||0
 vlr_number|VARCHAR(15)|0||0
+vlr_via_proxy|VARCHAR|0||0
 
 Table subscriber contents:
-ggsn_number|gmlc_number|id|imei|imeisv|imsi|last_lu_seen|last_lu_seen_ps|lmsi|ms_purged_cs|ms_purged_ps|msc_number|msisdn|nam_cs|nam_ps|periodic_lu_tmr|periodic_rau_tau_tmr|sgsn_address|sgsn_number|smsc_number|vlr_number
-||1|||123456789012345||||0|0||098765432109876|1|1||||||MSC-1
-||2|||111111111||||1|0|||1|1||||||
-||3|||222222222||||0|1||22222|1|1||||||
-||4|||333333||||0|0||3|0|1||||||
-||5|||444444444444444||||0|0||4444|1|0||||||
-||6|||5555555||||0|0||55555555555555|0|0||||||
+ggsn_number|gmlc_number|id|imei|imeisv|imsi|last_lu_seen|last_lu_seen_ps|lmsi|ms_purged_cs|ms_purged_ps|msc_number|msisdn|nam_cs|nam_ps|periodic_lu_tmr|periodic_rau_tau_tmr|sgsn_address|sgsn_number|sgsn_via_proxy|smsc_number|vlr_number|vlr_via_proxy
+||1|||123456789012345||||0|0||098765432109876|1|1|||||||MSC-1|
+||2|||111111111||||1|0|||1|1||||||||
+||3|||222222222||||0|1||22222|1|1||||||||
+||4|||333333||||0|0||3|0|1||||||||
+||5|||444444444444444||||0|0||4444|1|0||||||||
+||6|||5555555||||0|0||55555555555555|0|0||||||||
 
 Table: subscriber_apn
 name|type|notnull|dflt_value|pk
@@ -168,5 +171,5 @@ osmo-hlr --database $db --db-check --config-file $srcdir/osmo-hlr.cfg
 rc = 0
 DMAIN hlr starting
 DDB using database: <PATH>test.db
-DDB Database <PATH>test.db' has HLR DB schema version 4
+DDB Database <PATH>test.db' has HLR DB schema version 5
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.
