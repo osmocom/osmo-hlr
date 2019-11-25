@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	4
+#define CURRENT_SCHEMA_VERSION	5
 
 #define SEL_COLUMNS \
 	"id," \
@@ -46,15 +46,17 @@
 	"ms_purged_cs," \
 	"ms_purged_ps," \
 	"last_lu_seen," \
-	"last_lu_seen_ps" \
+	"last_lu_seen_ps," \
+	"vlr_via_proxy," \
+	"sgsn_via_proxy"
 
 static const char *stmt_sql[] = {
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
 	[DB_STMT_SEL_BY_MSISDN] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE msisdn = ?",
 	[DB_STMT_SEL_BY_ID] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE id = ?",
 	[DB_STMT_SEL_BY_IMEI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imei = ?",
-	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = $number WHERE id = $subscriber_id",
-	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = $number WHERE id = $subscriber_id",
+	[DB_STMT_UPD_VLR_BY_ID] = "UPDATE subscriber SET vlr_number = $number, vlr_via_proxy = $proxy WHERE id = $subscriber_id",
+	[DB_STMT_UPD_SGSN_BY_ID] = "UPDATE subscriber SET sgsn_number = $number, sgsn_via_proxy = $proxy WHERE id = $subscriber_id",
 	[DB_STMT_UPD_IMEI_BY_IMSI] = "UPDATE subscriber SET imei = $imei WHERE imsi = $imsi",
 	[DB_STMT_AUC_BY_IMSI] =
 		"SELECT id, algo_id_2g, ki, algo_id_3g, k, op, opc, sqn, ind_bitlen"
@@ -176,6 +178,25 @@ bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr)
 	rc = sqlite3_bind_int64(stmt, idx, nr);
 	if (rc != SQLITE_OK) {
 		LOGP(DDB, LOGL_ERROR, "Error binding int64 to SQL parameter %s: %d\n",
+		     param_name ? param_name : "#1", rc);
+		db_remove_reset(stmt);
+		return false;
+	}
+	return true;
+}
+
+bool db_bind_null(sqlite3_stmt *stmt, const char *param_name)
+{
+	int rc;
+	int idx = param_name ? sqlite3_bind_parameter_index(stmt, param_name) : 1;
+	if (idx < 1) {
+		LOGP(DDB, LOGL_ERROR, "Error composing SQL, cannot bind parameter '%s'\n",
+		     param_name);
+		return false;
+	}
+	rc = sqlite3_bind_null(stmt, idx);
+	if (rc != SQLITE_OK) {
+		LOGP(DDB, LOGL_ERROR, "Error binding NULL to SQL parameter %s: %d\n",
 		     param_name ? param_name : "#1", rc);
 		db_remove_reset(stmt);
 		return false;
@@ -441,12 +462,30 @@ static int db_upgrade_v4(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v5(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN vlr_via_proxy VARCHAR",
+		"ALTER TABLE subscriber ADD COLUMN sgsn_via_proxy VARCHAR",
+		"PRAGMA user_version = 5",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 5\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
 	db_upgrade_v2,
 	db_upgrade_v3,
 	db_upgrade_v4,
+	db_upgrade_v5,
 };
 
 static int db_get_user_version(struct db_context *dbc)
