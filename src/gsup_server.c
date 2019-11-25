@@ -37,7 +37,7 @@
 
 struct msgb *osmo_gsup_msgb_alloc(const char *label)
 {
-	struct msgb *msg = msgb_alloc_headroom(1024+16, 16, label);
+	struct msgb *msg = msgb_alloc_headroom(1024+512, 512, label);
 	OSMO_ASSERT(msg);
 	return msg;
 }
