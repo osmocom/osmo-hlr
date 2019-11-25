@@ -30,6 +30,7 @@
 
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/db.h>
+#include <osmocom/hlr/timestamp.h>
 
 struct vty;
 
@@ -49,11 +50,15 @@ get_datestr(const time_t *t, char *datebuf)
 
 static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen)
 {
+	uint32_t age;
 	char datebuf[26]; /* for ctime_r(3) */
 	if (!last_lu_seen)
 		return;
-	vty_out(vty, "    last LU seen on %s: %s UTC%s", domain_label, get_datestr(&last_lu_seen, datebuf),
-		VTY_NEWLINE);
+	vty_out(vty, "    last LU seen on %s: %s UTC", domain_label, get_datestr(&last_lu_seen, datebuf));
+	if (!timestamp_age(&last_lu_seen, &age))
+		vty_out(vty, " (invalid timestamp)%s", VTY_NEWLINE);
+	else
+		vty_out(vty, " (%us ago)%s", age, VTY_NEWLINE);
 }
 
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
