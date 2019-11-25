@@ -51,6 +51,7 @@ void db_remove_reset(sqlite3_stmt *stmt);
 bool db_bind_text(sqlite3_stmt *stmt, const char *param_name, const char *text);
 bool db_bind_int(sqlite3_stmt *stmt, const char *param_name, int nr);
 bool db_bind_int64(sqlite3_stmt *stmt, const char *param_name, int64_t nr);
+bool db_bind_null(sqlite3_stmt *stmt, const char *param_name);
 void db_close(struct db_context *dbc);
 struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite3_logging, bool allow_upgrades);
 
@@ -99,6 +100,9 @@ struct hlr_subscriber {
 	bool		ms_purged_ps;
 	time_t		last_lu_seen;
 	time_t		last_lu_seen_ps;
+	/* talloc'd IPA unit name */
+	struct osmo_ipa_name	vlr_via_proxy;
+	struct osmo_ipa_name	sgsn_via_proxy;
 };
 
 /* A format string for use with strptime(3). This format string is

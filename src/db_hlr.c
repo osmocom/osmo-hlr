@@ -505,6 +505,8 @@ static int db_sel(struct db_context *dbc, sqlite3_stmt *stmt, struct hlr_subscri
 			   subscr->imsi, "CS");
 	parse_last_lu_seen(&subscr->last_lu_seen_ps, (const char *)sqlite3_column_text(stmt, 15),
 			   subscr->imsi, "PS");
+	copy_sqlite3_text_to_ipa_name(&subscr->vlr_via_proxy, stmt, 16);
+	copy_sqlite3_text_to_ipa_name(&subscr->sgsn_via_proxy, stmt, 17);
 
 out:
 	db_remove_reset(stmt);
@@ -749,6 +751,14 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 
 	if (!db_bind_text(stmt, "$number", (char*)vlr_name->val))
 		return -EIO;
+
+	if (via_proxy && via_proxy->len) {
+		if (!db_bind_text(stmt, "$proxy", (char*)via_proxy->val))
+			return -EIO;
+	} else {
+		if (!db_bind_null(stmt, "$proxy"))
+			return -EIO;
+	}
 
 	/* execute the statement */
 	rc = sqlite3_step(stmt);
