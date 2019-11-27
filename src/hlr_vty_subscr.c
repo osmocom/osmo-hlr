@@ -57,8 +57,20 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 	vty_out(vty, "    last LU seen on %s: %s", domain_label, get_datestr(&last_lu_seen, datebuf, sizeof(datebuf)));
 	if (!timestamp_age(&last_lu_seen, &age))
 		vty_out(vty, " (invalid timestamp)%s", VTY_NEWLINE);
-	else
-		vty_out(vty, " (%us ago)%s", age, VTY_NEWLINE);
+	else {
+		vty_out(vty, " (");
+#define UNIT_AGO(UNITNAME, UNITVAL) \
+		if (age >= (UNITVAL)) { \
+			vty_out(vty, "%u%s", age / (UNITVAL), UNITNAME); \
+			age = age % (UNITVAL); \
+		}
+		UNIT_AGO("d", 60*60*24);
+		UNIT_AGO("h", 60*60);
+		UNIT_AGO("m", 60);
+		UNIT_AGO("s", 1);
+		vty_out(vty, " ago)%s", VTY_NEWLINE);
+#undef UNIT_AGO
+	}
 }
 
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
