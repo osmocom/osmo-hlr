@@ -65,19 +65,30 @@ int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg)
 static void gsup_server_send_req_response(struct osmo_gsup_req *req, struct osmo_gsup_message *response)
 {
 	struct osmo_gsup_server *server = req->cb_data;
+	struct osmo_cni_peer_id *routing;
 	struct osmo_gsup_conn *conn = NULL;
 	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP Tx");
 	int rc;
 
-	switch (req->source_name.type) {
+	if (response->message_type == OSMO_GSUP_MSGT_ROUTING_ERROR
+	    && !osmo_cni_peer_id_is_empty(&req->via_proxy)) {
+		/* If a routing error occured, we need to route back via the immediate sending peer, not via the
+		 * intended final recipient -- because one source of routing errors is a duplicate name for a recipient.
+		 * If we resolve to req->source_name, we may send to a completely unrelated recipient. */
+		routing = &req->via_proxy;
+	} else {
+		routing = &req->source_name;
+	}
+	switch (routing->type) {
 	case OSMO_CNI_PEER_ID_IPA_NAME:
-		conn = gsup_route_find_by_ipa_name(server, &req->source_name.ipa_name);
+		conn = gsup_route_find_by_ipa_name(server, &routing->ipa_name);
 		break;
 	default:
 		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP peer id kind not supported: %s\n",
-			     osmo_cni_peer_id_type_name(req->source_name.type));
+			     osmo_cni_peer_id_type_name(routing->type));
 		break;
 	}
+
 	if (!conn) {
 		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP client that sent this request not found, cannot respond\n");
 		msgb_free(msg);
