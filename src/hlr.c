@@ -792,6 +792,11 @@ static void handle_options(int argc, char **argv)
 			break;
 		}
 	}
+
+	if (argc > optind) {
+		fprintf(stderr, "Unsupported positional arguments on command line\n");
+		exit(2);
+	}
 }
 
 static void signal_hdlr(int signal)
