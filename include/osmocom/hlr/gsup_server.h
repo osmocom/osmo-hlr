@@ -5,7 +5,7 @@
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
 #include <osmocom/gsm/gsup.h>
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_peer_id.h>
 #include <osmocom/gsupclient/gsup_req.h>
 
 #ifndef OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN

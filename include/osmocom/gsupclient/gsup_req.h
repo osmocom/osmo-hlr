@@ -19,14 +19,14 @@
 #pragma once
 
 #include <osmocom/gsm/gsup.h>
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_peer_id.h>
 
 struct osmo_gsup_req;
 
 #define LOG_GSUP_REQ_CAT_SRC(req, subsys, level, file, line, fmt, args...) \
 	LOGPSRC(subsys, level, file, line, "GSUP %u: %s: IMSI-%s %s: " fmt, \
 		(req) ? (req)->nr : 0, \
-		(req) ? osmo_ipa_name_to_str(&(req)->source_name) : "NULL", \
+		(req) ? osmo_gsup_peer_id_to_str(&(req)->source_name) : "NULL", \
 		(req) ? (req)->gsup.imsi : "NULL", \
 		(req) ? osmo_gsup_message_type_name((req)->gsup.message_type) : "NULL", \
 		##args)
@@ -56,11 +56,11 @@ struct osmo_gsup_req {
 	/* The ultimate source of this message: the source_name form the GSUP message, or, if not present, then the
 	 * immediate GSUP peer. GSUP messages going via a proxy reflect the initial source in the source_name.
 	 * This source_name is implicitly added to the routes for the conn the message was received on. */
-	struct osmo_ipa_name source_name;
+	struct osmo_gsup_peer_id source_name;
 
 	/* If the source_name is not an immediate GSUP peer, this is set to the closest intermediate peer between here
 	 * and source_name. */
-	struct osmo_ipa_name via_proxy;
+	struct osmo_gsup_peer_id via_proxy;
 
 	/* Identify this request by number, for logging. */
 	unsigned int nr;
@@ -82,7 +82,7 @@ struct osmo_gsup_req {
 	struct msgb *msg;
 };
 
-struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_ipa_name *from_peer, struct msgb *msg,
+struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_gsup_peer_id *from_peer, struct msgb *msg,
 					osmo_gsup_req_send_response_t send_response_cb, void *cb_data,
 					struct llist_head *add_to_list);
 void osmo_gsup_req_free(struct osmo_gsup_req *req);
