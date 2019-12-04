@@ -9,7 +9,7 @@ AM_CFLAGS = -Wall $(all_includes) -I$(top_srcdir)/include -I$(top_builddir)/incl
 lib_LTLIBRARIES = libosmo-gsup-client.la
 
 libosmo_gsup_client_la_SOURCES = \
-	ipa_name.c \
+	gsup_peer_id.c \
 	gsup_client.c \
 	gsup_req.c \
 	$(NULL)
