@@ -416,22 +416,24 @@ static bool ss_op_is_ussd(uint8_t opcode)
 }
 
 /* is this GSUP connection an EUSE (true) or not (false)? */
-static bool peer_name_is_euse(const struct osmo_ipa_name *peer_name)
+static bool peer_name_is_euse(const struct osmo_gsup_peer_id *peer_name)
 {
-	if (peer_name->len <= 5)
+	if (peer_name->type != OSMO_GSUP_PEER_ID_IPA_NAME)
 		return false;
-	if (!strncmp((char *)(peer_name->val), "EUSE-", 5))
-		return true;
-	else
+	if (peer_name->ipa_name.len <= 5)
 		return false;
+	return strncmp((char *)(peer_name->ipa_name.val), "EUSE-", 5) == 0;
 }
 
-static struct hlr_euse *euse_by_name(const struct osmo_ipa_name *peer_name)
+static struct hlr_euse *euse_by_name(const struct osmo_gsup_peer_id *peer_name)
 {
 	if (!peer_name_is_euse(peer_name))
 		return NULL;
 
-	return euse_find(g_hlr, (const char*)(peer_name->val)+5);
+	/* above peer_name_is_euse() ensures this: */
+	OSMO_ASSERT(peer_name->type == OSMO_GSUP_PEER_ID_IPA_NAME);
+
+	return euse_find(g_hlr, (const char*)(peer_name->ipa_name.val)+5);
 }
 
 static int handle_ss(struct ss_session *ss, bool is_euse_originated, const struct osmo_gsup_message *gsup,
@@ -519,6 +521,14 @@ void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 	LOGP(DSS, LOGL_DEBUG, "%s/0x%08x: Process SS (%s)\n", gsup->imsi, gsup->session_id,
 		osmo_gsup_session_state_name(gsup->session_state));
 
+	if (gsup_req->source_name.type != OSMO_GSUP_PEER_ID_IPA_NAME) {
+		LOGP(DSS, LOGL_ERROR, "%s/0x%082x: Unable to process SS request: Unsupported GSUP peer id type%s\n",
+		     gsup->imsi, gsup->session_id,
+		     osmo_gsup_peer_id_type_name(gsup_req->source_name.type));
+		osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_PROTO_ERR_UNSPEC, "error processing SS request");
+		return;
+	}
+
 	/* decode and find out what kind of SS message it is */
 	if (gsup->ss_info && gsup->ss_info_len) {
 		if (gsm0480_parse_facility_ie(gsup->ss_info, gsup->ss_info_len, &req)) {
@@ -556,7 +566,8 @@ void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 		if (!is_euse_originated) {
 			ss->initial_req_from_ms = gsup_req;
 			free_gsup_req = NULL;
-			ss->vlr_name = gsup_req->source_name;
+			OSMO_ASSERT(gsup_req->source_name.type == OSMO_GSUP_PEER_ID_IPA_NAME); /* checked above */
+			ss->vlr_name = gsup_req->source_name.ipa_name;
 		} else {
 			ss->initial_req_from_euse = gsup_req;
 			free_gsup_req = NULL;

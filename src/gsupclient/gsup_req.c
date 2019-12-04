@@ -44,7 +44,7 @@
  * \param[inout] add_to_list  List to which to append this request, or NULL for no list.
  * \return a newly allocated osmo_gsup_req, or NULL on error.
  */
-struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_ipa_name *from_peer, struct msgb *msg,
+struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_gsup_peer_id *from_peer, struct msgb *msg,
 					osmo_gsup_req_send_response_t send_response_cb, void *cb_data,
 					struct llist_head *add_to_list)
 {
@@ -54,7 +54,7 @@ struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_ipa_name *f
 
 	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
 		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from %s: missing or empty L2 data\n",
-		     osmo_ipa_name_to_str(from_peer));
+		     osmo_gsup_peer_id_to_str(from_peer));
 		msgb_free(msg);
 		return NULL;
 	}
@@ -70,7 +70,7 @@ struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_ipa_name *f
 		req->source_name = *from_peer;
 	rc = osmo_gsup_decode(msgb_l2(req->msg), msgb_l2len(req->msg), (struct osmo_gsup_message*)&req->gsup);
 	if (rc < 0) {
-		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from %s: cannot decode (rc=%d)\n", osmo_ipa_name_to_str(from_peer), rc);
+		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from %s: cannot decode (rc=%d)\n", osmo_gsup_peer_id_to_str(from_peer), rc);
 		osmo_gsup_req_free(req);
 		return NULL;
 	}
@@ -78,17 +78,18 @@ struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_ipa_name *f
 	LOG_GSUP_REQ(req, LOGL_DEBUG, "new request: {%s}\n", osmo_gsup_message_to_str_c(OTC_SELECT, &req->gsup));
 
 	if (req->gsup.source_name_len) {
-		if (osmo_ipa_name_set(&req->source_name, req->gsup.source_name, req->gsup.source_name_len)) {
+		if (osmo_gsup_peer_id_set(&req->source_name, OSMO_GSUP_PEER_ID_IPA_NAME,
+					  req->gsup.source_name, req->gsup.source_name_len)) {
 			LOGP(DLGSUP, LOGL_ERROR,
 			     "Rx GSUP from %s: failed to decode source_name, message is not routable\n",
-			     osmo_ipa_name_to_str(from_peer));
+			     osmo_gsup_peer_id_to_str(from_peer));
 			osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_ROUTING_ERROR, true);
 			return NULL;
 		}
 
 		/* The source of the GSUP message is not the immediate GSUP peer; the peer is our proxy for that source.
 		 */
-		if (osmo_ipa_name_cmp(&req->source_name, from_peer))
+		if (osmo_gsup_peer_id_cmp(&req->source_name, from_peer))
 			req->via_proxy = *from_peer;
 	}
 
