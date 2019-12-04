@@ -27,7 +27,7 @@
 #include <osmocom/core/utils.h>
 #include <osmocom/core/logging.h>
 
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_peer_id.h>
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/logging.h>
 

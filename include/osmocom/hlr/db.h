@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <sqlite3.h>
 
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_peer_id.h>
 
 struct hlr;
 

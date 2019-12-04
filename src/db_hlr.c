@@ -37,7 +37,7 @@
 #include <osmocom/hlr/logging.h>
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/db.h>
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/gsup_peer_id.h>
 
 #define LOGHLR(imsi, level, fmt, args ...)	LOGP(DAUC, level, "IMSI='%s': " fmt, imsi, ## args)
 
