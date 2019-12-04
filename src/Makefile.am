@@ -72,7 +72,7 @@ osmo_hlr_db_tool_SOURCES = \
 	logging.c \
 	rand_urandom.c \
 	dbd_decode_binary.c \
-	$(srcdir)/gsupclient/ipa_name.c \
+	$(srcdir)/gsupclient/cni_peer_id.c \
 	$(NULL)
 
 osmo_hlr_db_tool_LDADD = \

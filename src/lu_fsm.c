@@ -26,7 +26,7 @@
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
 
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/cni_peer_id.h>
 #include <osmocom/gsupclient/gsup_req.h>
 #include <osmocom/hlr/logging.h>
 #include <osmocom/hlr/hlr.h>
@@ -52,11 +52,11 @@ struct lu {
 	bool is_ps;
 
 	/* VLR requesting the LU. */
-	struct osmo_ipa_name vlr_name;
+	struct osmo_cni_peer_id vlr_name;
 
 	/* If the LU request was received via a proxy and not immediately from a local VLR, this indicates the closest
 	 * peer that forwarded the GSUP message. */
-	struct osmo_ipa_name via_proxy;
+	struct osmo_cni_peer_id via_proxy;
 };
 LLIST_HEAD(g_all_lu);
 
@@ -130,7 +130,7 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 
 	osmo_fsm_inst_update_id_f_sanitize(fi, '_', "%s:IMSI-%s", lu->is_ps ? "PS" : "CS", update_location_req->gsup.imsi);
 
-	if (!lu->vlr_name.len) {
+	if (osmo_cni_peer_id_is_empty(&lu->vlr_name)) {
 		lu_failure(lu, GMM_CAUSE_NET_FAIL, "LU without a VLR");
 		return;
 	}
@@ -163,18 +163,30 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 #endif
 
 	/* Store the VLR / SGSN number with the subscriber, so we know where it was last seen. */
-	if (lu->via_proxy.len) {
+	if (!osmo_cni_peer_id_is_empty(&lu->via_proxy)) {
 		LOG_GSUP_REQ(update_location_req, LOGL_DEBUG, "storing %s = %s, via proxy %s\n",
 			     lu->is_ps ? "SGSN number" : "VLR number",
-			     osmo_ipa_name_to_str(&lu->vlr_name),
-			     osmo_ipa_name_to_str(&lu->via_proxy));
+			     osmo_cni_peer_id_to_str(&lu->vlr_name),
+			     osmo_cni_peer_id_to_str(&lu->via_proxy));
 	} else {
 		LOG_GSUP_REQ(update_location_req, LOGL_DEBUG, "storing %s = %s\n",
 		     lu->is_ps ? "SGSN number" : "VLR number",
-		     osmo_ipa_name_to_str(&lu->vlr_name));
+		     osmo_cni_peer_id_to_str(&lu->vlr_name));
 	}
 
-	if (db_subscr_lu(g_hlr->dbc, lu->subscr.id, &lu->vlr_name, lu->is_ps, &lu->via_proxy)) {
+	if (osmo_cni_peer_id_is_empty(&lu->vlr_name)
+	    || (lu->vlr_name.type != OSMO_CNI_PEER_ID_IPA_NAME)) {
+		lu_failure(lu, GMM_CAUSE_PROTO_ERR_UNSPEC, "Unsupported GSUP peer id type for vlr_name: %s",
+			   osmo_cni_peer_id_type_name(lu->vlr_name.type));
+		return;
+	}
+	if (!osmo_cni_peer_id_is_empty(&lu->via_proxy) && (lu->via_proxy.type != OSMO_CNI_PEER_ID_IPA_NAME)) {
+		lu_failure(lu, GMM_CAUSE_PROTO_ERR_UNSPEC, "Unsupported GSUP peer id type for via_proxy: %s",
+			   osmo_cni_peer_id_type_name(lu->via_proxy.type));
+		return;
+	}
+	if (db_subscr_lu(g_hlr->dbc, lu->subscr.id, &lu->vlr_name.ipa_name, lu->is_ps,
+			 osmo_cni_peer_id_is_empty(&lu->via_proxy)? NULL : &lu->via_proxy.ipa_name)) {
 		lu_failure(lu, GMM_CAUSE_NET_FAIL, "Cannot update %s in the database",
 			   lu->is_ps ? "SGSN number" : "VLR number");
 		return;

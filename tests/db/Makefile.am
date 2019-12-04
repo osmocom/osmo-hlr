@@ -30,7 +30,7 @@ db_test_LDADD = \
 	$(top_builddir)/src/db_auc.o \
 	$(top_builddir)/src/db_hlr.o \
 	$(top_builddir)/src/db.o \
-	$(top_builddir)/src/ipa_name.o \
+	$(top_builddir)/src/cni_peer_id.o \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(LIBOSMOABIS_LIBS) \

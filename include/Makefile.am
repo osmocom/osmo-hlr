@@ -1,7 +1,7 @@
 SUBDIRS = osmocom
 
 nobase_include_HEADERS = \
-	osmocom/gsupclient/ipa_name.h \
+	osmocom/gsupclient/cni_peer_id.h \
 	osmocom/gsupclient/gsup_client.h \
 	osmocom/gsupclient/gsup_req.h \
 	osmocom/mslookup/mdns.h \

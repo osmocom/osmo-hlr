@@ -37,7 +37,7 @@
 #include <osmocom/gsm/gsm_utils.h>
 #include <osmocom/gsm/gsm23003.h>
 
-#include <osmocom/gsupclient/ipa_name.h>
+#include <osmocom/gsupclient/cni_peer_id.h>
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/ctrl.h>

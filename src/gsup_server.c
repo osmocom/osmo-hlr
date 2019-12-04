@@ -65,13 +65,21 @@ int osmo_gsup_conn_send(struct osmo_gsup_conn *conn, struct msgb *msg)
 static void gsup_server_send_req_response(struct osmo_gsup_req *req, struct osmo_gsup_message *response)
 {
 	struct osmo_gsup_server *server = req->cb_data;
-	struct osmo_gsup_conn *conn;
+	struct osmo_gsup_conn *conn = NULL;
 	struct msgb *msg = osmo_gsup_msgb_alloc("GSUP Tx");
 	int rc;
 
-	conn = gsup_route_find_by_ipa_name(server, &req->source_name);
+	switch (req->source_name.type) {
+	case OSMO_CNI_PEER_ID_IPA_NAME:
+		conn = gsup_route_find_by_ipa_name(server, &req->source_name.ipa_name);
+		break;
+	default:
+		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP peer id kind not supported: %s\n",
+			     osmo_cni_peer_id_type_name(req->source_name.type));
+		break;
+	}
 	if (!conn) {
-		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP client that sent this request was disconnected, cannot respond\n");
+		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP client that sent this request not found, cannot respond\n");
 		msgb_free(msg);
 		return;
 	}
@@ -91,19 +99,34 @@ static void gsup_server_send_req_response(struct osmo_gsup_req *req, struct osmo
 
 struct osmo_gsup_req *osmo_gsup_conn_rx(struct osmo_gsup_conn *conn, struct msgb *msg)
 {
-	struct osmo_gsup_req *req = osmo_gsup_req_new(conn->server, &conn->peer_name, msg, gsup_server_send_req_response,
-						      conn->server, NULL);
+	struct osmo_gsup_req *req;
+	struct osmo_cni_peer_id cpi = {
+		.type = OSMO_CNI_PEER_ID_IPA_NAME,
+		.ipa_name = conn->peer_name,
+	};
+
+	req = osmo_gsup_req_new(conn->server, &cpi, msg, gsup_server_send_req_response, conn->server, NULL);
 	if (!req)
 		return NULL;
 
-	if (req->via_proxy.len) {
+	if (!osmo_cni_peer_id_is_empty(&req->via_proxy)) {
+		switch (req->via_proxy.type) {
+		case OSMO_CNI_PEER_ID_IPA_NAME:
+			break;
+		default:
+			LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP peer id kind not supported: %s\n",
+				     osmo_cni_peer_id_type_name(req->source_name.type));
+			osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_ROUTING_ERROR, true);
+			return NULL;
+		}
+
 		/* The source of the GSUP message is not the immediate GSUP peer, but that peer is our proxy for that
 		 * source. Add it to the routes for this conn (so we can route responses back). */
-		if (gsup_route_add_ipa_name(conn, &req->source_name)) {
+		if (gsup_route_add_ipa_name(conn, &req->source_name.ipa_name)) {
 			LOG_GSUP_REQ(req, LOGL_ERROR,
 				     "GSUP message received from %s via peer %s, but there already exists a"
 				     " different route to this source, message is not routable\n",
-				     osmo_ipa_name_to_str(&req->source_name),
+				     osmo_cni_peer_id_to_str(&req->source_name),
 				     osmo_ipa_name_to_str(&conn->peer_name));
 			osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_ROUTING_ERROR, true);
 			return NULL;
