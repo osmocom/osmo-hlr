@@ -11,81 +11,21 @@ OsmoHLR> ?
   logp        Print a message on all log outputs; useful for placing markers in test logs
   subscriber  Subscriber management commands
 OsmoHLR> list
-  show version
-  show online-help
-  list
-  exit
-  help
-  enable
-  terminal length <0-512>
-  terminal no length
-  who
-  show history
-  logging enable
 ...
-  show logging vty
-  show alarms
-  show talloc-context (application|all) (full|brief|DEPTH)
-  show talloc-context (application|all) (full|brief|DEPTH) tree ADDRESS
-  show talloc-context (application|all) (full|brief|DEPTH) filter REGEXP
-  show stats
-  show stats level (global|peer|subscriber)
-  show asciidoc counters
-  show rate-counters
   show gsup-connections
   subscriber (imsi|msisdn|id|imei) IDENT show
   show subscriber (imsi|msisdn|id|imei) IDENT
 
 OsmoHLR> enable
 OsmoHLR# ?
-  help        Description of the interactive help system
-  list        Print command list
-  write       Write running configuration to memory, network, or terminal
-  show        Show running system information
-  exit        Exit current mode and down to previous mode
-  disable     Turn off privileged mode command
-  configure   Configuration from vty interface
-  copy        Copy configuration
-  terminal    Set terminal line parameters
-  who         Display who is on vty
-  logging     Configure logging
-  no          Negate a command or set its defaults
-  logp        Print a message on all log outputs; useful for placing markers in test logs
+...
   subscriber  Subscriber management commands
-OsmoHLR# list
-  help
-...
-  exit
-  disable
-  configure terminal
-  copy running-config startup-config
-  show startup-config
-  show version
-  show online-help
-  terminal length <0-512>
-  terminal no length
-  who
-  show history
-  terminal monitor
-  terminal no monitor
-  logging enable
-...
 
 OsmoHLR# configure terminal
 OsmoHLR(config)# ?
 ...
-  banner    Set banner string
-  service   Set up miscellaneous service
-  line      Configure a terminal line
-  ctrl      Configure the Control Interface
-  log       Configure logging sub-system
-  stats     Configure stats sub-system
   hlr       Configure the HLR
 OsmoHLR(config)# list
-  help
-...
-  exit
-  end
 ...
   hlr
 
@@ -99,10 +39,7 @@ OsmoHLR(config-hlr)# ?
   store-imei                   Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send Check IMEI requests (for OsmoMSC, you may want to set 'check-imei-rqd 1').
   subscriber-create-on-demand  Make a new record when a subscriber is first seen.
 OsmoHLR(config-hlr)# list
-  help
 ...
-  exit
-  end
   gsup
   database PATH
   euse NAME
