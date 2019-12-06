@@ -507,6 +507,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 			return 0;
 	}
 
+	/* HLR related messages that are handled at this HLR instance */
 	switch (req->gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:

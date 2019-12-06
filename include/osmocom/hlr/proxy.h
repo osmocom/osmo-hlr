@@ -28,12 +28,6 @@
 struct osmo_gsup_req;
 struct remote_hlr;
 
-struct proxy_pending_gsup_req {
-	struct llist_head entry;
-	struct osmo_gsup_req *req;
-	timestamp_t received_at;
-};
-
 struct proxy {
 	struct llist_head subscr_list;
 	struct llist_head pending_gsup_reqs;
@@ -87,8 +81,8 @@ void proxy_subscrs_get_by_remote_hlr(struct proxy *proxy, const struct osmo_sock
 int proxy_subscr_create_or_update(struct proxy *proxy, const struct proxy_subscr *proxy_subscr);
 int proxy_subscr_del(struct proxy *proxy, const char *imsi);
 
-void proxy_subscr_forward_to_remote_hlr(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-					struct osmo_gsup_req *req);
+int proxy_subscr_forward_to_remote_hlr(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
+				       struct osmo_gsup_req *req);
 void proxy_subscr_forward_to_remote_hlr_resolved(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
 						 struct remote_hlr *remote_hlr, struct osmo_gsup_req *req);
 
@@ -96,6 +90,6 @@ int proxy_subscr_forward_to_vlr(struct proxy *proxy, const struct proxy_subscr *
 				const struct osmo_gsup_message *gsup, struct remote_hlr *from_remote_hlr);
 
 void proxy_subscr_remote_hlr_resolved(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-				      struct remote_hlr *remote_hlr);
+				      const struct osmo_sockaddr_str *remote_hlr_addr);
 void proxy_subscr_remote_hlr_up(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
 				struct remote_hlr *remote_hlr);

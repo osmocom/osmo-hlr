@@ -63,6 +63,10 @@ int mslookup_server_msc_service_del(struct mslookup_server_msc_cfg *msc, const c
 extern const struct osmo_ipa_name mslookup_server_msc_wildcard;
 struct mslookup_server_msc_cfg *mslookup_server_msc_get(const struct osmo_ipa_name *msc_name, bool create);
 
-struct mslookup_service_host *mslookup_server_get_local_gsup_addr();
+const struct mslookup_service_host *mslookup_server_get_local_gsup_addr();
 void mslookup_server_rx(const struct osmo_mslookup_query *query,
 			     struct osmo_mslookup_result *result);
+
+bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
+				 uint32_t *lu_age_p, struct osmo_ipa_name *local_msc_name,
+				 char *ret_imsi, size_t ret_imsi_len);

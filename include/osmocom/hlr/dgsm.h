@@ -21,6 +21,7 @@
 
 #include <osmocom/mslookup/mslookup.h>
 #include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/logging.h>
 #include <osmocom/gsupclient/gsup_peer_id.h>
 #include <osmocom/gsupclient/gsup_req.h>
 

@@ -47,7 +47,8 @@
 				      (gsup_msg) ? osmo_gsup_message_type_name((gsup_msg)->message_type) : "NULL", \
 				      ##args)
 
-/* Why have a separate struct to add an llist_head entry?
+/* The proxy subscriber database.
+ * Why have a separate struct to add an llist_head entry?
  * This is to keep the option open to store the proxy data in the database instead, without any visible effect outside
  * of proxy.c. */
 struct proxy_subscr_listentry {
@@ -56,10 +57,16 @@ struct proxy_subscr_listentry {
 	struct proxy_subscr data;
 };
 
+struct proxy_pending_gsup_req {
+	struct llist_head entry;
+	struct osmo_gsup_req *req;
+	timestamp_t received_at;
+};
+
 /* Defer a GSUP message until we know a remote HLR to proxy to.
  * Where to send this GSUP message is indicated by its IMSI: as soon as an MS lookup has yielded the IMSI's home HLR,
  * that's where the message should go. */
-static void proxy_defer_gsup_req(struct proxy *proxy, struct osmo_gsup_req *req)
+static void proxy_deferred_gsup_req_add(struct proxy *proxy, struct osmo_gsup_req *req)
 {
 	struct proxy_pending_gsup_req *m;
 
@@ -70,49 +77,46 @@ static void proxy_defer_gsup_req(struct proxy *proxy, struct osmo_gsup_req *req)
 	llist_add_tail(&m->entry, &proxy->pending_gsup_reqs);
 }
 
-/* Unable to resolve remote HLR for this IMSI, Answer with error back to the sender. */
-static void proxy_defer_gsup_message_err(struct proxy *proxy, struct proxy_pending_gsup_req *m)
+static void proxy_pending_req_remote_hlr_connect_result(struct osmo_gsup_req *req, struct remote_hlr *remote_hlr)
 {
-	osmo_gsup_req_respond_err(m->req, GMM_CAUSE_IMSI_UNKNOWN, "could not reach home HLR");
-	m->req = NULL;
+	if (!remote_hlr || !remote_hlr_is_up(remote_hlr)) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "Proxy: Failed to connect to home HLR");
+		return;
+	}
+
+	remote_hlr_gsup_forward_to_remote_hlr(remote_hlr, req, NULL);
 }
 
-/* Forward spooled message for this IMSI to remote HLR. */
-static void proxy_defer_gsup_message_send(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-					  struct proxy_pending_gsup_req *m, struct remote_hlr *remote_hlr)
+static bool proxy_deferred_gsup_req_waiting(struct proxy *proxy, const char *imsi)
 {
-	LOG_PROXY_SUBSCR_MSG(proxy_subscr, &m->req->gsup, LOGL_INFO, "Forwarding deferred message\n");
-	proxy_subscr_forward_to_remote_hlr_resolved(proxy, proxy_subscr, remote_hlr, m->req);
-	m->req = NULL;
-}
-
-/* Result of looking for remote HLR. If it failed, pass remote_hlr as NULL. On failure, the proxy_subscr and the
- * remote_hlr may be passed NULL. The IMSI then reflects who the error was for. */
-static void proxy_defer_gsup_message_pop(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-					 const char *imsi, struct remote_hlr *remote_hlr)
-{
-	struct proxy_pending_gsup_req *m, *n;
-	if (!imsi && proxy_subscr)
-		imsi = proxy_subscr->imsi;
+	struct proxy_pending_gsup_req *p;
 	OSMO_ASSERT(imsi);
 
-	if (!remote_hlr)
-		LOGP(DDGSM, LOGL_ERROR, "IMSI-%s: No remote HLR found, dropping spooled GSUP messages\n", imsi);
-
-	llist_for_each_entry_safe(m, n, &proxy->pending_gsup_reqs, entry) {
-		if (strcmp(m->req->gsup.imsi, imsi))
+	llist_for_each_entry(p, &proxy->pending_gsup_reqs, entry) {
+		if (strcmp(p->req->gsup.imsi, imsi))
 			continue;
-
-		if (!remote_hlr)
-			proxy_defer_gsup_message_err(proxy, m);
-		else
-			proxy_defer_gsup_message_send(proxy, proxy_subscr, m, remote_hlr);
-
-		llist_del(&m->entry);
-		talloc_free(m);
+		return true;
 	}
+	return false;
 }
 
+/* Result of looking for remote HLR. If it failed, pass remote_hlr as NULL. On failure, the remote_hlr may be passed
+ * NULL. */
+static void proxy_deferred_gsup_req_pop(struct proxy *proxy, const char *imsi, struct remote_hlr *remote_hlr)
+{
+	struct proxy_pending_gsup_req *p, *n;
+	OSMO_ASSERT(imsi);
+
+	llist_for_each_entry_safe(p, n, &proxy->pending_gsup_reqs, entry) {
+		if (strcmp(p->req->gsup.imsi, imsi))
+			continue;
+
+		proxy_pending_req_remote_hlr_connect_result(p->req, remote_hlr);
+		p->req = NULL;
+		llist_del(&p->entry);
+		talloc_free(p);
+	}
+}
 
 static bool proxy_subscr_matches_imsi(const struct proxy_subscr *proxy_subscr, const char *imsi)
 {
@@ -170,21 +174,6 @@ int proxy_subscr_get_by_msisdn(struct proxy_subscr *dst, struct proxy *proxy, co
 	return 0;
 }
 
-void proxy_subscrs_get_by_remote_hlr(struct proxy *proxy, const struct osmo_sockaddr_str *remote_hlr_addr,
-				     bool (*yield)(struct proxy *proxy, const struct proxy_subscr *subscr, void *data),
-				     void *data)
-{
-	struct proxy_subscr_listentry *e;
-	if (!proxy)
-		return;
-	llist_for_each_entry(e, &proxy->subscr_list, entry) {
-		if (!osmo_sockaddr_str_cmp(remote_hlr_addr, &e->data.remote_hlr_addr)) {
-			if (!yield(proxy, &e->data, data))
-				return;
-		}
-	}
-}
-
 int proxy_subscr_create_or_update(struct proxy *proxy, const struct proxy_subscr *proxy_subscr)
 {
 	struct proxy_subscr_listentry *e = _proxy_get_by_imsi(proxy, proxy_subscr->imsi);
@@ -207,7 +196,7 @@ int _proxy_subscr_del(struct proxy_subscr_listentry *e)
 int proxy_subscr_del(struct proxy *proxy, const char *imsi)
 {
 	struct proxy_subscr_listentry *e;
-	proxy_defer_gsup_message_pop(proxy, NULL, imsi, NULL);
+	proxy_deferred_gsup_req_pop(proxy, imsi, NULL);
 	e = _proxy_get_by_imsi(proxy, imsi);
 	if (!e)
 		return -ENOENT;
@@ -262,42 +251,6 @@ void proxy_del(struct proxy *proxy)
 {
 	osmo_timer_del(&proxy->gc_timer);
 	talloc_free(proxy);
-}
-
-void proxy_subscr_remote_hlr_up(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-				struct remote_hlr *remote_hlr)
-{
-	proxy_defer_gsup_message_pop(proxy, proxy_subscr, proxy_subscr->imsi, remote_hlr);
-}
-
-void proxy_subscr_remote_hlr_resolved(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-				      struct remote_hlr *remote_hlr)
-{
-	struct proxy_subscr proxy_subscr_new;
-
-	if (osmo_sockaddr_str_is_nonzero(&proxy_subscr->remote_hlr_addr)) {
-		if (!osmo_sockaddr_str_cmp(&remote_hlr->addr, &proxy_subscr->remote_hlr_addr)) {
-			/* Already have this remote address */
-			return;
-		} else {
-			LOG_PROXY_SUBSCR(proxy_subscr, LOGL_NOTICE,
-					 "Remote HLR address changes to " OSMO_SOCKADDR_STR_FMT "\n",
-					 OSMO_SOCKADDR_STR_FMT_ARGS(&remote_hlr->addr));
-		}
-	}
-
-	/* Store the address. Make a copy to modify. */
-	proxy_subscr_new = *proxy_subscr;
-	proxy_subscr_new.remote_hlr_addr = remote_hlr->addr;
-
-	if (proxy_subscr_create_or_update(proxy, &proxy_subscr_new)) {
-		LOG_PROXY_SUBSCR(proxy_subscr, LOGL_ERROR, "Failed to store proxy entry for remote HLR\n");
-		/* If no remote HLR is known for the IMSI, the proxy entry is pointless. */
-		proxy_subscr_del(proxy, proxy_subscr_new.imsi);
-		return;
-	}
-	proxy_subscr = &proxy_subscr_new;
-	LOG_PROXY_SUBSCR(proxy_subscr, LOGL_DEBUG, "Remote HLR resolved, stored address\n");
 }
 
 /* All GSUP messages sent to the remote HLR pass through this function, to modify the subscriber state or disallow
@@ -457,27 +410,77 @@ static int proxy_acknowledge_gsup_from_remote_hlr(struct proxy *proxy, const str
 	return 0;
 }
 
-
-void proxy_subscr_forward_to_remote_hlr_resolved(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
-						 struct remote_hlr *remote_hlr, struct osmo_gsup_req *req)
+static void proxy_remote_hlr_connect_result_cb(const struct osmo_sockaddr_str *addr, struct remote_hlr *remote_hlr,
+					       void *data)
 {
-	if (proxy_acknowledge_gsup_to_remote_hlr(proxy, proxy_subscr, req)) {
-		osmo_gsup_req_respond_err(req, GMM_CAUSE_PROTO_ERR_UNSPEC, "Proxy does not allow this message");
+	struct proxy *proxy = data;
+	struct proxy_subscr_listentry *e;
+	if (!proxy)
 		return;
+	llist_for_each_entry(e, &proxy->subscr_list, entry) {
+		if (!osmo_sockaddr_str_cmp(addr, &e->data.remote_hlr_addr)) {
+			proxy_deferred_gsup_req_pop(proxy, e->data.imsi, remote_hlr);
+		}
 	}
-
-	remote_hlr_gsup_forward_to_remote_hlr(remote_hlr, req);
 }
 
-void proxy_subscr_forward_to_remote_hlr(struct proxy *proxy, const struct proxy_subscr *proxy_subscr, struct osmo_gsup_req *req)
+/* Store the remote HLR's GSUP address for this proxy subscriber.
+ * This can be set before the remote_hlr is connected, or after.
+ * And, this can be set before the gsup_req has been queued for this HLR, or after.
+ */
+void proxy_subscr_remote_hlr_resolved(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,
+				      const struct osmo_sockaddr_str *remote_hlr_addr)
+{
+	struct proxy_subscr proxy_subscr_new;
+
+	if (osmo_sockaddr_str_is_nonzero(&proxy_subscr->remote_hlr_addr)) {
+		if (!osmo_sockaddr_str_cmp(remote_hlr_addr, &proxy_subscr->remote_hlr_addr)) {
+			/* Already have this remote address */
+			return;
+		} else {
+			LOG_PROXY_SUBSCR(proxy_subscr, LOGL_NOTICE,
+					 "Remote HLR address changes to " OSMO_SOCKADDR_STR_FMT "\n",
+					 OSMO_SOCKADDR_STR_FMT_ARGS(remote_hlr_addr));
+		}
+	}
+
+	/* Store the address. Make a copy to modify. */
+	proxy_subscr_new = *proxy_subscr;
+	proxy_subscr = &proxy_subscr_new;
+	proxy_subscr_new.remote_hlr_addr = *remote_hlr_addr;
+
+	if (proxy_subscr_create_or_update(proxy, proxy_subscr)) {
+		LOG_PROXY_SUBSCR(proxy_subscr, LOGL_ERROR, "Failed to store proxy entry for remote HLR\n");
+		/* If no remote HLR is known for the IMSI, the proxy entry is pointless. */
+		proxy_subscr_del(proxy, proxy_subscr->imsi);
+		return;
+	}
+	LOG_PROXY_SUBSCR(proxy_subscr, LOGL_DEBUG, "Remote HLR resolved, stored address\n");
+
+	/* If any messages for this HLR are already spooled, connect now. Otherwise wait for
+	 * proxy_subscr_forward_to_remote_hlr() to connect then. */
+	if (proxy_deferred_gsup_req_waiting(proxy, proxy_subscr->imsi))
+		remote_hlr_get_or_connect(&proxy_subscr->remote_hlr_addr, true,
+					  proxy_remote_hlr_connect_result_cb, proxy);
+}
+
+int proxy_subscr_forward_to_remote_hlr(struct proxy *proxy, const struct proxy_subscr *proxy_subscr, struct osmo_gsup_req *req)
 {
 	struct remote_hlr *remote_hlr;
+	int rc;
+
+	rc = proxy_acknowledge_gsup_to_remote_hlr(proxy, proxy_subscr, req);
+	if (rc) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_PROTO_ERR_UNSPEC, "Proxy does not allow this message");
+		return rc;
+	}
 
 	if (!osmo_sockaddr_str_is_nonzero(&proxy_subscr->remote_hlr_addr)) {
-		/* We don't know the remote target yet. Still waiting for an MS lookup response. */
+		/* We don't know the remote target yet. Still waiting for an MS lookup response, which will end up
+		 * calling proxy_subscr_remote_hlr_resolved(). See dgsm.c. */
 		LOG_PROXY_SUBSCR_MSG(proxy_subscr, &req->gsup, LOGL_DEBUG, "deferring until remote HLR is known\n");
-		proxy_defer_gsup_req(proxy, req);
-		return;
+		proxy_deferred_gsup_req_add(proxy, req);
+		return 0;
 	}
 
 	if (!osmo_gsup_peer_id_is_empty(&req->via_proxy)) {
@@ -489,23 +492,22 @@ void proxy_subscr_forward_to_remote_hlr(struct proxy *proxy, const struct proxy_
 				     osmo_gsup_peer_id_to_str(&req->source_name));
 	}
 
-	remote_hlr = remote_hlr_get(&proxy_subscr->remote_hlr_addr, true);
-	if (!remote_hlr) {
-		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL,
-					  "Proxy: Failed to establish connection to remote HLR " OSMO_SOCKADDR_STR_FMT,
-					  OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr));
-		return;
+	/* We could always store in the defer queue and empty the queue if the connection is already up.
+	 * Slight optimisation: if the remote_hlr is already up and running, skip the defer queue.
+	 * First ask for an existing remote_hlr. */
+	remote_hlr = remote_hlr_get_or_connect(&proxy_subscr->remote_hlr_addr, false, NULL, NULL);
+	if (remote_hlr && remote_hlr_is_up(remote_hlr)) {
+		proxy_pending_req_remote_hlr_connect_result(req, remote_hlr);
+		return 0;
 	}
 
-	if (!remote_hlr->gsupc || !remote_hlr->gsupc->is_connected) {
-		/* GSUP link is still busy establishing... */
-		LOG_PROXY_SUBSCR_MSG(proxy_subscr, &req->gsup, LOGL_DEBUG,
-				     "deferring until link to remote HLR is up\n");
-		proxy_defer_gsup_req(proxy, req);
-		return;
-	}
-
-	proxy_subscr_forward_to_remote_hlr_resolved(proxy, proxy_subscr, remote_hlr, req);
+	/* Not existing or not up. Defer req and ask to be notified when it is up.
+	 * If the remote_hlr exists but is not connected yet, there should actually already be a pending
+	 * proxy_remote_hlr_connect_result_cb queued, but it doesn't hurt to do that more often. */
+	proxy_deferred_gsup_req_add(proxy, req);
+	remote_hlr_get_or_connect(&proxy_subscr->remote_hlr_addr, true,
+				  proxy_remote_hlr_connect_result_cb, proxy);
+	return 0;
 }
 
 int proxy_subscr_forward_to_vlr(struct proxy *proxy, const struct proxy_subscr *proxy_subscr,

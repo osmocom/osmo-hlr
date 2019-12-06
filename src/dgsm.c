@@ -44,8 +44,7 @@ static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
 {
 	struct proxy *proxy = g_hlr->gs->proxy;
 	struct proxy_subscr proxy_subscr;
-	const struct osmo_sockaddr_str *use_addr;
-	struct remote_hlr *remote_hlr;
+	const struct osmo_sockaddr_str *remote_hlr_addr;
 
 	/* A remote HLR is answering back, indicating that it is the home HLR for a given IMSI.
 	 * There should be a mostly empty proxy entry for that IMSI.
@@ -64,18 +63,12 @@ static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
 	}
 
 	if (osmo_sockaddr_str_is_nonzero(&result->host_v4))
-		use_addr = &result->host_v4;
+		remote_hlr_addr = &result->host_v4;
 	else if (osmo_sockaddr_str_is_nonzero(&result->host_v6))
-		use_addr = &result->host_v6;
+		remote_hlr_addr = &result->host_v6;
 	else {
 		LOG_DGSM(query->id.imsi, LOGL_ERROR, "Invalid address for remote HLR: %s\n",
 			 osmo_mslookup_result_name_c(OTC_SELECT, query, result));
-		proxy_subscr_del(proxy, query->id.imsi);
-		return;
-	}
-
-	remote_hlr = remote_hlr_get(use_addr, true);
-	if (!remote_hlr) {
 		proxy_subscr_del(proxy, query->id.imsi);
 		return;
 	}
@@ -86,18 +79,7 @@ static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
 		return;
 	}
 
-	/* The remote HLR already exists and is connected. Messages for this IMSI were spooled because we did not know
-	 * which remote HLR was responsible. Now we know, send this IMSI's messages now. */
-	LOG_DGSM(query->id.imsi, LOGL_DEBUG, "Resolved remote HLR, sending spooled GSUP messages: %s\n",
-		 osmo_mslookup_result_name_c(OTC_SELECT, query, result));
-
-	proxy_subscr_remote_hlr_resolved(proxy, &proxy_subscr, remote_hlr);
-
-	if (!remote_hlr->gsupc || !remote_hlr->gsupc->is_connected) {
-		LOG_REMOTE_HLR(remote_hlr, LOGL_DEBUG, "Waiting for link-up\n");
-		return;
-	}
-	proxy_subscr_remote_hlr_up(proxy, &proxy_subscr, remote_hlr);
+	proxy_subscr_remote_hlr_resolved(proxy, &proxy_subscr, remote_hlr_addr);
 }
 
 /* Return true when the message has been handled by D-GSM. */
@@ -114,8 +96,10 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req)
 		return false;
 
 	/* Are we already forwarding this IMSI to a remote HLR? */
-	if (proxy_subscr_get_by_imsi(&proxy_subscr, proxy, req->gsup.imsi) == 0)
-		goto yes_we_are_proxying;
+	if (proxy_subscr_get_by_imsi(&proxy_subscr, proxy, req->gsup.imsi) == 0) {
+		proxy_subscr_forward_to_remote_hlr(proxy, &proxy_subscr, req);
+		return true;
+	}
 
 	/* The IMSI is not known locally, so we want to proxy to a remote HLR, but no proxy entry exists yet. We need to
 	 * look up the subscriber in remote HLRs via D-GSM mslookup, forward GSUP and reply once a result is back from
@@ -125,40 +109,41 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req)
 	proxy_subscr = (struct proxy_subscr){};
 	OSMO_STRLCPY_ARRAY(proxy_subscr.imsi, req->gsup.imsi);
 	if (proxy_subscr_create_or_update(proxy, &proxy_subscr)) {
-		LOG_DGSM(req->gsup.imsi, LOGL_ERROR, "Failed to create proxy entry\n");
-		return false;
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Failed to create proxy entry\n");
+		return true;
 	}
 
 	/* Is a fixed gateway proxy configured? */
 	if (osmo_sockaddr_str_is_nonzero(&g_hlr->mslookup.client.gsup_gateway_proxy)) {
-		struct remote_hlr *gsup_gateway_proxy = remote_hlr_get(&g_hlr->mslookup.client.gsup_gateway_proxy, true);
-		if (!gsup_gateway_proxy) {
-			LOG_DGSM(req->gsup.imsi, LOGL_ERROR,
-				 "Failed to set up fixed gateway proxy " OSMO_SOCKADDR_STR_FMT "\n",
-				 OSMO_SOCKADDR_STR_FMT_ARGS(&g_hlr->mslookup.client.gsup_gateway_proxy));
-			return false;
-		}
+		proxy_subscr_remote_hlr_resolved(proxy, &proxy_subscr, &g_hlr->mslookup.client.gsup_gateway_proxy);
 
-		proxy_subscr_remote_hlr_resolved(proxy, &proxy_subscr, gsup_gateway_proxy);
-
-		/* Update info */
+		/* Proxy database modified, update info */
 		if (proxy_subscr_get_by_imsi(&proxy_subscr, proxy, req->gsup.imsi)) {
-			LOG_DGSM(req->gsup.imsi, LOGL_ERROR, "Proxy entry disappeared\n");
-			return false;
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Internal proxy error\n");
+			return true;
 		}
-		goto yes_we_are_proxying;
+
+		proxy_subscr_forward_to_remote_hlr(proxy, &proxy_subscr, req);
+		return true;
 	}
 
-	/* Kick off an mslookup for the remote HLR. */
-	if (!g_hlr->mslookup.client.client) {
+	/* Kick off an mslookup for the remote HLR?  This check could be up first on the top, but do it only now so that
+	 * if the mslookup client disconnected, we still continue to service open proxy entries. */
+	if (!osmo_mslookup_client_active(g_hlr->mslookup.client.client)) {
 		LOG_GSUP_REQ(req, LOGL_DEBUG, "mslookup client not running, cannot query remote home HLR\n");
 		return false;
+	}
+
+	/* First spool message, then kick off mslookup. If the proxy denies this message type, then don't do anything. */
+	if (proxy_subscr_forward_to_remote_hlr(proxy, &proxy_subscr, req)) {
+		/* If the proxy denied forwarding, an error response was already generated. */
+		return true;
 	}
 
 	query = (struct osmo_mslookup_query){
 		.id = {
 			.type = OSMO_MSLOOKUP_ID_IMSI,
-		}
+		},
 	};
 	OSMO_STRLCPY_ARRAY(query.id.imsi, req->gsup.imsi);
 	OSMO_STRLCPY_ARRAY(query.service, OSMO_MSLOOKUP_SERVICE_HLR_GSUP);
@@ -171,14 +156,10 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req)
 		LOG_DGSM(req->gsup.imsi, LOGL_ERROR, "Error dispatching mslookup query for home HLR: %s\n",
 			 osmo_mslookup_result_name_c(OTC_SELECT, &query, NULL));
 		proxy_subscr_del(proxy, req->gsup.imsi);
+		/* mslookup seems to not be working. Try handling it locally. */
 		return false;
 	}
 
-yes_we_are_proxying:
-
-	/* If the remote HLR is already known, directly forward the GSUP message; otherwise, spool the GSUP message
-	 * until the remote HLR will respond / until timeout aborts. */
-	proxy_subscr_forward_to_remote_hlr(proxy, &proxy_subscr, req);
 	return true;
 }
 
