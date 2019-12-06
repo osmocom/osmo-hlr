@@ -31,6 +31,7 @@ gsup_server_test_SOURCES = \
 gsup_server_test_LDADD = \
 	$(top_srcdir)/src/gsup_server.c \
 	$(top_srcdir)/src/gsup_router.c \
+	$(top_srcdir)/src/gsup_send.c \
 	$(top_srcdir)/src/gsupclient/gsup_peer_id.c \
 	$(top_srcdir)/src/gsupclient/gsup_req.c \
 	$(LIBOSMOCORE_LIBS) \

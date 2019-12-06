@@ -461,7 +461,7 @@ DEFUN(do_mslookup_show_services,
       "List configured service addresses as sent to remote mslookup requests\n")
 {
 	struct mslookup_server_msc_cfg *msc;
-	struct mslookup_service_host *local_hlr = mslookup_server_get_local_gsup_addr();
+	const struct mslookup_service_host *local_hlr = mslookup_server_get_local_gsup_addr();
 
 	vty_out(vty, "Local GSUP HLR address returned in mslookup responses for local IMSIs:");
 	if (osmo_sockaddr_str_is_nonzero(&local_hlr->host_v4))

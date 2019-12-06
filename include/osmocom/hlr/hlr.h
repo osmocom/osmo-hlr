@@ -110,6 +110,14 @@ struct hlr {
 			} mdns;
 		} client;
 	} mslookup;
+
+	struct {
+		/* FIXME actually use branch fixeria/sms for SMSC routing. completely unimplemented */
+		struct osmo_gsup_peer_id smsc;
+
+		/* If no SMSC is present / responsible, try punching the SMS through directly when this is true. */
+		bool try_direct_delivery;
+	} sms_over_gsup;
 };
 
 extern struct hlr *g_hlr;

@@ -49,7 +49,7 @@ static void set_result(struct osmo_mslookup_result *result,
 	result->age = age;
 }
 
-struct mslookup_service_host *mslookup_server_get_local_gsup_addr()
+const struct mslookup_service_host *mslookup_server_get_local_gsup_addr()
 {
 	static struct mslookup_service_host gsup_bind = {};
 	struct mslookup_service_host *host;
@@ -190,7 +190,7 @@ int mslookup_server_msc_service_del(struct mslookup_server_msc_cfg *msc, const c
 static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 					struct osmo_mslookup_result *result)
 {
-	struct mslookup_service_host *host;
+	const struct mslookup_service_host *host;
 	int rc;
 	switch (query->id.type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
@@ -231,18 +231,21 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
  * VLR, we will find a valid location updating with vlr_number, and no vlr_via_proxy entry. */
 static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *query,
 					    uint32_t *lu_age,
-					    struct osmo_ipa_name *local_msc_name)
+					    struct osmo_ipa_name *local_msc_name,
+					    struct hlr_subscriber *ret_subscr)
 {
-	struct hlr_subscriber subscr;
+	struct hlr_subscriber _subscr;
 	int rc;
 	uint32_t age;
 
+	struct hlr_subscriber *subscr = ret_subscr ? : &_subscr;
+
 	switch (query->id.type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
-		rc = db_subscr_get_by_imsi(g_hlr->dbc, query->id.imsi, &subscr);
+		rc = db_subscr_get_by_imsi(g_hlr->dbc, query->id.imsi, subscr);
 		break;
 	case OSMO_MSLOOKUP_ID_MSISDN:
-		rc = db_subscr_get_by_msisdn(g_hlr->dbc, query->id.msisdn, &subscr);
+		rc = db_subscr_get_by_msisdn(g_hlr->dbc, query->id.msisdn, subscr);
 		break;
 	default:
 		LOGP(DMSLOOKUP, LOGL_ERROR, "Unknown mslookup ID type: %d\n", query->id.type);
@@ -255,22 +258,22 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
 		return false;
 	}
 
-	if (!subscr.vlr_number[0]) {
+	if (!subscr->vlr_number[0]) {
 		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: not attached (vlr_number unset)\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 	}
 
-	if (subscr.vlr_via_proxy.len) {
+	if (subscr->vlr_via_proxy.len) {
 		/* The VLR is behind a proxy, the subscriber is not attached to a local VLR but a remote one. That
 		 * remote proxy should instead respond to the service lookup request. */
 		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: last attach is not at local VLR, but at VLR '%s' via proxy %s\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
-		     subscr.vlr_number,
-		     osmo_ipa_name_to_str(&subscr.vlr_via_proxy));
+		     subscr->vlr_number,
+		     osmo_ipa_name_to_str(&subscr->vlr_via_proxy));
 		return false;
 	}
 
-	if (!timestamp_age(&subscr.last_lu_seen, &age)) {
+	if (!timestamp_age(&subscr->last_lu_seen, &age)) {
 		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: Invalid last_lu_seen timestamp for subscriber\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
 		return false;
@@ -283,7 +286,7 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
 	}
 
 	*lu_age = age;
-	osmo_ipa_name_set_str(local_msc_name, subscr.vlr_number);
+	osmo_ipa_name_set_str(local_msc_name, subscr->vlr_number);
 	LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: attached %u seconds ago at local VLR %s\n",
 	     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
 	     age, osmo_ipa_name_to_str(local_msc_name));
@@ -297,7 +300,8 @@ static bool subscriber_has_done_lu_here_hlr(const struct osmo_mslookup_query *qu
  */
 static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *query,
 					      uint32_t *lu_age,
-					      struct osmo_ipa_name *local_msc_name)
+					      struct osmo_ipa_name *local_msc_name,
+					      const struct proxy_subscr **ret_proxy_subscr)
 {
 	const struct proxy_subscr *proxy_subscr;
 	uint32_t age;
@@ -349,12 +353,14 @@ static bool subscriber_has_done_lu_here_proxy(const struct osmo_mslookup_query *
 	     age, osmo_ipa_name_to_str(local_msc_name),
 	     OSMO_SOCKADDR_STR_FMT_ARGS(&proxy_subscr->remote_hlr_addr));
 
+	if (ret_proxy_subscr)
+		*ret_proxy_subscr = proxy_subscr;
 	return true;
 }
 
-static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
-					uint32_t *lu_age_p,
-					struct osmo_ipa_name *local_msc_name)
+bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
+				 uint32_t *lu_age_p, struct osmo_ipa_name *local_msc_name,
+				 char *ret_imsi, size_t ret_imsi_len)
 {
 	bool attached_here;
 	uint32_t lu_age = 0;
@@ -362,6 +368,9 @@ static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 	bool attached_here_proxy;
 	uint32_t proxy_lu_age = 0;
 	struct osmo_ipa_name proxy_msc_name = {};
+	const struct proxy_subscr *proxy_subscr;
+	struct hlr_subscriber db_subscr;
+
 
 	/* First ask the local HLR db, but if the local proxy record indicates a more recent LU, use that instead.
 	 * For all usual cases, only one of these will reflect a LU, even if a subscriber had more than one home HLR:
@@ -371,14 +380,19 @@ static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 	 * the local HLR database, there might occur a situation where both reflect a LU. So, to be safe against all
 	 * situations, compare the two entries.
 	 */
-	attached_here = subscriber_has_done_lu_here_hlr(query, &lu_age, &msc_name);
-	attached_here_proxy = subscriber_has_done_lu_here_proxy(query, &proxy_lu_age, &proxy_msc_name);
+	attached_here = subscriber_has_done_lu_here_hlr(query, &lu_age, &msc_name, &db_subscr);
+	attached_here_proxy = subscriber_has_done_lu_here_proxy(query, &proxy_lu_age, &proxy_msc_name, &proxy_subscr);
 
 	/* If proxy has a younger lu, replace. */
 	if (attached_here_proxy && (!attached_here || (proxy_lu_age < lu_age))) {
 		attached_here = true;
 		lu_age = proxy_lu_age;
 		msc_name = proxy_msc_name;
+		if (ret_imsi)
+			osmo_strlcpy(ret_imsi, proxy_subscr->imsi, ret_imsi_len);
+	} else if (attached_here) {
+		if (ret_imsi)
+			osmo_strlcpy(ret_imsi, db_subscr.imsi, ret_imsi_len);
 	}
 
 	if (attached_here && !msc_name.len) {
@@ -402,7 +416,7 @@ static bool subscriber_has_done_lu_here(const struct osmo_mslookup_query *query,
 
 /* A remote entity is asking us whether we are providing the given service for the given subscriber. */
 void mslookup_server_rx(const struct osmo_mslookup_query *query,
-			     struct osmo_mslookup_result *result)
+			struct osmo_mslookup_result *result)
 {
 	const struct mslookup_service_host *service_host;
 	uint32_t age;
@@ -416,7 +430,7 @@ void mslookup_server_rx(const struct osmo_mslookup_query *query,
 	/* All other service types: answer when the subscriber has done a LU that is either listed in the local HLR or
 	 * in the GSUP proxy database: i.e. if the subscriber has done a Location Updating at an VLR belonging to this
 	 * HLR. Respond with whichever services are configured in the osmo-hlr.cfg. */
-	if (!subscriber_has_done_lu_here(query, &age, &msc_name)) {
+	if (!subscriber_has_done_lu_here(query, &age, &msc_name, NULL, 0)) {
 		*result = not_found;
 		return;
 	}

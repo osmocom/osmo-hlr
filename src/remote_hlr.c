@@ -101,16 +101,16 @@ static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 	return 0;
 }
 
-static bool remote_hlr_up_yield(struct proxy *proxy, const struct proxy_subscr *proxy_subscr, void *data)
-{
-	struct remote_hlr *remote_hlr = data;
-	proxy_subscr_remote_hlr_up(proxy, proxy_subscr, remote_hlr);
-	return true;
-}
+struct remote_hlr_pending_up {
+	struct llist_head entry;
+	remote_hlr_connect_result_cb_t connect_result_cb;
+	void *data;
+};
 
 static bool remote_hlr_up_down(struct osmo_gsup_client *gsupc, bool up)
 {
 	struct remote_hlr *remote_hlr = gsupc->data;
+	struct remote_hlr_pending_up *p, *n;
 	if (!up) {
 		LOG_REMOTE_HLR(remote_hlr, LOGL_NOTICE, "link to remote HLR is down, removing GSUP client\n");
 		remote_hlr_destroy(remote_hlr);
@@ -118,22 +118,41 @@ static bool remote_hlr_up_down(struct osmo_gsup_client *gsupc, bool up)
 	}
 
 	LOG_REMOTE_HLR(remote_hlr, LOGL_NOTICE, "link up\n");
-	proxy_subscrs_get_by_remote_hlr(g_hlr->gs->proxy, &remote_hlr->addr, remote_hlr_up_yield, remote_hlr);
+	llist_for_each_entry_safe(p, n, &remote_hlr->pending_up_callbacks, entry) {
+		if (p->connect_result_cb)
+			p->connect_result_cb(&remote_hlr->addr, remote_hlr, p->data);
+		llist_del(&p->entry);
+	}
 	return true;
 }
 
-struct remote_hlr *remote_hlr_get(const struct osmo_sockaddr_str *addr, bool create)
+bool remote_hlr_is_up(struct remote_hlr *remote_hlr)
 {
-	struct remote_hlr *rh;
+	return remote_hlr && remote_hlr->gsupc && remote_hlr->gsupc->is_connected;
+}
+
+struct remote_hlr *remote_hlr_get_or_connect(const struct osmo_sockaddr_str *addr, bool connect,
+					     remote_hlr_connect_result_cb_t connect_result_cb, void *data)
+{
+	struct remote_hlr *rh = NULL;
+	struct remote_hlr *rh_i;
 	struct osmo_gsup_client_config cfg;
 
-	llist_for_each_entry(rh, &remote_hlrs, entry) {
-		if (!osmo_sockaddr_str_cmp(&rh->addr, addr))
-			return rh;
+	llist_for_each_entry(rh_i, &remote_hlrs, entry) {
+		if (!osmo_sockaddr_str_cmp(&rh_i->addr, addr)) {
+			rh = rh_i;
+			break;
+		}
 	}
 
-	if (!create)
+	if (rh)
+		goto add_result_cb;
+
+	if (!connect) {
+		if (connect_result_cb)
+			connect_result_cb(addr, NULL, data);
 		return NULL;
+	}
 
 	/* Doesn't exist yet, create a GSUP client to remote HLR. */
 	cfg = (struct osmo_gsup_client_config){
@@ -151,15 +170,33 @@ struct remote_hlr *remote_hlr_get(const struct osmo_sockaddr_str *addr, bool cre
 		.addr = *addr,
 		.gsupc = osmo_gsup_client_create3(rh, &cfg),
 	};
+	INIT_LLIST_HEAD(&rh->pending_up_callbacks);
 	if (!rh->gsupc) {
 		LOGP(DDGSM, LOGL_ERROR,
 		     "Failed to establish connection to remote HLR " OSMO_SOCKADDR_STR_FMT "\n",
 		     OSMO_SOCKADDR_STR_FMT_ARGS(addr));
 		talloc_free(rh);
+		if (connect_result_cb)
+			connect_result_cb(addr, NULL, data);
 		return NULL;
 	}
+
 	rh->gsupc->data = rh;
 	llist_add(&rh->entry, &remote_hlrs);
+
+add_result_cb:
+	if (connect_result_cb) {
+		if (remote_hlr_is_up(rh)) {
+			connect_result_cb(addr, rh, data);
+		} else {
+			struct remote_hlr_pending_up *p;
+			p = talloc_zero(rh, struct remote_hlr_pending_up);
+			OSMO_ASSERT(p);
+			p->connect_result_cb = connect_result_cb;
+			p->data = data;
+			llist_add_tail(&p->entry, &rh->pending_up_callbacks);
+		}
+	}
 	return rh;
 }
 
@@ -183,14 +220,19 @@ int remote_hlr_msgb_send(struct remote_hlr *remote_hlr, struct msgb *msg)
 }
 
 /* A GSUP message was received from the MS/MSC side, forward it to the remote HLR. */
-void remote_hlr_gsup_forward_to_remote_hlr(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req)
+void remote_hlr_gsup_forward_to_remote_hlr(struct remote_hlr *remote_hlr, struct osmo_gsup_req *req,
+					   struct osmo_gsup_message *modified_gsup)
 {
 	int rc;
 	struct msgb *msg;
 	/* To forward to a remote HLR, we need to indicate the source MSC's name in the Source Name IE to make sure the
 	 * reply can be routed back. Store the sender MSC in gsup->source_name -- the remote HLR is required to return
 	 * this as gsup->destination_name so that the reply gets routed to the original MSC. */
-	struct osmo_gsup_message forward = req->gsup;
+	struct osmo_gsup_message forward;
+	if (modified_gsup)
+		forward = *modified_gsup;
+	else
+		forward = req->gsup;
 
 	if (req->source_name.type != OSMO_GSUP_PEER_ID_IPA_NAME) {
 		osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "Unsupported GSUP peer id type: %s",
