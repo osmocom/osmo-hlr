@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# FIXME: use python3 once buildslaves are updated.
+#!/usr/bin/env python3
 # Convert test sets pasted from 3GPP TS 55.205 to C code.
  
 # (C) 2016 by sysmocom s.f.m.c. GmbH <info@sysmocom.de>
