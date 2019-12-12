@@ -30,7 +30,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	5
+#define CURRENT_SCHEMA_VERSION	6
 
 #define SEL_COLUMNS \
 	"id," \
@@ -87,6 +87,9 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
+	[DB_STMT_IND_ADD] = "INSERT INTO ind (vlr) VALUES ($vlr)",
+	[DB_STMT_IND_SELECT] = "SELECT ind FROM ind WHERE vlr = $vlr",
+	[DB_STMT_IND_DEL] = "DELETE FROM ind WHERE vlr = $vlr",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -481,6 +484,29 @@ static int db_upgrade_v5(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v6(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"CREATE TABLE ind (\n"
+		"	-- 3G auth IND pool to be used for this VLR\n"
+		"	ind     INTEGER PRIMARY KEY,\n"
+		"	-- VLR identification, usually the GSUP source_name\n"
+		"	vlr     TEXT NOT NULL,\n"
+		"	UNIQUE (vlr)\n"
+		")"
+		,
+		"PRAGMA user_version = 6",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 6\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -488,6 +514,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v3,
 	db_upgrade_v4,
 	db_upgrade_v5,
+	db_upgrade_v6,
 };
 
 static int db_get_user_version(struct db_context *dbc)
