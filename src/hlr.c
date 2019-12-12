@@ -280,18 +280,28 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
  ***********************************************************************/
 
 /* process an incoming SAI request */
-static int rx_send_auth_info(unsigned int auc_3g_ind, struct osmo_gsup_req *req)
+static int rx_send_auth_info(struct osmo_gsup_req *req)
 {
 	struct osmo_gsup_message gsup_out = {
 		.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT,
 	};
 	bool separation_bit = false;
+	unsigned int auc_3g_ind;
 	int rc;
 
 	subscr_create_on_demand(req->gsup.imsi);
 
 	if (req->gsup.current_rat_type == OSMO_RAT_EUTRAN_SGS)
 		separation_bit = true;
+
+	rc = db_ind(g_hlr->dbc, &req->source_name, &auc_3g_ind);
+	if (rc) {
+		LOG_GSUP_REQ(req, LOGL_ERROR,
+			     "Unable to determine 3G auth IND for source %s (rc=%d),"
+			     " generating tuples with IND = 0\n",
+			     osmo_gsup_peer_id_to_str(&req->source_name), rc);
+		auc_3g_ind = 0;
+	}
 
 	rc = db_get_auc(g_hlr->dbc, req->gsup.imsi, auc_3g_ind,
 			gsup_out.auth_vectors,
@@ -511,7 +521,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	switch (req->gsup.message_type) {
 	/* requests sent to us */
 	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_REQUEST:
-		rx_send_auth_info(conn->auc_3g_ind, req);
+		rx_send_auth_info(req);
 		break;
 	case OSMO_GSUP_MSGT_UPDATE_LOCATION_REQUEST:
 		rx_upd_loc_req(conn, req);
