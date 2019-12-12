@@ -918,6 +918,50 @@ static void test_subscr_sqn()
 	comment_end();
 }
 
+static void test_ind()
+{
+	comment_start();
+
+#define ASSERT_IND(VLR, IND) do { \
+		unsigned int ind; \
+		struct osmo_gsup_peer_id vlr; \
+		OSMO_ASSERT(!osmo_gsup_peer_id_set_str(&vlr, OSMO_GSUP_PEER_ID_IPA_NAME, VLR)); \
+		ASSERT_RC(db_ind(dbc, &vlr, &ind), 0); \
+		fprintf(stderr, "%s ind = %u\n\n", osmo_quote_str((char*)vlr.ipa_name.val, vlr.ipa_name.len), ind); \
+		if (ind != (IND)) \
+			fprintf(stderr, "  ERROR: expected " #IND "\n"); \
+	} while (0)
+#define IND_DEL(VLR) do { \
+		struct osmo_gsup_peer_id vlr; \
+		OSMO_ASSERT(!osmo_gsup_peer_id_set_str(&vlr, OSMO_GSUP_PEER_ID_IPA_NAME, VLR)); \
+		ASSERT_RC(db_ind_del(dbc, &vlr), 0); \
+		fprintf(stderr, "%s ind deleted\n\n", osmo_quote_str((char*)vlr.ipa_name.val, vlr.ipa_name.len)); \
+	} while (0)
+
+	ASSERT_IND("msc-23", 1);
+	ASSERT_IND("sgsn-11", 2);
+	ASSERT_IND("msc-42", 3);
+	ASSERT_IND("sgsn-22", 4);
+	ASSERT_IND("msc-0x17", 5);
+	ASSERT_IND("sgsn-0xaa", 6);
+	ASSERT_IND("msc-42", 3);
+	ASSERT_IND("sgsn-22", 4);
+	ASSERT_IND("msc-0x17", 5);
+	ASSERT_IND("sgsn-0xaa", 6);
+	ASSERT_IND("sgsn-0xbb", 7);
+	ASSERT_IND("msc-0x2a", 8);
+	ASSERT_IND("msc-42", 3);
+	ASSERT_IND("sgsn-22", 4);
+	ASSERT_IND("msc-23", 1);
+	ASSERT_IND("sgsn-11", 2);
+
+	IND_DEL("msc-0x17"); /* dropped IND == 5 */
+	ASSERT_IND("msc-0x2a", 8); /* known CS remains where it is */
+	ASSERT_IND("any-unknown", 9); /* new VLR takes a new IND from the end */
+
+	comment_end();
+}
+
 static struct {
 	bool verbose;
 } cmdline_opts = {
@@ -998,6 +1042,7 @@ int main(int argc, char **argv)
 	test_subscr_aud();
 	test_subscr_aud_invalid_len();
 	test_subscr_sqn();
+	test_ind();
 
 	printf("Done\n");
 	db_close(dbc);
