@@ -200,15 +200,16 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	if (rc)
 		return rc;
 
+	/* modulo by the IND bitlen value range. For example, ind_bitlen == 5 would modulo 32:
+	 * 1 << 5 == 0b0100000 == 32
+	 * - 1 == 0b0011111 == bitmask of 5 lowest bits
+	 * x &= 0b0011111 == modulo 32
+	 * Why do this? osmo-hlr cannot possibly choose individual VLR INDs always matching all subscribers' IND_bitlen,
+	 * which might vary wildly. Instead, let hlr.c pass in an arbitrarily high number here, and the modulo does a
+	 * round-robin if the IND pools that this subscriber has available. */
+	auc_3g_ind &= (1U << aud3g.u.umts.ind_bitlen) - 1;
 	aud3g.u.umts.ind = auc_3g_ind;
-	if (aud3g.type == OSMO_AUTH_TYPE_UMTS
-	    && aud3g.u.umts.ind >= (1U << aud3g.u.umts.ind_bitlen)) {
-		LOGAUC(imsi, LOGL_NOTICE, "3G auth: SQN's IND bitlen %u is"
-		       " too small to hold an index of %u. Truncating. This"
-		       " may cause numerous additional AUTS resyncing.\n",
-		       aud3g.u.umts.ind_bitlen, aud3g.u.umts.ind);
-		aud3g.u.umts.ind &= (1U << aud3g.u.umts.ind_bitlen) - 1;
-	}
+
 	/* the first bit (bit0) cannot be used as AMF anymore, but has been
 	 * re-appropriated as the separation bit.  See 3GPP TS 33.102 Annex H
 	 * together with 3GPP TS 33.401 / 33.402 / 33.501 */
