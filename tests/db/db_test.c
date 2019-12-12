@@ -918,6 +918,58 @@ static void test_subscr_sqn()
 	comment_end();
 }
 
+static void test_ind()
+{
+	comment_start();
+
+#define ASSERT_IND(CN_DOMAIN, VLR, IND) do { \
+		unsigned int ind; \
+		struct osmo_gsup_peer_id vlr; \
+		OSMO_ASSERT(!osmo_gsup_peer_id_set_str(&vlr, OSMO_GSUP_PEER_ID_IPA_NAME, VLR)); \
+		ASSERT_RC(db_ind(dbc, CN_DOMAIN, &vlr, &ind), 0); \
+		fprintf(stderr, #CN_DOMAIN " %s ind = %u\n\n", osmo_quote_str((char*)vlr.ipa_name.val, vlr.ipa_name.len), ind); \
+		if (ind != (IND)) \
+			fprintf(stderr, "  ERROR: expected " #IND "\n"); \
+	} while (0)
+#define IND_DEL(CN_DOMAIN, VLR) do { \
+		struct osmo_gsup_peer_id vlr; \
+		OSMO_ASSERT(!osmo_gsup_peer_id_set_str(&vlr, OSMO_GSUP_PEER_ID_IPA_NAME, VLR)); \
+		ASSERT_RC(db_ind_del(dbc, CN_DOMAIN, &vlr), 0); \
+		fprintf(stderr, #CN_DOMAIN " %s ind deleted\n\n", osmo_quote_str((char*)vlr.ipa_name.val, vlr.ipa_name.len)); \
+	} while (0)
+#define CS OSMO_GSUP_CN_DOMAIN_CS
+#define PS OSMO_GSUP_CN_DOMAIN_PS
+
+	ASSERT_IND(CS, "msc-23", 1);
+	ASSERT_IND(PS, "sgsn-11", 0);
+	ASSERT_IND(CS, "msc-42", 3);
+	ASSERT_IND(PS, "sgsn-22", 2);
+	ASSERT_IND(CS, "msc-0x17", 5);
+	ASSERT_IND(PS, "sgsn-0xaa", 4);
+	ASSERT_IND(CS, "msc-42", 3);
+	ASSERT_IND(PS, "sgsn-22", 2);
+	ASSERT_IND(CS, "msc-0x17", 5);
+	ASSERT_IND(PS, "sgsn-0xaa", 4);
+	ASSERT_IND(CS, "msc-0x2a", 7);
+	ASSERT_IND(PS, "sgsn-0xbb", 6);
+	ASSERT_IND(CS, "msc-42", 3);
+	ASSERT_IND(PS, "sgsn-22", 2);
+	ASSERT_IND(CS, "msc-23", 1);
+	ASSERT_IND(PS, "sgsn-11", 0);
+
+	ASSERT_IND(CS, "same", 9);
+	ASSERT_IND(PS, "same", 8);
+	ASSERT_IND(CS, "same", 9);
+	ASSERT_IND(PS, "same", 8);
+
+	IND_DEL(CS, "msc-0x17"); /* dropped IND == 5 */
+	ASSERT_IND(PS, "unrelated-PS", 8);
+	ASSERT_IND(CS, "msc-0x2a", 7); /* known CS remains where it is */
+	ASSERT_IND(CS, "any-unknown-CS", 5); /* takes spot of IND == 5 */
+
+	comment_end();
+}
+
 static struct {
 	bool verbose;
 } cmdline_opts = {
@@ -998,6 +1050,7 @@ int main(int argc, char **argv)
 	test_subscr_aud();
 	test_subscr_aud_invalid_len();
 	test_subscr_sqn();
+	test_ind();
 
 	printf("Done\n");
 	db_close(dbc);

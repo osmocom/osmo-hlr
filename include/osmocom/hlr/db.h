@@ -4,6 +4,7 @@
 #include <sqlite3.h>
 
 #include <osmocom/gsupclient/gsup_peer_id.h>
+#include <osmocom/gsm/gsup.h>
 
 struct hlr;
 
@@ -33,6 +34,9 @@ enum stmt_idx {
 	DB_STMT_SET_LAST_LU_SEEN_PS,
 	DB_STMT_EXISTS_BY_IMSI,
 	DB_STMT_EXISTS_BY_MSISDN,
+	DB_STMT_IND_SELECT,
+	DB_STMT_IND_ADD,
+	DB_STMT_IND_DEL,
 	_NUM_DB_STMT
 };
 
@@ -162,6 +166,10 @@ int db_subscr_lu(struct db_context *dbc, int64_t subscr_id,
 
 int db_subscr_purge(struct db_context *dbc, const char *by_imsi,
 		    bool purge_val, bool is_ps);
+
+int db_ind(struct db_context *dbc, enum osmo_gsup_cn_domain cn_domain, const struct osmo_gsup_peer_id *vlr,
+	   unsigned int *ind);
+int db_ind_del(struct db_context *dbc, enum osmo_gsup_cn_domain cn_domain, const struct osmo_gsup_peer_id *vlr);
 
 /*! Call sqlite3_column_text() and copy result to a char[].
  * \param[out] buf  A char[] used as sizeof() arg(!) and osmo_strlcpy() target.

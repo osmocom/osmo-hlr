@@ -30,7 +30,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	5
+#define CURRENT_SCHEMA_VERSION	6
 
 #define SEL_COLUMNS \
 	"id," \
@@ -87,6 +87,86 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
+	[DB_STMT_IND_SELECT] = "SELECT ind FROM ind WHERE cn_domain = $cn_domain AND vlr = $vlr",
+	[DB_STMT_IND_DEL] = "DELETE FROM ind WHERE cn_domain = $cn_domain AND vlr = $vlr",
+	[DB_STMT_IND_ADD] =
+		/* This SQL statement is quite the works, so let me elaborate.
+		 * This is about auc_3g IND pool choice for a given attached VLR (MSC or SGSN).
+		 * - We want to insert an unused IND into the table, where a CS IND should be odd-numbered and a PS IND
+		 *   should be even (see OS#4319). In short, an IND collision between MSC and SGSN of the same site is a
+		 *   grave sink of SQN numbers and HLR CPU cycles, so it is worth it to avoid that with 100% certainty.
+		 * - We want to start from zero/one (for PS/CS) and,
+		 * - When there is a gap due to deletion, we always want to first fill up the gaps before picking unused
+		 *   INDs from the end of the range.
+		 * - We also want to treat $cn_domain as an integer, to be ready for future added cn_domain enum values.
+		 *   That implies having one single table for all cn_domains,
+		 * - The other benefit of having a single table for both cn_domains is that we can beyond all doubt
+		 *   prevent any IND assigned twice.
+		 * - If too many sites show up for the IND_bitlen of a subscriber, the auc_3g code actually takes the
+		 *   modulo to fit in the IND_bitlen space, so here all we do is grow IND values into "all infinity",
+		 *   causing effective round-robin of any arbitrary IND_bitlen space. That is why we fill gaps first.
+		 *
+		 * $cn_domain is: PS=1 CS=2, so $cn_domain - 1 gives PS=0 CS=1
+		 * Given any arbitrary nr, this always hits the right even/odd per CN domain:
+		 *    nr - (nr % 2) + ($cn_domain-1)
+		 * However, CN domains are always spaced two apart, so we often want (nr + 2).
+		 * With above always-hit-the-right-bucket, that gives
+		 *    (nr+2) - ((nr+2) % 2) + ($cn_domain-1)
+		 * This modulo dance is aggressively applied to gracefully recover even when a user has manually
+		 * modified the IND table to actually pair an even/odd IND to the wrong cn_domain.
+		 *
+		 * The deeper SELECT between THEN and ELSE picks the lowest unused IND for a given $cn_domain.
+		 * However, that only works when there already is any one entry in the table.
+		 * That's why we need the entire CASE WHEN .. THEN .. ELSE .. END stuff.
+		 *
+		 * That CASE's ELSE..END part returns the absolute first value for a $cn_domain for an empty table.
+		 *
+		 * The outermost SELECT puts the values ($cn_domain, $ind, $vlr) together.
+		 *
+		 * So, again, this time from outside to inside:
+		 *   INSERT...
+		 *   SELECT ($cn_domain, <IND>, $vlr)
+		 *
+		 * where <IND> is done like:
+		 *   CASE WHEN <table-already-has-such-$cn_domain>
+		 *   THEN
+		 *       <FIND-UNUSED-IND>
+		 *   ELSE
+		 *       <use-first-ind-for-this-$cn_domain>
+		 *
+		 * where in turn <FIND-UNUSED-IND> is [CC-BY-SA-4.0]
+		 *   kindly taken from the answer of https://stackoverflow.com/users/55159/quassnoi (MySQL section)
+		 *   to the question https://stackoverflow.com/questions/1312101/how-do-i-find-a-gap-in-running-counter-with-sql
+		 *   and modified to use the even/odd skipping according to $cn_domain instead of simple increment.
+		 * <FIND-UNUSED-IND> works such that it selects an IND number for which IND + 2 yields no entry,
+		 * modification here: the entry must also match the given $cn_domain.
+		 *
+		 * The C invoking this still first tries to just find an entry for a given $vlr, so when this statement
+		 * is invoked, we actually definitely want to insert an entry and expect no constraint conflicts.
+		 *
+		 * Parameters are $cn_domain (integer) and $vlr (text). The $cn_domain should be either 1 (PS)
+		 * or 2 (CS), any other value should default to 1 (because according to GSUP specs PS is the default).
+		 */
+		"INSERT INTO ind (cn_domain, ind, vlr)"
+		"SELECT  $cn_domain,"
+		"	CASE WHEN EXISTS(SELECT NULL FROM ind WHERE cn_domain = $cn_domain LIMIT 1)"
+		"	THEN"
+		"		("
+		"		SELECT ((ind + 2) - ((ind + 2)%2) + ($cn_domain-1))"
+		"		FROM ind as mo"
+		"		WHERE NOT EXISTS ("
+		"			SELECT NULL"
+		"			FROM ind as mi"
+		"			WHERE cn_domain = $cn_domain"
+		"			AND mi.ind = ((mo.ind + 2) - ((mo.ind + 2)%2) + $cn_domain-1)"
+		"			)"
+		"		ORDER BY ind"
+		"		LIMIT 1"
+		"		)"
+		"	ELSE ($cn_domain-1)"
+		"	END ind"
+		"	, $vlr"
+		,
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)
@@ -481,6 +561,30 @@ static int db_upgrade_v5(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v6(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"CREATE TABLE ind (\n"
+		"	cn_domain INTEGER NOT NULL,\n"
+		"	-- 3G auth IND bucket to be used for this VLR, where IND = (idx << 1) + cn_domain -1\n"
+		"	ind     INTEGER PRIMARY KEY,\n"
+		"	-- VLR identification, usually the GSUP source_name\n"
+		"	vlr     TEXT NOT NULL,\n"
+		"	UNIQUE (cn_domain, vlr)\n"
+		")"
+		,
+		"PRAGMA user_version = 6",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 6\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -488,6 +592,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v3,
 	db_upgrade_v4,
 	db_upgrade_v5,
+	db_upgrade_v6,
 };
 
 static int db_get_user_version(struct db_context *dbc)

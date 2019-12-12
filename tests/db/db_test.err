@@ -1613,3 +1613,104 @@ db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
 
 ===== test_subscr_sqn: SUCCESS
 
+
+===== test_ind
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-23\0" ind = 1
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-11\0" ind = 0
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-42\0" ind = 3
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-22\0" ind = 2
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-0x17\0" ind = 5
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-0xaa\0" ind = 4
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-42\0" ind = 3
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-22\0" ind = 2
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-0x17\0" ind = 5
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-0xaa\0" ind = 4
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-0x2a\0" ind = 7
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-0xbb\0" ind = 6
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-42\0" ind = 3
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-22\0" ind = 2
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-23\0" ind = 1
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "sgsn-11\0" ind = 0
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "same\0" ind = 9
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "same\0" ind = 8
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "same\0" ind = 9
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "same\0" ind = 8
+
+db_ind_del(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr) --> 0
+
+CS "msc-0x17\0" ind deleted
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_PS, &vlr, &ind) --> 0
+
+PS "unrelated-PS\0" ind = 10
+
+  ERROR: expected 8
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "msc-0x2a\0" ind = 7
+
+db_ind(dbc, OSMO_GSUP_CN_DOMAIN_CS, &vlr, &ind) --> 0
+
+CS "any-unknown-CS\0" ind = 5
+
+===== test_ind: SUCCESS
+
