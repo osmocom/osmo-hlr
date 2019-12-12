@@ -79,8 +79,16 @@ CREATE TABLE auc_3g (
 	ind_bitlen	INTEGER NOT NULL DEFAULT 5
 );
 
+CREATE TABLE ind (
+	-- 3G auth IND pool to be used for this VLR
+	ind     INTEGER PRIMARY KEY,
+	-- VLR identification, usually the GSUP source_name
+	vlr     TEXT NOT NULL,
+	UNIQUE (vlr)
+);
+
 CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 5;
+PRAGMA user_version = 6;

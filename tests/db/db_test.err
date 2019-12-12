@@ -1613,3 +1613,83 @@ db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> -ENOENT
 
 ===== test_subscr_sqn: SUCCESS
 
+
+===== test_ind
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-23\0" ind = 1
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-11\0" ind = 2
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-42\0" ind = 3
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-22\0" ind = 4
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-0x17\0" ind = 5
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-0xaa\0" ind = 6
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-42\0" ind = 3
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-22\0" ind = 4
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-0x17\0" ind = 5
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-0xaa\0" ind = 6
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-0xbb\0" ind = 7
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-0x2a\0" ind = 8
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-42\0" ind = 3
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-22\0" ind = 4
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-23\0" ind = 1
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"sgsn-11\0" ind = 2
+
+db_ind_del(dbc, &vlr) --> 0
+
+"msc-0x17\0" ind deleted
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"msc-0x2a\0" ind = 8
+
+db_ind(dbc, &vlr, &ind) --> 0
+
+"any-unknown\0" ind = 9
+
+===== test_ind: SUCCESS
+

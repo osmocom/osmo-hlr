@@ -116,8 +116,8 @@ static void show_one_conn(struct vty *vty, const struct osmo_gsup_conn *conn)
 	rc = osmo_gsup_conn_ccm_get(conn, (uint8_t **) &name, IPAC_IDTAG_SERNR);
 	OSMO_ASSERT(rc);
 
-	vty_out(vty, " '%s' from %s:%5u, CS=%u, PS=%u, 3G_IND=%u%s",
-		name, isc->addr, isc->port, conn->supports_cs, conn->supports_ps, conn->auc_3g_ind,
+	vty_out(vty, " '%s' from %s:%5u, CS=%u, PS=%u%s",
+		name, isc->addr, isc->port, conn->supports_cs, conn->supports_ps,
 		VTY_NEWLINE);
 }
 
