@@ -22,13 +22,6 @@ cat $abs_srcdir/gsup/gsup_test.err > experr
 AT_CHECK([$abs_top_builddir/tests/gsup/gsup_test], [], [expout], [experr])
 AT_CLEANUP
 
-AT_SETUP([gsup_server])
-AT_KEYWORDS([gsup_server])
-cat $abs_srcdir/gsup_server/gsup_server_test.ok > expout
-cat $abs_srcdir/gsup_server/gsup_server_test.err > experr
-AT_CHECK([$abs_top_builddir/tests/gsup_server/gsup_server_test], [], [expout], [experr])
-AT_CLEANUP
-
 AT_SETUP([db])
 AT_KEYWORDS([db])
 cat $abs_srcdir/db/db_test.ok > expout

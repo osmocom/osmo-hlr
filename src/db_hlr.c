@@ -972,3 +972,106 @@ out:
 
 	return ret;
 }
+
+static int _db_ind_run(struct db_context *dbc, sqlite3_stmt *stmt, const char *vlr, bool reset)
+{
+	int rc;
+
+	if (!db_bind_text(stmt, "$vlr", vlr))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (reset)
+		db_remove_reset(stmt);
+	return rc;
+}
+
+static int _db_ind_add(struct db_context *dbc, const char *vlr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_IND_ADD];
+	if (_db_ind_run(dbc, stmt, vlr, true) != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Cannot create IND entry for %s\n", osmo_quote_str_c(OTC_SELECT, vlr, -1));
+		return -EIO;
+	}
+	return 0;
+}
+
+static int _db_ind_del(struct db_context *dbc, const char *vlr)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_IND_DEL];
+	_db_ind_run(dbc, stmt, vlr, true);
+	/* We don't really care about the result. If it didn't exist, then that was the goal anyway. */
+	return 0;
+}
+
+static int _db_ind_get(struct db_context *dbc, const char *vlr, unsigned int *ind)
+{
+	int ret = 0;
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_IND_SELECT];
+	int rc = _db_ind_run(dbc, stmt, vlr, false);
+	if (rc == SQLITE_DONE) {
+		/* Does not exist yet */
+		ret = -ENOENT;
+		goto out;
+	} else if (rc != SQLITE_ROW) {
+		LOGP(DDB, LOGL_ERROR, "Error executing SQL: %d\n", rc);
+		ret = -EIO;
+		goto out;
+	}
+
+	OSMO_ASSERT(ind);
+	*ind = sqlite3_column_int64(stmt, 0);
+out:
+	db_remove_reset(stmt);
+	return ret;
+}
+
+int _db_ind(struct db_context *dbc, const struct osmo_cni_peer_id *vlr,
+	    unsigned int *ind, bool del)
+{
+	const char *vlr_name = NULL;
+	int rc;
+
+	switch (vlr->type) {
+	case OSMO_CNI_PEER_ID_IPA_NAME:
+		if (vlr->ipa_name.len < 2 || vlr->ipa_name.val[vlr->ipa_name.len - 1] != '\0') {
+			LOGP(DDB, LOGL_ERROR, "Expecting VLR ipa_name to be zero terminated; found %s\n",
+			     osmo_ipa_name_to_str(&vlr->ipa_name));
+			return -ENOTSUP;
+		}
+		vlr_name = (const char*)vlr->ipa_name.val;
+		break;
+	default:
+		LOGP(DDB, LOGL_ERROR, "Unsupported osmo_cni_peer_id type: %s\n",
+		     osmo_cni_peer_id_type_name(vlr->type));
+		return -ENOTSUP;
+	}
+
+	if (del)
+		return _db_ind_del(dbc, vlr_name);
+
+	rc = _db_ind_get(dbc, vlr_name, ind);
+	if (!rc)
+		return 0;
+
+	/* Does not exist yet, create. */
+	rc = _db_ind_add(dbc, vlr_name);
+	if (rc) {
+		LOGP(DDB, LOGL_ERROR, "Error creating IND entry for %s\n", osmo_quote_str_c(OTC_SELECT, vlr_name, -1));
+		return rc;
+	}
+
+	/* To be sure, query again from scratch. */
+	return _db_ind_get(dbc, vlr_name, ind);
+}
+
+int db_ind(struct db_context *dbc, const struct osmo_cni_peer_id *vlr, unsigned int *ind)
+{
+	return _db_ind(dbc, vlr, ind, false);
+}
+
+int db_ind_del(struct db_context *dbc, const struct osmo_cni_peer_id *vlr)
+{
+	return _db_ind(dbc, vlr, NULL, true);
+}
