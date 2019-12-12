@@ -132,8 +132,11 @@ int osmo_gsup_peer_id_set_str(struct osmo_gsup_peer_id *gsup_peer_id, enum osmo_
 	va_list ap;
 	int rc;
 
+	*gsup_peer_id = (struct osmo_gsup_peer_id){};
+
 	switch (type) {
 	case OSMO_GSUP_PEER_ID_IPA_NAME:
+		gsup_peer_id->type = OSMO_GSUP_PEER_ID_IPA_NAME;
 		va_start(ap, str_fmt);
 		rc = osmo_ipa_name_set_str_va(&gsup_peer_id->ipa_name, str_fmt, ap);
 		va_end(ap);
