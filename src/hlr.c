@@ -51,6 +51,7 @@
 #include <osmocom/hlr/dgsm.h>
 #include <osmocom/hlr/proxy.h>
 #include <osmocom/hlr/lu_fsm.h>
+#include <osmocom/hlr/sms_over_gsup.h>
 #include <osmocom/mslookup/mdns.h>
 
 struct hlr *g_hlr;
@@ -508,6 +509,10 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		}
 	}
 
+	/* SMS over GSUP */
+	if (sms_over_gsup_check_handle_msg(req))
+		return 0;
+
 	/* Distributed GSM: check whether to proxy for / lookup a remote HLR.
 	 * It would require less database hits to do this only if a local-only operation fails with "unknown IMSI", but
 	 * it becomes semantically easier if we do this once-off ahead of time. */
@@ -722,6 +727,8 @@ int main(int argc, char **argv)
 
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;
+
+	g_hlr->sms_over_gsup.try_direct_delivery = true;
 
 	rc = osmo_init_logging2(hlr_ctx, &hlr_log_info);
 	if (rc < 0) {
