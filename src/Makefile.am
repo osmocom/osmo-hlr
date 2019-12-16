@@ -61,6 +61,7 @@ osmo_hlr_SOURCES = \
 	mslookup_server.c \
 	mslookup_server_mdns.c \
 	dgsm_vty.c \
+	sms_over_gsup.c \
 	$(NULL)
 
 osmo_hlr_LDADD = \

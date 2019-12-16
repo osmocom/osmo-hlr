@@ -16,5 +16,6 @@ noinst_HEADERS = \
 	proxy.h \
 	rand.h \
 	remote_hlr.h \
+	sms_over_gsup.h \
 	timestamp.h \
 	$(NULL)
