@@ -353,7 +353,7 @@ static int db_upgrade_v3(struct db_context *dbc)
 {
 	int rc;
 
-	/* A newer SQLite version would allow simply 'ATLER TABLE subscriber RENAME COLUMN hlr_number TO msc_number'.
+	/* A newer SQLite version would allow simply 'ALTER TABLE subscriber RENAME COLUMN hlr_number TO msc_number'.
 	 * This is a really expensive workaround for that in order to cover earlier SQLite versions as well:
 	 * Create a new table with the new column name and copy the data over (https://www.sqlite.org/faq.html#q11).
 	 */
