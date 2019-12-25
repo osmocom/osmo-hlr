@@ -150,8 +150,6 @@ DEFUN(cfg_hlr_gsup_bind_ip,
  * USSD Entity
  ***********************************************************************/
 
-#include <osmocom/hlr/hlr_ussd.h>
-
 #define USSD_STR "USSD Configuration\n"
 #define UROUTE_STR "Routing Configuration\n"
 #define PREFIX_STR "Prefix-Matching Route\n" "USSD Prefix\n"
