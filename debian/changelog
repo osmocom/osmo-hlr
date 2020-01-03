@@ -1,3 +1,45 @@
+osmo-hlr (1.2.0) unstable; urgency=medium
+
+  [ Ruben Undheim ]
+  * Fix test for return codes on mipsel and alpha archs
+
+  [ Thorsten Alteholz ]
+  * fix spelling errors detected by lintian
+
+  [ Pau Espin Pedrol ]
+  * tests: Fix db_test err file to expect error code name instead of value
+
+  [ Oliver Smith ]
+  * tests/test_nodes.vty: check less libosmocore cmds
+  * tests/db_upgrade: disable for old sqlite versions
+  * gitignore: add tests/db_upgrade/*.dump
+  * gsup_client.h: fix license header: GPLv2+
+  * tests/auc: change back to python3
+
+  [ Neels Hofmeyr ]
+  * fix double free in osmo_gsup_client_enc_send()
+  * db upgrade to v2: log version 2, not 1
+  * fix upgrade to version 2: imei column default value
+  * add --db-check option
+  * hlr.sql: move comment
+  * add db_upgrade test
+  * hlr db schema 3: hlr_number -> msc_number
+  * db.c: code dup: add db_run_statements() for arrays of statements
+  * move headers to include/osmocom/hlr
+  * fix upgrade test in presence of ~/.sqliterc
+  * db upgrade: remove some code dup
+  * add osmo_gsup_msgb_alloc()
+  * Makefile convenience: add VTY_TEST var to run only one test
+  * remove gsup_test
+  * test_nodes.vty: tweak: add some '?' checks
+  * db v4: add column last_lu_seen_ps
+
+  [ Harald Welte ]
+  * AUC: Add support for setting the AMF separation bit to '1' for EUTRAN
+  * hlr: exit(2) on unsupported positional arguments on command line
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Fri, 03 Jan 2020 12:37:35 +0100
+
 osmo-hlr (1.1.0) unstable; urgency=medium
 
   [ Oliver Smith ]
