@@ -234,6 +234,7 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	struct osmo_gsup_message gsup_out;
 	struct msgb *msg_out;
 	bool separation_bit = false;
+	int num_auth_vectors = OSMO_GSUP_MAX_NUM_AUTH_INFO;
 	int rc;
 
 	subscr_create_on_demand(gsup->imsi);
@@ -245,9 +246,13 @@ static int rx_send_auth_info(struct osmo_gsup_conn *conn,
 	if (gsup->current_rat_type == OSMO_RAT_EUTRAN_SGS)
 		separation_bit = true;
 
+	if (gsup->num_auth_vectors > 0 &&
+			gsup->num_auth_vectors <= OSMO_GSUP_MAX_NUM_AUTH_INFO)
+		num_auth_vectors = gsup->num_auth_vectors;
+
 	rc = db_get_auc(dbc, gsup->imsi, conn->auc_3g_ind,
 			gsup_out.auth_vectors,
-			ARRAY_SIZE(gsup_out.auth_vectors),
+			num_auth_vectors,
 			gsup->rand, gsup->auts, separation_bit);
 	if (rc <= 0) {
 		gsup_out.message_type = OSMO_GSUP_MSGT_SEND_AUTH_INFO_ERROR;
