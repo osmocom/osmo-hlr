@@ -542,11 +542,11 @@ static int rx_check_imei_req(struct osmo_gsup_conn *conn, const struct osmo_gsup
 static char namebuf[255];
 #define LOGP_GSUP_FWD(gsup, level, fmt, args ...) \
 	LOGP(DMAIN, level, "Forward %s (class=%s, IMSI=%s, %s->%s): " fmt, \
-	     osmo_gsup_message_type_name(gsup->message_type), \
-	     osmo_gsup_message_class_name(gsup->message_class), \
-	     gsup->imsi, \
-	     osmo_quote_str((const char *)gsup->source_name, gsup->source_name_len), \
-	     osmo_quote_str_buf2(namebuf, sizeof(namebuf), (const char *)gsup->destination_name, gsup->destination_name_len), \
+	     osmo_gsup_message_type_name((gsup)->message_type), \
+	     osmo_gsup_message_class_name((gsup)->message_class), \
+	     (gsup)->imsi, \
+	     osmo_quote_str((const char *)(gsup)->source_name, (gsup)->source_name_len), \
+	     osmo_quote_str_buf2(namebuf, sizeof(namebuf), (const char *)(gsup)->destination_name, (gsup)->destination_name_len), \
 	     ## args)
 
 static int read_cb_forward(struct osmo_gsup_conn *conn, struct msgb *msg, const struct osmo_gsup_message *gsup)
