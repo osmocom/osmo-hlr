@@ -100,6 +100,9 @@ def rx_deliver_sm(pdu):
         time.sleep(args.sleep)
         logging.info("Sleep done")
 
+    if args.always_fail is not None:
+        return args.always_fail
+
     result = query_mslookup("smpp.sms", msisdn)
     if 'v4' not in result or not result['v4']:
         logging.info('No IPv4 result from mslookup! This example only'
@@ -147,12 +150,35 @@ def main():
     parser.add_argument('--sleep', default=0, type=float,
                         help='sleep time in seconds before forwarding an SMS,'
                              ' to test multithreading (default: 0)')
+    parser.add_argument('--always-fail', default=None, metavar='SMPP_ESME_ERRCODE',
+                        help='test delivery failure: always return an error code on Deliver-SM,'
+                        ' pass an smpplib error code name like RDELIVERYFAILURE (see smpplib/consts.py),'
+                        ' or an SMPP error code in hex digits')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s]'
                         ' (%(threadName)s) %(message)s', datefmt="%H:%M:%S")
+
+    if args.always_fail:
+        resolved = None
+        name = 'SMPP_ESME_' + args.always_fail
+        if hasattr(smpplib.consts, name):
+            resolved = getattr(smpplib.consts, name)
+        if resolved is None:
+            try:
+                resolved = int(args.always_fail, 16)
+            except ValueError:
+                resolved = None
+        if resolved is None:
+            print('Invalid argument for --always-fail: %r' % args.always_fail)
+            exit(1)
+        args.always_fail = resolved
+        logging.info('--always-fail: returning error code %s to all Deliver-SM' % hex(args.always_fail))
+
     smpp_bind()
 
 
 if __name__ == "__main__":
     main()
+
+# vim: expandtab tabstop=4 shiftwidth=4
