@@ -47,6 +47,7 @@ OsmoHLR(config-hlr)# ?
   no                           Negate a command or set its defaults
   ussd                         USSD Configuration
   ncss-guard-timeout           Set guard timer for NCSS (call independent SS) session activity
+  reject-cause                 GSUP/GMM cause to be sent
   store-imei                   Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send Check IMEI requests (for OsmoMSC, you may want to set 'check-imei-rqd 1').
   subscriber-create-on-demand  Make a new record when a subscriber is first seen.
 OsmoHLR(config-hlr)# list
@@ -61,6 +62,7 @@ OsmoHLR(config-hlr)# list
   ussd default-route external EUSE
   no ussd default-route
   ncss-guard-timeout <0-255>
+  reject-cause (not-found|no-proxy) (imsi-unknown|illegal-ms|plmn-not-allowed|la-not-allowed|roaming-not-allowed|no-suitable-cell-in-la|net-fail|congestion|auth-unacceptable|proto-error-unspec)
   store-imei
   no store-imei
   subscriber-create-on-demand (no-msisdn|<3-15>) (none|cs|ps|cs+ps)

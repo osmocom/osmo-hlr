@@ -25,7 +25,10 @@
  *
  */
 
+#include <errno.h>
+
 #include <osmocom/core/talloc.h>
+#include <osmocom/gsm/protocol/gsm_04_08_gprs.h>
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/stats.h>
 #include <osmocom/vty/command.h>
@@ -39,6 +42,36 @@
 #include <osmocom/hlr/hlr_vty_subscr.h>
 #include <osmocom/hlr/hlr_ussd.h>
 #include <osmocom/hlr/gsup_server.h>
+
+static const struct value_string gsm48_gmm_cause_vty_names[] = {
+	{ GMM_CAUSE_IMSI_UNKNOWN,	"imsi-unknown" },
+	{ GMM_CAUSE_ILLEGAL_MS,		"illegal-ms" },
+	{ GMM_CAUSE_PLMN_NOTALLOWED,	"plmn-not-allowed" },
+	{ GMM_CAUSE_LA_NOTALLOWED,	"la-not-allowed" },
+	{ GMM_CAUSE_ROAMING_NOTALLOWED,	"roaming-not-allowed" },
+	{ GMM_CAUSE_NO_SUIT_CELL_IN_LA,	"no-suitable-cell-in-la" },
+	{ GMM_CAUSE_NET_FAIL,		"net-fail" },
+	{ GMM_CAUSE_CONGESTION,		"congestion" },
+	{ GMM_CAUSE_GSM_AUTH_UNACCEPT,	"auth-unacceptable" },
+	{ GMM_CAUSE_PROTO_ERR_UNSPEC,	"proto-error-unspec" },
+	{ 0, NULL },
+};
+
+/* TS 24.008 4.4.4.7 */
+static const struct value_string gsm48_gmm_cause_vty_descs[] = {
+	{ GMM_CAUSE_IMSI_UNKNOWN,	" #02: (IMSI unknown in HLR)" },
+	{ GMM_CAUSE_ILLEGAL_MS,		" #03  (Illegal MS)" },
+	{ GMM_CAUSE_PLMN_NOTALLOWED,	" #11: (PLMN not allowed)" },
+	{ GMM_CAUSE_LA_NOTALLOWED,	" #12: (Location Area not allowed)" },
+	{ GMM_CAUSE_ROAMING_NOTALLOWED,	" #13: (Roaming not allowed in this location area)" },
+	{ GMM_CAUSE_NO_SUIT_CELL_IN_LA,	" #15: (No Suitable Cells In Location Area [continue search in PLMN])." },
+	{ GMM_CAUSE_NET_FAIL,		" #17: (Network Failure)" },
+	{ GMM_CAUSE_CONGESTION,		" #22: (Congestion)" },
+	{ GMM_CAUSE_GSM_AUTH_UNACCEPT,	" #23: (GSM authentication unacceptable [UMTS])" },
+	{ GMM_CAUSE_PROTO_ERR_UNSPEC,	"#111: (Protocol error, unspecified)" },
+	{ 0, NULL },
+};
+
 
 struct cmd_node hlr_node = {
 	HLR_NODE,
@@ -73,6 +106,15 @@ DEFUN(cfg_gsup,
 static int config_write_hlr(struct vty *vty)
 {
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
+
+	if (g_hlr->reject_cause != GMM_CAUSE_IMSI_UNKNOWN)
+		vty_out(vty, " reject-cause not-found %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->reject_cause), VTY_NEWLINE);
+	if (g_hlr->no_proxy_reject_cause != GMM_CAUSE_IMSI_UNKNOWN)
+		vty_out(vty, " reject-cause no-proxy %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->no_proxy_reject_cause), VTY_NEWLINE);
 	if (g_hlr->store_imei)
 		vty_out(vty, " store-imei%s", VTY_NEWLINE);
 	if (g_hlr->db_file_path && strcmp(g_hlr->db_file_path, HLR_DEFAULT_DB_FILE_PATH))
@@ -358,6 +400,21 @@ DEFUN(cfg_ncss_guard_timeout, cfg_ncss_guard_timeout_cmd,
 	return CMD_SUCCESS;
 }
 
+
+DEFUN(cfg_reject_cause, cfg_reject_cause_cmd,
+      "reject-cause TYPE CAUSE", "") /* Dynamically Generated */
+{
+	int cause_code = get_string_value(gsm48_gmm_cause_vty_names, argv[1]);
+	OSMO_ASSERT(cause_code >= 0);
+
+	if (strcmp(argv[0], "not-found") == 0)
+		g_hlr->reject_cause = (enum gsm48_gmm_cause) cause_code;
+	if (strcmp(argv[0], "no-proxy") == 0)
+		g_hlr->no_proxy_reject_cause = (enum gsm48_gmm_cause) cause_code;
+
+	return CMD_SUCCESS;
+}
+
 DEFUN(cfg_store_imei, cfg_store_imei_cmd,
 	"store-imei",
 	"Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send"
@@ -450,8 +507,22 @@ int hlr_vty_is_config_node(struct vty *vty, int node)
 	}
 }
 
-void hlr_vty_init(void)
+void hlr_vty_init(void *hlr_ctx)
 {
+	cfg_reject_cause_cmd.string =
+		vty_cmd_string_from_valstr(hlr_ctx,
+					   gsm48_gmm_cause_vty_names,
+					   "reject-cause (not-found|no-proxy) (", "|", ")",
+					   VTY_DO_LOWER);
+
+	cfg_reject_cause_cmd.doc =
+		vty_cmd_string_from_valstr(hlr_ctx,
+					   gsm48_gmm_cause_vty_descs,
+					   "GSUP/GMM cause to be sent\n"
+					   "in the case the IMSI could not be found in the database\n"
+					   "in the case no remote HLR reponded to mslookup GSUP request\n",
+					   "\n", "", 0);
+
 	logging_vty_add_cmds();
 	osmo_talloc_vty_add_cmds();
 	osmo_stats_vty_add_cmds();
@@ -478,6 +549,7 @@ void hlr_vty_init(void)
 	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ncss_guard_timeout_cmd);
+	install_element(HLR_NODE, &cfg_reject_cause_cmd);
 	install_element(HLR_NODE, &cfg_store_imei_cmd);
 	install_element(HLR_NODE, &cfg_no_store_imei_cmd);
 	install_element(HLR_NODE, &cfg_subscr_create_on_demand_cmd);

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <osmocom/gsm/protocol/gsm_04_08_gprs.h>
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/gsm/ipa.h>
 #include <osmocom/core/tdef.h>
@@ -55,6 +56,8 @@ struct hlr {
 
 	struct llist_head euse_list;
 	struct hlr_euse *euse_default;
+	enum gsm48_gmm_cause reject_cause;
+	enum gsm48_gmm_cause no_proxy_reject_cause;
 
 	/* NCSS (call independent) session guard timeout value */
 	int ncss_guard_timeout;
