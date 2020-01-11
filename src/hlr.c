@@ -846,7 +846,6 @@ int main(int argc, char **argv)
 
 	g_hlr = talloc_zero(hlr_ctx, struct hlr);
 	INIT_LLIST_HEAD(&g_hlr->euse_list);
-	INIT_LLIST_HEAD(&g_hlr->iuse_list);
 	INIT_LLIST_HEAD(&g_hlr->ss_sessions);
 	INIT_LLIST_HEAD(&g_hlr->ussd_routes);
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
