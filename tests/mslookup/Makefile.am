@@ -16,15 +16,11 @@ AM_LDFLAGS = \
 	$(NULL)
 
 EXTRA_DIST = \
-	mdns_test.err \
-	mslookup_client_mdns_test.err \
 	mslookup_client_test.err \
 	mslookup_test.err \
 	$(NULL)
 
 check_PROGRAMS = \
-	mdns_test \
-	mslookup_client_mdns_test \
 	mslookup_client_test \
 	mslookup_test \
 	$(NULL)
@@ -41,22 +37,6 @@ mslookup_client_test_SOURCES = \
 	mslookup_client_test.c \
 	$(NULL)
 mslookup_client_test_LDADD = \
-	$(top_builddir)/src/mslookup/libosmo-mslookup.la \
-	$(LIBOSMOGSM_LIBS) \
-	$(NULL)
-
-mslookup_client_mdns_test_SOURCES = \
-	mslookup_client_mdns_test.c \
-	$(NULL)
-mslookup_client_mdns_test_LDADD = \
-	$(top_builddir)/src/mslookup/libosmo-mslookup.la \
-	$(LIBOSMOGSM_LIBS) \
-	$(NULL)
-
-mdns_test_SOURCES = \
-	mdns_test.c \
-	$(NULL)
-mdns_test_LDADD = \
 	$(top_builddir)/src/mslookup/libosmo-mslookup.la \
 	$(LIBOSMOGSM_LIBS) \
 	$(NULL)
