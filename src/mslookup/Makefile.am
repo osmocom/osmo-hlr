@@ -26,12 +26,3 @@ libosmo_mslookup_la_LIBADD = \
 	$(LIBOSMOGSM_LIBS) \
 	$(TALLOC_LIBS) \
 	$(NULL)
-
-bin_PROGRAMS = osmo-mslookup-client
-osmo_mslookup_client_SOURCES = osmo-mslookup-client.c
-osmo_mslookup_client_LDADD = \
-	libosmo-mslookup.la \
-	$(LIBOSMOCORE_LIBS) \
-	$(TALLOC_LIBS) \
-	$(NULL)
-osmo_mslookup_client_CFLAGS = $(TALLOC_CFLAGS) $(LIBOSMOCORE_CFLAGS)
