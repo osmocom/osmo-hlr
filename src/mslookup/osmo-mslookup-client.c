@@ -315,17 +315,18 @@ int do_send(int argc, char ** argv)
 	struct msgb *msg = osmo_mdns_result_encode(ctx, 0, &q, &r, cmdline_opts.mdns_domain_suffix);
 	if (!msg) {
 		print_error("unable to encode mDNS response\n");
-		goto exit_cleanup;
+		goto exit_cleanup_sock;
 	}
 
 	if (osmo_mdns_sock_send(sock, msg)) {
 		print_error("unable to send mDNS message\n");
-		goto exit_cleanup;
+		goto exit_cleanup_sock;
 	}
 
 	rc = 0;
-exit_cleanup:
+exit_cleanup_sock:
 	osmo_mdns_sock_cleanup(sock);
+exit_cleanup:
 	talloc_free(ctx);
 	return rc;
 }
