@@ -213,9 +213,9 @@ struct osmo_mdns_record *osmo_mdns_record_txt_keyval_encode(void *ctx, const cha
 
 	va_start(ap, value_fmt);
 	value = talloc_vasprintf(ctx, value_fmt, ap);
+	va_end(ap);
 	if (!value)
 		return NULL;
-	va_end(ap);
 	r = _osmo_mdns_record_txt_encode(ctx, key, value);
 	talloc_free(value);
 	return r;
