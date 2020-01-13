@@ -17,6 +17,7 @@
  *
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
@@ -189,11 +190,45 @@ static void test_server_client()
 	client_stop();
 }
 
+bool is_multicast_enabled()
+{
+	bool ret = true;
+	struct addrinfo *ai;
+	int sock;
+	struct addrinfo hints = {0};
+	struct ip_mreq multicast_req = {0};
+	in_addr_t iface = INADDR_ANY;
+
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = (AI_PASSIVE | AI_NUMERICHOST);
+	assert(getaddrinfo("239.192.23.42", "4266", &hints, &ai) == 0);
+
+	sock = socket(ai->ai_family, ai->ai_socktype, 0);
+	assert(sock != -1);
+	assert(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (char*)&iface, sizeof(iface)) != -1);
+
+	memcpy(&multicast_req.imr_multiaddr, &((struct sockaddr_in*)(ai->ai_addr))->sin_addr,
+	       sizeof(multicast_req.imr_multiaddr));
+	multicast_req.imr_interface.s_addr = htonl(INADDR_ANY);
+
+	if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&multicast_req, sizeof(multicast_req)) == -1)
+		ret = false;
+
+	freeaddrinfo(ai);
+	return ret;
+}
+
 /*
  * Run all tests
  */
 int main()
 {
+	if (!is_multicast_enabled()) {
+		fprintf(stderr, "WARNING: multicast is disabled, skipping the test! (OS#4361)");
+		return 77;
+	}
+
 	talloc_enable_null_tracking();
 	ctx = talloc_named_const(NULL, 0, "main");
 	osmo_init_logging2(ctx, NULL);
