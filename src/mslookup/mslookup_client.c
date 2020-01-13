@@ -146,7 +146,7 @@ void osmo_mslookup_client_rx_result(struct osmo_mslookup_client *client, uint32_
 	if (!req) {
 		LOGP(DMSLOOKUP, LOGL_ERROR,
 		     "Internal error: Got mslookup result for a request that does not exist (handle %u)\n",
-		     req->request_handle);
+		     request_handle);
 		return;
 	}
 
