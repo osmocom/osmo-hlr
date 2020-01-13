@@ -114,6 +114,7 @@ static void mdns_method_request(struct osmo_mslookup_client_method *method, cons
 	if (!msg) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "Cannot encode request: %s\n",
 		     osmo_mslookup_result_name_b(buf, sizeof(buf), query, NULL));
+		return;
 	}
 
 	/* Send over the wire */
