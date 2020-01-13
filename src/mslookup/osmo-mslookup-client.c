@@ -456,6 +456,11 @@ static int socket_read_cb(struct osmo_fd *ofd)
 
 	rxbuf[rc] = '\0';
 	query_with_timeout = strtok(rxbuf, "\r\n");
+	if (!query_with_timeout) {
+		print_error("ERROR: failed to read line from socket\n");
+		goto close;
+	}
+
 	at = strchr(query_with_timeout, '@');
 	query_str = at ? at + 1 : query_with_timeout;
 
