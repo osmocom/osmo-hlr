@@ -84,7 +84,7 @@ struct osmo_mdns_sock *osmo_mdns_sock_init(void *ctx, const char *ip, unsigned i
 	rc = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (char*)&iface, sizeof(iface));
 	if (rc == -1) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "osmo_mdns_sock_init: setsockopt: %s\n", strerror(errno));
-		goto error;
+		goto error_sock;
 	}
 	memcpy(&multicast_req.imr_multiaddr, &((struct sockaddr_in*)(ret->ai->ai_addr))->sin_addr,
 	       sizeof(multicast_req.imr_multiaddr));
@@ -92,7 +92,7 @@ struct osmo_mdns_sock *osmo_mdns_sock_init(void *ctx, const char *ip, unsigned i
 	rc = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&multicast_req, sizeof(multicast_req));
 	if (rc == -1) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "osmo_mdns_sock_init: setsockopt: %s\n", strerror(errno));
-		goto error;
+		goto error_sock;
 	}
 
 	/* Always allow binding the same IP and port twice. This is needed in OsmoHLR (where the code becomes cleaner by
@@ -102,20 +102,22 @@ struct osmo_mdns_sock *osmo_mdns_sock_init(void *ctx, const char *ip, unsigned i
 	rc = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&y, sizeof(y));
 	if (rc == -1) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "osmo_mdns_sock_init: setsockopt: %s\n", strerror(errno));
-		goto error;
+		goto error_sock;
 	}
 
 	/* Bind and register osmo_fd callback */
 	rc = bind(sock, ret->ai->ai_addr, ret->ai->ai_addrlen);
 	if (rc == -1) {
 		LOGP(DMSLOOKUP, LOGL_ERROR, "osmo_mdns_sock_init: bind: %s\n", strerror(errno));
-		goto error;
+		goto error_sock;
 	}
 	osmo_fd_setup(&ret->osmo_fd, sock, OSMO_FD_READ, cb, data, priv_nr);
 	if (osmo_fd_register(&ret->osmo_fd) != 0)
-		goto error;
+		goto error_sock;
 
 	return ret;
+error_sock:
+	close(sock);
 error:
 	if (ret->ai)
 		freeaddrinfo(ret->ai);
