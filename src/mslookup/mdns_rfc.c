@@ -83,7 +83,12 @@ char *osmo_mdns_rfc_qname_decode(void *ctx, const char *qname, size_t qname_max_
 		return NULL;
 
 	while (*qname) {
-		size_t len = *qname;
+		size_t len;
+
+		if (i >= qname_max_len)
+			return NULL;
+
+		len = *qname;
 		next_label = qname + len + 1;
 
 		if (next_label >= qname_end || i + len > OSMO_MDNS_RFC_MAX_NAME_LEN)
