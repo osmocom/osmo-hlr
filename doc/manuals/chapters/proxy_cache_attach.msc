@@ -1,0 +1,33 @@
+msc {
+  hscale="2";
+  ms[label="MS,BSS"],__msc[label="MSC"],hlr[label="HLR proxy"],home[label="Home HLR"];
+
+  ms => __msc [label="Location Updating Request (IMSI Attach)"];
+  __msc => hlr [label="Send Auth Info Request"];
+  hlr abox hlr [label="No proxy cache data available for this subscriber"];
+  hlr rbox home [label="mslookup finds the home HLR"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result\nwith 5 auth tuples"];
+  hlr rbox hlr [label="(1) Keep a copy of the auth tuples"];
+  __msc <= hlr [label="Send Auth Info Result"];
+  __msc rbox __msc [label="MSC stores 5 auth tuples,\nuses the first one now,\nand keeps the rest for later requests"];
+  ms rbox __msc [label="Authentication"];
+  __msc => hlr [label="Update Location Request"];
+  hlr => home [label="Update Location Request"];
+  hlr <= home [label="Insert Subscriber Data Request\n(with subscriber's MSISDN)"];
+  hlr rbox hlr [label="proxy HLR caches the MSISDN"];
+  __msc <= hlr [label="Insert Subscriber Data Request"];
+  __msc => hlr [label="Insert Subscriber Data Result"];
+  hlr => home [label="Insert Subscriber Data Result"];
+  hlr <= home [label="Update Location Result"];
+  __msc <= hlr [label="Update Location Result"];
+  ms <= __msc [label="Location Updating Accept"];
+  hlr abox hlr [label="After successful Update Location, check the cache"];
+  hlr rbox hlr [label="(2) Ask for more auth tuples to cache\n(amount of tuples configurable)"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result"];
+  hlr rbox hlr [label="store 5 more tuples"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result"];
+  hlr rbox hlr [label="store yet 5 more tuples"];
+}

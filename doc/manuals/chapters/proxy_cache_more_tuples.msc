@@ -1,0 +1,24 @@
+msc {
+  hscale="2";
+  ms[label="MS,BSS"],__msc[label="MSC"],hlr[label="HLR proxy"],home[label="Home HLR"];
+
+  ms => __msc [label="CM Service Request / Paging Response"];
+  __msc => hlr [label="Send Auth Info Request"];
+  hlr rbox hlr [label="Use already set up proxy path"];
+  hlr abox hlr [label="there still are unsent auth tuples\nin the cache"];
+  hlr rbox hlr [label="(3) Send cached, fresh tuples"];
+  __msc <= hlr [label="Send Auth Info Result\ncontaining auth tuples\nfrom the proxy cache"];
+  ms rbox __msc [label="Authentication"];
+  ms rbox __msc [label="Continue the CM Service / Paging action"];
+  hlr abox hlr [label="Note that there are no/few unused tuples in the cache, fill up again"];
+  hlr rbox hlr [label="(4) Ask for more auth tuples to cache"];
+  hlr => home [label="Send Auth Info Request"];
+  --- [label="If the home HLR link is not working"];
+  hlr abox hlr [label="no link\nor\nresponse timeout"];
+  hlr rbox hlr [label="(5) Set up a timer to retry SAI\n(a few minutes?)"];
+  hlr abox hlr [label="Timer triggers"];
+  hlr => home [label="Send Auth Info Request"];
+  --- [label="If the home HLR link is functional"];
+  hlr <= home [label="Send Auth Info Result"];
+  hlr rbox hlr [label="store 5 more tuples"];
+}

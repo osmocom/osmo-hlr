@@ -20,8 +20,11 @@
 #pragma once
 
 #include <time.h>
-#include <osmocom/gsm/protocol/gsm_23_003.h>
 #include <osmocom/core/sockaddr_str.h>
+#include <osmocom/core/linuxlist.h>
+#include <osmocom/core/timer.h>
+#include <osmocom/gsm/protocol/gsm_23_003.h>
+#include <osmocom/gsm/gsup.h>
 #include <osmocom/gsupclient/gsup_peer_id.h>
 #include <osmocom/hlr/timestamp.h>
 
@@ -65,6 +68,8 @@ struct proxy_subscr {
 	char msisdn[GSM23003_MSISDN_MAX_DIGITS+1];
 	struct osmo_sockaddr_str remote_hlr_addr;
 	struct proxy_subscr_domain_state cs, ps;
+	struct osmo_fsm_inst *mm_fi;
+	struct osmo_fsm_inst *to_home_fi;
 };
 
 void proxy_init(struct osmo_gsup_server *gsup_server_to_vlr);

@@ -1,0 +1,19 @@
+digraph G {
+rankdir=LR
+labelloc=t;
+
+	msc [label="MS/BSS/MSC"]
+	subgraph cluster_proxy {
+		label="HLR Proxy"
+		proxy_mm [label="Proxy Mobility Management FSM",shape=box3d]
+		proxy_home [label="Proxy to Home HLR FSM",shape=box3d]
+		proxy [label="GSUP Proxy"]
+		proxy_mm -> proxy_home [constraint=false,dir=both,label="(FSM events)"]
+	}
+	hlr [label="Home HLR"]
+
+	msc -> proxy_mm [dir=both,label="MM related GSUP\n (immediate response\n if possible)"]
+	proxy_home -> hlr [dir=both,label="MM related GSUP\n (delayed)"]
+
+	msc -> proxy -> hlr [dir=both,label="non-MM GSUP",style=dashed]
+}

@@ -14,6 +14,8 @@ noinst_HEADERS = \
 	mslookup_server.h \
 	mslookup_server_mdns.h \
 	proxy.h \
+	proxy_mm.h \
+	proxy_db.h \
 	rand.h \
 	remote_hlr.h \
 	timestamp.h \

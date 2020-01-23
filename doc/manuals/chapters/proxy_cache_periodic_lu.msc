@@ -1,0 +1,43 @@
+msc {
+  hscale="2";
+  ms[label="MS,BSS"],__msc[label="MSC"],hlr[label="HLR proxy"],home[label="Home HLR"];
+
+  ms => __msc [label="Location Updating Request (Periodic)"];
+  ms rbox __msc [label="Authentication,\nusing the next of 5 auth tuples the MSC has stored"];
+  __msc => hlr [label="Update Location Request"];
+  hlr rbox hlr [label="Use already set up proxy path"];
+  hlr abox hlr [label="(8) proxy cache already has all information to answer"];
+  __msc <= hlr [label="Insert Subscriber Data Request"];
+  __msc => hlr [label="Insert Subscriber Data Result"];
+  __msc <= hlr [label="Update Location Result"];
+  ms <= __msc [label="Location Updating Accept"];
+  hlr rbox hlr [label="(9) Verify Update Location with home HLR"];
+  |||;
+  --- [label="if the home HLR has no changes and accepts"];
+  hlr => home [label="Update Location Request"];
+  hlr <= home [label="Insert Subscriber Data Request"];
+  hlr => home [label="Insert Subscriber Data Result"];
+  hlr abox hlr [label="Notice identical MSISDN"];
+  hlr <= home [label="Update Location Result"];
+  |||;
+  --- [label="if the home HLR is unreachable"];
+  hlr => home [label="Update Location Request"];
+  hlr abox hlr [label="no link\nor\nresponse timeout"];
+  hlr rbox hlr [label="Don't care, carry on"];
+  |||;
+  --- [label="if the home HLR has a modified MSISDN, and accepts"];
+  hlr => home [label="Update Location Request"];
+  hlr <= home [label="Insert Subscriber Data Request"];
+  hlr => home [label="Insert Subscriber Data Result"];
+  hlr abox hlr [label="Notice changed MSISDN"];
+  __msc <= hlr [label="Insert Subscriber Data Request"];
+  __msc => hlr [label="Insert Subscriber Data Result"];
+  hlr <= home [label="Update Location Result"];
+  |||;
+  --- [label="if the home HLR rejects"];
+  hlr => home [label="Update Location Request"];
+  hlr <= home [label="Update Location Error"];
+  __msc <= hlr [label="Cancel Location Request"];
+  __msc => hlr [label="Cancel Location Result"];
+  hlr rbox hlr [label="Clear subscriber cache"];
+}

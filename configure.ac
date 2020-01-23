@@ -186,6 +186,7 @@ AC_OUTPUT(
 	Makefile
 	doc/Makefile
 	doc/examples/Makefile
+	doc/sequence_charts/Makefile
 	src/Makefile
 	src/gsupclient/Makefile
 	src/mslookup/Makefile

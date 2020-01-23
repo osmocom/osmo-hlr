@@ -1,0 +1,17 @@
+msc {
+  hscale="2";
+  ms[label="MS,BSS"],__msc[label="MSC"],hlr[label="HLR proxy"],home[label="Home HLR"];
+
+  ms => __msc [label="CM Service Request / Paging Response"];
+  __msc => hlr [label="Send Auth Info Request"];
+  hlr rbox hlr [label="Use already set up proxy path"];
+  hlr abox hlr [label="All cached auth tuples have been sent to the MSC before"];
+  --- [label="If no GSM AKA fallback is allowed"];
+  __msc <= hlr [label="Send Auth Info Error"];
+  ms rbox __msc [label="Detach"];
+  --- [label="If GSM AKA fallback is allowed"];
+  hlr rbox hlr [label="(6) Resend only GSM AKA tuples, already sent earlier"];
+  __msc <= hlr [label="Send Auth Info Result\ncontaining GSM AKA auth tuples\nfrom the proxy cache"];
+  ms rbox __msc [label="2G: Authentication\n3G: Detach"];
+  ms rbox __msc [label="Continue the CM Service / Paging action"];
+}

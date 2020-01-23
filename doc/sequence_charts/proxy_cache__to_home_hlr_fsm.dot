@@ -1,0 +1,97 @@
+digraph G {
+rankdir=TB
+labelloc=t; label="HLR Proxy to Home HLR FSM"
+
+	top,to_top1,to_top2,to_top3,to_top4,to_top5[shape=invtriangle,label="(A)"]
+	top->junction_resolve_home_hlr
+
+	at_clear,to_clear1,to_clear2 [shape=invtriangle,label="(X)"]
+
+	mm_fsm [shape=box3d,label="Proxy MM FSM"]
+	mm_fsm -> junction_resolve_home_hlr [style=invisible,arrowhead=none]
+
+	WAIT_HOME_HLR_RESOLVED [style=bold]
+	WAIT_UPDATE_LOCATION_RESULT [style=bold]
+	WAIT_SEND_AUTH_INFO_RESULT [style=bold]
+	IDLE [style=bold]
+	CLEAR [style=bold]
+
+	new [label="proxy_cache_subscr_new()\n/ proxy_cache_subscr_from_db()",shape=box]
+	{
+		rank=same;
+		junction_resolve_home_hlr [shape=diamond,label="Home HLR\n known?"]
+		junction_confirm_home_hlr [shape=diamond,label="mslookup\n for home HLR\n very old?"]
+		junction_update_location [shape=diamond,label="Did MM FSM emit another\n HOME_EV_CONFIRM_LU?"]
+		junction_auth_info [shape=diamond,label="Auth tuple\ncache full of\nfresh tuples?"]
+	}
+
+	new -> {junction_resolve_home_hlr, mm_fsm}
+
+	junction_resolve_home_hlr -> junction_confirm_home_hlr [label="known"]
+	junction_resolve_home_hlr -> action_mslookup [label="wat"]
+	action_mslookup [shape=larrow,label="start mslookup"]
+	action_mslookup -> WAIT_HOME_HLR_RESOLVED
+	WAIT_HOME_HLR_RESOLVED -> rx_mslookup_res [arrowhead=none]
+	rx_mslookup_res [shape=rarrow,label="home HLR\n resolved"]
+	rx_mslookup_res -> to_top1
+	WAIT_HOME_HLR_RESOLVED -> CLEAR [style=dashed,label=Timeout]
+
+	junction_update_location -> action_lu_req [label="need data\n/\nneed to confirm LU"]
+	action_lu_req [shape=larrow,label="Tx GSUP Update Location Req\nto home HLR"]
+	action_lu_req -> WAIT_UPDATE_LOCATION_RESULT
+	WAIT_UPDATE_LOCATION_RESULT->rx_isd [arrowhead=none]
+	rx_isd [shape=rarrow,label="Rx GSUP\n Insert Subscriber\n Data Request\nfrom home HLR"]
+	rx_isd -> emit_rx_subscr_data
+	emit_rx_subscr_data [shape=lpromoter,label="emit\n MM_EV_RX_SUBSCR_DATA"]
+	emit_rx_subscr_data->action_tx_isd_res
+	action_tx_isd_res -> WAIT_UPDATE_LOCATION_RESULT
+	action_tx_isd_res [shape=larrow,label="Tx GSUP Insert Subscriber Data Result\nto home HLR"]
+	WAIT_UPDATE_LOCATION_RESULT -> rx_lu_res [arrowhead=none]
+	rx_lu_res [shape=rarrow,label="Rx GSUP Update\n Location Result\nfrom home HLR"]
+	rx_lu_res -> to_top2
+	junction_update_location -> junction_auth_info [label="data known,\nLU confirmed"]
+	WAIT_UPDATE_LOCATION_RESULT->junction_lu_failed [label="Timeout   "]
+	junction_lu_failed [shape=diamond,label="has home HLR\never confirmed\na LU before?"];
+	junction_lu_failed -> to_clear2 [label="never\nconfirmed",style=dashed]
+	junction_lu_failed -> note_lu_failed [label="has\nconfirmed\nbefore"]
+	note_lu_failed [shape=note,label="Home HLR is\ntemporarily unreachable,\n just carry on."]
+	note_lu_failed -> to_top3
+
+	junction_confirm_home_hlr -> action_mslookup_confirm [label="very old"]
+	junction_confirm_home_hlr -> junction_update_location [label="fair enough"]
+	action_mslookup_confirm [shape=larrow,label="start mslookup"]
+	note_mslookup_confirm [shape=note,label="Result evaluated in IDLE state.\nIf no mslookup result comes\n back, the home HLR is\ntemporarily unreachable:\ncontinue anyway.\nThis is sanity checking for\na *modified* home HLR"]
+	action_mslookup_confirm -> note_mslookup_confirm [arrowhead=none,style=dotted]
+	action_mslookup_confirm -> junction_update_location
+
+	junction_auth_info -> action_sai_req [label="need more tuples"]
+	junction_auth_info -> set_idle_timeout [label="cache is fresh"]
+	action_sai_req [shape=larrow,label="Tx GSUP\n Send Auth Info Request\n to home HLR"]
+	action_sai_req -> WAIT_SEND_AUTH_INFO_RESULT
+	WAIT_SEND_AUTH_INFO_RESULT->rx_sai_res[arrowhead=none]
+	rx_sai_res[shape=rarrow,label="Rx GSUP\n Send Auth Info\n Result\nfrom home HLR"]
+	rx_sai_res -> emit_rx_tuples
+	emit_rx_tuples [shape=lpromoter,label="emit\n MM_EV_RX_AUTH_TUPLES"]
+	emit_rx_tuples -> to_top4
+	WAIT_SEND_AUTH_INFO_RESULT->set_idle_timeout[label="Timeout",style=dashed]
+	set_idle_timeout [shape=diamond,label="Select IDLE\n timeout:\nmin(\nretry tuples,\n confirm mslookup)"]
+	set_idle_timeout -> IDLE
+
+	IDLE -> rx_mslookup_confirm_res [arrowhead=none]
+	rx_mslookup_confirm_res [shape=rarrow,label="Rx mslookup result"]
+	rx_mslookup_confirm_res -> junction_compare_home_hlr
+	junction_compare_home_hlr [shape=diamond,label="mslookup result\n matches home HLR\n on record?"]
+	junction_compare_home_hlr -> set_idle_timeout [label="matches"]
+	junction_compare_home_hlr -> to_clear1 [label="mismatch",style=dashed]
+
+	IDLE -> to_top5 [label="Timeout"]
+	IDLE -> {rx_ev_check_tuples,rx_ev_confirm_lu} [arrowhead=none]
+	rx_ev_check_tuples [shape=rpromoter,label="receive\n HOME_EV_CHECK_TUPLES"]
+	rx_ev_confirm_lu [shape=rpromoter,label="receive\n HOME_EV_CONFIRM_LU"]
+	{rx_ev_check_tuples,rx_ev_confirm_lu} -> to_top5
+
+	at_clear -> CLEAR
+	CLEAR -> emit_subscr_invalid -> TERM
+	emit_subscr_invalid [shape=lpromoter,label="emit\n MM_EV_SUBSCR_INVALID"]
+	TERM[shape=octagon][style=bold]
+}

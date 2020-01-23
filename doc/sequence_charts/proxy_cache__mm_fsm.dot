@@ -1,0 +1,78 @@
+digraph G {
+rankdir=TB
+labelloc=t; label="HLR Proxy MM FSM"
+
+	top,top2,top3[shape=invtriangle,label="(1)"]
+
+	top -> READY
+
+	new [label="proxy_cache_subscr_new()\n/ proxy_cache_subscr_from_db()",shape=box]
+	READY [style=bold]
+	HIBERNATE [shape=note,label="Hibernate\n (keep in DB)"]
+	CLEAR [shape=box,label="Clear DB entry\n (discard completely)"]
+	WAIT_AUTH_TUPLES [style=bold]
+	WAIT_SUBSCR_DATA [style=bold]
+	WAIT_GSUP_ISD_RESULT [style=bold]
+
+	home_fsm [label="Proxy to Home HLR FSM",shape=box3d]
+	{rank=same;READY,home_fsm}
+
+
+	new -> {READY,home_fsm}
+
+	READY -> {event_lu_req,event_auth_info_req} [arrowhead=none]
+
+	event_auth_info_req [shape=rarrow,label="Rx GSUP\nSend Auth Info Request\nfrom MSC"]
+	event_auth_info_req -> junction_send_auth_info_req
+	junction_send_auth_info_req [shape=diamond,label="Unused\nauth tuples\navailable?"]
+	junction_send_auth_info_req -> action_send_auth_info [label="yes"]
+	junction_send_auth_info_req -> emit_need_tuples [label="no"]
+	emit_need_tuples [shape=lpromoter,label="emit\n HOME_EV_CHECK_TUPLES\n to Home FSM"]
+	emit_need_tuples->WAIT_AUTH_TUPLES
+	WAIT_AUTH_TUPLES -> rx_ev_rx_auth_tuples [arrowhead=none]
+	rx_ev_rx_auth_tuples [shape=rpromoter,label="receive\n MM_EV_RX_AUTH_TUPLES"]
+	rx_ev_rx_auth_tuples -> action_send_auth_info
+	action_send_auth_info [shape=larrow,label="Tx GSUP\nSend Auth Info Result\nwith fresh auth tuples\n to MSC"]
+	action_send_auth_info -> emit_check_tuples
+	emit_check_tuples [shape=lpromoter,label="emit\n HOME_EV_CHECK_TUPLES\n to Home FSM"]
+	emit_check_tuples -> top2
+	WAIT_AUTH_TUPLES -> junction_check_auth_fallback [label="Timeout",style=dashed]
+	junction_check_auth_fallback -> action_do_auth_fallback [label="yes",style=dashed]
+	action_do_auth_fallback [shape=larrow,label="Tx GSUP\nSend Auth Info Result\nwith recycled auth tuple\n(GSM AKA only)"]
+	junction_check_auth_fallback [shape=diamond,label="Re-usable\nauth tuples\navailable?"]
+	junction_check_auth_fallback -> action_fail_auth [label="no",style=dashed]
+	action_fail_auth [shape=larrow,label="Tx GSUP\nSend Auth Info Error\npending re-connection to\nthe home HLR"]
+	{action_do_auth_fallback,action_fail_auth} -> top2 [style=dashed]
+
+	event_lu_req [shape=rarrow,label="Rx GSUP\nUpdate Location Request\nfrom MSC"]
+	event_lu_req -> emit_lu_req
+	emit_lu_req [shape=lpromoter,label="emit\n HOME_EV_CONFIRM_LU"];
+	emit_lu_req -> junction_check_subscriber_data
+	junction_check_subscriber_data [shape=diamond,label="Subscriber\nData\nknown?"]
+	junction_check_subscriber_data -> WAIT_SUBSCR_DATA [label=no]
+	WAIT_SUBSCR_DATA -> rx_ev_subscr_data [arrowhead=none]
+	rx_ev_subscr_data [shape=rpromoter,label="receive\n MM_EV_RX_SUBSCR_DATA"];
+	rx_ev_subscr_data -> action_subscr_data_req
+	junction_check_subscriber_data -> action_subscr_data_req [label="yes"]
+	action_subscr_data_req [shape=larrow,label="Tx GSUP\n Insert Subscriber Data\n Request to MSC"]
+	action_subscr_data_req -> WAIT_GSUP_ISD_RESULT
+	WAIT_GSUP_ISD_RESULT -> tx_gsup_isd_res [arrowhead=none]
+	tx_gsup_isd_res [shape=rarrow,label="Rx GSUP\n Insert Subscriber Data Result\nfrom MSC"]
+	tx_gsup_isd_res -> top3
+
+	{WAIT_GSUP_ISD_RESULT,WAIT_SUBSCR_DATA} -> action_lu_reject [label="Timeout",style=dashed]
+	action_lu_reject [shape=larrow,label="Tx GSUP\nUpdate Location Error\nto MSC\npending reconnect of home HLR"]
+	action_lu_reject -> top3 [style=dashed]
+
+	READY -> HIBERNATE [label="Timeout"]
+	READY -> rx_ev_subscr_invalid [arrowhead=none]
+	rx_ev_subscr_invalid[shape=rpromoter,label="receive\n MM_EV_SUBSCR_INVALID"]
+	rx_ev_subscr_invalid -> tx_purge_req
+	tx_purge_req [shape=larrow,label="Tx GSUP\nPurge MS Request"]
+	tx_purge_req -> note_purge [style=dotted]
+	note_purge [shape=note,label="Don't care about\nPurge MS Result"]
+	tx_purge_req -> CLEAR
+	{CLEAR,HIBERNATE} -> TERM
+	TERM[shape=octagon][style=bold]
+
+}

@@ -4,13 +4,18 @@ EXTRA_DIST = example_subscriber_add_update_delete.vty \
     osmohlr-usermanual.adoc \
     osmohlr-usermanual-docinfo.xml \
     osmohlr-vty-reference.xml \
+    chapters/proxy_cache_attach.msc \
+    chapters/proxy_cache_more_tuples.msc \
+    chapters/proxy_cache_periodic_lu.msc \
+    chapters/proxy_cache_tuple_cache_dry.msc \
+    chapters/proxy_cache_umts_aka_resync.msc \
     regen_doc.sh \
     chapters \
     vty
 
 if BUILD_MANUALS
   ASCIIDOC = osmohlr-usermanual.adoc
-  ASCIIDOC_DEPS = $(srcdir)/chapters/*.adoc $(srcdir)/*.vty $(srcdir)/*.ctrl
+  ASCIIDOC_DEPS = $(srcdir)/chapters/*.adoc $(srcdir)/*.vty $(srcdir)/*.ctrl $(srcdir)/chapters/*.msc
   include $(OSMO_GSM_MANUALS_DIR)/build/Makefile.asciidoc.inc
 
   VTY_REFERENCE = osmohlr-vty-reference.xml

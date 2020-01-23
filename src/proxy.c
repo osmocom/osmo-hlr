@@ -403,6 +403,18 @@ static int proxy_acknowledge_gsup_from_remote_hlr(struct proxy *proxy, const str
 				    );
 		break;
 
+	case OSMO_GSUP_MSGT_SEND_AUTH_INFO_RESULT:
+		/* Remember the auth tuples: if the remote HLR becomes unreachable for an intermediate period, we can
+		 * still re-use this auth information a number of times and keep the subscriber attached (on this
+		 * roaming/proxy HLR). */
+#if 0
+		for (i = 0; i < gsup->num_auth_vectors; i++)
+			proxy_subscr_new.auth_vectors[i] = gsup->auth_vectors[i];
+		proxy_subscr_new.num_auth_vectors = gsup->num_auth_vectors;
+		rc = proxy_subscr_create_or_update(proxy, &proxy_subscr_new);
+#endif
+		break;
+
 	default:
 		break;
 	}

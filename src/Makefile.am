@@ -54,6 +54,9 @@ osmo_hlr_SOURCES = \
 	gsup_send.c \
 	hlr_ussd.c \
 	proxy.c \
+	proxy_mm.c \
+	proxy_to_home.c \
+	proxy_db.c \
 	dgsm.c \
 	remote_hlr.c \
 	lu_fsm.c \

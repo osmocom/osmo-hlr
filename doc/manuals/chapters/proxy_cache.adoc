@@ -1,0 +1,333 @@
+== Distributed GSM / GSUP Proxy Cache: Remedy Temporary Link Failure to Home HLR
+
+The aim of the Proxy Cache is to still provide service to roaming subscribers even if the GSUP link to the home HLR is
+temporarily down or unresponsive.
+
+If a subscriber from a remote site is currently roaming at this local site, and the link to the subscriber's home HLR
+has succeeded before, the GSUP proxy cache can try to bridge the time of temporary link failure to that home HLR.
+
+Tasks to take over from an unreachable home HLR:
+
+- Cache and send auth tuples on Send Auth Info Request.
+- Acknowledge periodic Location Updating.
+- ...?
+
+=== Design Considerations
+
+==== Authentication
+
+The most critical role of the home HLR is providing the Authentication and Key Agreement (AKA) tuples. If the home HLR
+is not reachable, the lack of fresh authentication challenges would normally cause the subscriber to be rejected. To
+avoid that, a proxying HLR needs to be able to provide AKA tuples on behalf of the home HLR.
+
+In short, the strategy of the D-GSM proxy cache is:
+
+- Try to keep a certain number of unused full UMTS AKA tuples in the proxy cache at all times.
+- When the MSC requests more tuples, dispense some from the cache, and fill it back up later on, as soon as a good link
+  is available.
+- When the tuple cache in the proxy HLR runs dry, 3G RAN becomes unusable. But 2G RAN may fall back to GSM AKA, if the
+  proxy HLR configuration permits it: resend previously used GSM AKA auth tuples to the MSC, omitting UMTS AKA items
+  from the Send Auth Info Result, to force the MSC to send a GSM AKA challenge on 2G.
+
+The remaining part of this section provides detailed reasoning for this strategy.
+
+The aim is to attach a subscriber without immediate access to the authentication key data.
+
+Completely switching off authentication would be an option on GERAN (2G), but this would mean complete lack of
+encryption on the air interface, and is not recommended. On 3G and later, authentication is always mandatory.
+
+The key data is known only to the USIM and the home HLR. The HLR generates distinct authentication tuples, each
+containing a cryptographic challenge (RAND, AUTN) and its expected response (SRES, XRES). The MSC consumes one tuple
+per authentication: it sends the challenge to the subscriber, and compares the response received.
+
+The proxy could generate fresh tuples if the cryptographic key data (Ki,K,OP/OPC) from the home HLR was shared with the
+proxy HLR. Distributed GSM does not do this, because:
+
+- The key data is cryptographically very valuable. If it were leaked, any and all authentication challenges would be
+  fully compromised.
+
+- In D-GSM, each home site shall retain exclusive authority over the user data. It should not be necessary to share the
+  secret keys with any remote site.
+
+So, how about resending already used auth tuples to the MSC when no fresh ones are available? Resending identical
+authentication challenges makes the system vulnerable to relatively trivial replay-attacks, but this may be an
+acceptable fallback in situations of failing links, if it means being able to provide reliable roaming.
+
+But, even if a proxying HLR is willing to compromise cryptographic security to improve service, this can only work with
+GSM AKA:
+
+- In GSM AKA (so-called 2G auth), tuples may be re-used any amount of times without a strict need to generate more
+  authentication challenges. The SIM will merely calculate the (same) SRES response again, and authentication will
+  succeed. It is bad security to do so, but it is a choice the core network is free to make.
+
+- UMTS AKA (Milenage or so-called 3G auth, but also used on 2G GERAN) adds mutual authentication, i.e. the core network
+  must prove that it is authentic. Specifically to thwart replay-attacks that would spoof a core network, UMTS AKA
+  contains an ongoing sequence number (SQN) that is woven into the authentication challenge. An SQN may skip forward by
+  a certain number of counts, but it can never move backwards. If a USIM detects a stale SQN, it will request an
+  authentication re-synchronisation (by passing AUTS in an Authentication Failure message), after which a freshly
+  generated UMTS AKA challenge is strictly required -- not possible with an unresponsive home HLR.
+
+Post-R99 (1999) 2G GERAN networks are capable of UMTS AKA, so, not only 3G, but also the vast majority of 2G networks
+today use UMTS AKA -- and so does Osmocom, typically. Hence it is desirable to fully support UMTS AKA in D-GSM.
+
+[options="header"]
+|===
+| RAN | authentication is... 2+| available AKA types
+| GERAN (2G) | optional | GSM AKA | UMTS AKA
+| UTRAN (3G) | mandatory | - | UMTS AKA
+|===
+
+UMTS AKA will not allow re-sending previously used authentication tuples. But a UMTS capable SIM will fall back to GSM
+AKA if the network sent only a GSM AKA challenge. If the proxy HLR sends only GSM AKA tuples, then the MSC will request
+GSM authentication, and re-sending old tuples is again possible. However, a USIM will only fall back to GSM AKA if the
+phone is attaching on a 2G network. For 3G RAN and later, UMTS AKA is mandatory. So, as soon as a site uses 3G or newer
+RAN technology, there is simply no way to resend previously used authentication tuples.
+
+The only way to have unused UMTS AKA tuples in the proxy HLR is to already have them stored from an earlier time. The
+idea is to request more auth tuples in advance whenever the link is available, and cache them in the proxy. When the MSC
+uses up some tuples from the proxy HLR, the proxy cache can fill up again in its own time, by requesting more tuples
+from the home HLR at a time of good link. Then, the next time the subscriber needs immediate action, it does not matter
+whether the home HLR is directly reachable or not.
+
+In an aside, since OsmoMSC already caches a number of authentication tuples, one option would be to implement this in
+OsmoMSC, and not in the proxy HLR: the MSC could request new tuples long before its tuple cache runs dry. However, the
+OsmoMSC VLR state is volatile, and a power cycle of the system would lose the tuple cache; if the home HLR is
+unreachable at the same time of the power cycle, roaming service would be interrupted. The proxy cache in the HLR is
+persistent, so roaming can continue immediately after a power cycle, even if the home HLR link is down.
+
+==== Location Updating
+
+Any attached subscriber periodically repeats a Location Updating procedure, typically every 15 minutes. If a home HLR is
+unreachable at the time of the periodic Location Updating, a roaming subscriber would assume that it is detached from
+the network, even though the local site it is roaming at is still fully operational.
+
+The aim of D-GSM is to keep subscribers attached even if the remote home HLR is temporarily unreachable. The simplest
+way to achieve that is by directly responding with a Update Location Result to the MSC.
+
+In addition to accepting an Update Location, a proxy HLR should also start an Insert Subscriber Data procedure, as a
+home HLR would do. For a periodic Location Updating, the MSC should already know all of the information that an Insert
+Subscriber Data would convey (i.e. the MSISDN), and there would be no strict need to resend this data. But if a
+subscriber quickly detaches and re-attaches (e.g. the device rebooted), the MSC has discarded the subscriber info from
+the VLR, and hence the proxy HLR should also always perform an Insert Subscriber Data. (On the GSUP wire, a periodic LU
+is indistinguishable from an IMSI-Attach LU.)
+
+Furthermore, the longer the proxy HLR's cache keeps a roaming subscriber's data after an IMSI Detach, the longer it is
+possible for the subscriber to immediately re-attach despite the home HLR being temporarily unreachable.
+
+If a subscriber has carried out a GSUP Update Location with the proxy HLR while the home HLR was unreachable, it is not
+strictly necessary to repeat that Update Location message to the home HLR later. The home HLR does keep a timestamped
+record of an Update Location from a proxy HLR if seen, but that has no visible effect on serving the subscriber:
+
+- If the home HLR still thinks that the subscriber is currently attached at the home site, it will respond to mslookup
+  requests. But the actual site the subscriber is roaming at will have a younger age, and its mslookup responses will
+  win.
+
+- If the home HLR has no record of the subscriber being attached recently, or has a record of being attached at another
+  remote site, it does not respond to mslookup requests for that subscriber. If it records the new proxy LU, it still
+  does not respond to mslookup requests since the subscriber is attached remotely, i.e. there is no difference.
+
+It is thinkable to always handle an Update Location in the proxy HLR, and never even attempt to involve the home HLR in
+case the proxy cache already has data for a given subscriber, but then the proxy HLR would never notice a changed MSISDN
+or authorization status for this subscriber. It is best practice to involve the home HLR whenever possible.
+
+==== IMSI Detach
+
+If a GSUP client reports a detaching IMSI when the home HLR is not reachable, simply respond with an ack.
+
+It is not required to signal the home HLR with a detach once the link is back up. A home HLR anyway flags a remotely
+roaming subscriber as attached-at-a-proxy, and there is literally no difference between telling a home HLR about a
+detach or not.
+
+(TODO: is there even a GSUP message that a VLR should send on IMSI Detach? see OS#4374)
+
+[[proxy_cache_umts_aka_resync]]
+==== UMTS AKA Resync
+
+When the SQN between USIM and AUC (subscriber and home HLR) have diverged, the Send Authentication Info Request from the
+MSC contains an AUTS IE. This means that a resynchronization between USIM and AUC (the home HLR) is necessary. All of
+the UMTS AKA tuples in the proxy cache are now unusable, and the home HLR must respond with fresh tuples after doing a
+resync. This also means that either the home HLR must be reachable immediately, or GSM AKA fallback must be allowed for
+the subscriber to remain in roaming service.
+
+In short:
+
+- A UMTS AKA resync is handled similarly to the attaching of a so far unknown subscriber.
+- With the exception that previous GSM AKA tuples may be available to try a fallback to re-using older tuples.
+
+Needless to say that avoiding the need for UMTS AKA resynchronization is an important aspect of D-GSM's resilience
+against unreliable links.
+
+In UMTS AKA, there is not one single SQN, but there are a number SQN slots, called IND slots or IND buckets. The IND
+bitlen configured on the USIM determines the amount of slots available. The IND bitlen is usually 5, i.e. 2^5^ = 32
+slots. Monotonously rising SQN are only strictly enforced within each slot, so that each site should maintain a
+different IND slot. OsmoHLR determines distinct IND slots based on the IPA unit name. As soon as more than 16 sites
+(with an MSC and SGSN each) are maintained, IND slots may be shared between distinct sites, and administrative care
+should be taken to choose wisely which sites share the same slots: those that least share a common user group.
+
+On 2G RAN, it may be possible to fall back to GSM AKA after a UMTS AKA resync request.
+TODO: test this
+
+Either way, the AUTS that was received from the MSC definitely needs to find its way to the home HLR, and, ideally, the
+immediately returned auth tuples from the home HLR should be used to attach the subscriber.
+
+=== CS and PS
+
+Each subscriber may have multiple HLR subscriptions from distinct CN Domain VLRs at any time: Circuit Switched (MSC) and
+Packet Switched (SGSN) attach separately and perform Update Location Requests that are completely orthogonal, as far as
+the HLR is concerned.
+
+Particularly the UMTS AKA tuples, which use distinct IND slots per VLR, need to be cached separately per CN Domain.
+
+Hence it is not enough to maintain one cache per subscriber. A separate auth tuple cache and Mobility Management state
+has to be kept for each VLR that is requesting roaming service for a given subscriber.
+
+=== Intercepting GSUP Conversations
+
+Taking over GSUP conversations in the proxy HLR is not as trivial as it may sound. Here are potential problems and how
+to fix them.
+
+[[proxy_cache_gsup_mm_messages]]
+==== Which GSUP Conversations to Intercept
+
+For the purpose of providing highly available roaming despite unreliable links to the home HLR, it suffices to intercept
+Mobility Management (MM) related GSUP messages, only:
+
+- Send Auth Info Request / Result
+- Update Location Request / Result
+- Insert Subscriber Data Request / Result
+- PurgeMS Request / Result (?)
+
+An interesting feature would be to also intercept specific USSD requests, like returning the own MSISDN or IMSI more
+reliably, or handling services that only make sense when served by the local site. At the time of writing, this is seen
+as a future extension of D-GSM and not considered for implementation.
+
+==== Determining Whether a Home HLR is Responsive
+
+Normally, all GSUP messages are merely routed via the proxy HLR and are handled by the home HLR. The idea is that the
+proxy HLR jumps in and saves a GSUP conversation when the home HLR is not answering properly.
+
+The simplest method to decide whether a home HLR is currently connected would be to look at the GSUP client state.
+However, a local flag that indicates an established GSUP connection does not necessarily mean a reliable link.
+There are keep-alive messages on the GSUP/IPA link, and a lost connection should reflect in the client state, so that a
+lost GSUP link definitely indicates an unresponsive home HLR. But for various reasons (e.g. packet loss), the link might
+look intact, but still a given GSUP message fails to get a response from the home HLR.
+
+A more resilient method to decide whether a home HLR is responsive is to keep track of every MM related GSUP
+conversation for each subscriber, and to jump in and take over the GSUP conversation as soon as the response is taking
+too long to arrive. However, choosing an inadequate timeout period would either mean responding after the MSC has
+already timed out (too slow), or completely cutting off all responses from a high-latency home HLR (too fast).
+
+Also, if the proxy HLR has already responded to the MSC, but a slow home HLR's response arrives shortly after,
+forwarding this late message to the MSC on top of the earlier response to the same request would confuse the GSUP
+conversation.
+
+So, the proxy HLR just jumping into the GSUP conversation when a specific delay has passed is fairly complex and error
+prone. A better idea is to always intercept MM related GSUP conversations:
+
+[[proxy_cache_gsup_conversations]]
+==== Solution: Distinct GSUP Conversations
+
+A solution that avoids all of the above problems is to *always* take over *all* MM related conversations (see
+<<proxy_cache_gsup_mm_messages>>), as soon as the proxy has sufficient data to service them by itself; at the same time,
+the proxy HLR should also relay the same requests to the home HLR, and acknowledge its responses, after the fact.
+
+If the proxy cache already has a complete record of a subscriber, the proxy HLR can always directly accept an Update
+Location Request, including an Insert Subscriber Data. A prompt response ensures that the MSC does not timeout its GSUP
+request, and reduces waiting time for the subscriber.
+
+To ensure that the proxy HLR's data on the subscriber doesn't become stale and diverge from the home HLR, the proxy
+asynchronously also forwards an Update Location Request to the home HLR. In most normal cases, there will be no
+surprises, and the home HLR will continue with an Insert Subscriber Data Request containing already known data, and an
+Update Location Result accepting the LU.
+
+If the home HLR does not respond, the proxy HLR ignores that fact -- the home HLR is not reachable, and the aim is to
+continue to service the subscriber for the time being.
+
+But, should the home HLR's Insert Subscriber Data Request send different data than the proxy cache sees on record, the
+proxy HLR can trigger another Insert Subscriber Data Request to the MSC, to correct the stale data sent before.
+
+Similarly, if the home HLR rejects the Update Location Request completely, the proxy HLR can tell the MSC to detach the
+subscriber with a Cancel Location Request message, as soon as it notices the rejection.
+
+Note that a UMTS AKA resynchronization request invalidates the entire auth tuple cache and needs to either be sent to
+the home HLR immediately, if available, or the AUTS from the USIM must later reach the home HLR to obtain fresh UMTS AKA
+tuples for the cache. See <<proxy_cache_umts_aka_resync>>.
+
+=== Message Sequences
+
+==== Normal Roaming Attach
+
+On first attaching via a proxy HLR, when there is no proxy state for the subscriber yet, the home HLR must be reachable.
+
+The normal procedure takes place without modification, except that he proxy HLR keeps a copy of the first auth tuples it
+forwards from the home HLR back to the MSC (marked as used) (1). This is to have auth tuples available for resending
+already used tuples in a fallback to GSM AKA, in case this is enabled in the proxy HLR config.
+
+After the Location Updating has completed successfully, the proxy HLR fills up its auth tuple cache by additional Send
+Auth Info Requests (2). As soon as unused auth tuples become available, the proxy HLR can discard already used tuples
+from (1).
+
+.Normal attaching of a subscriber that is roaming here
+["mscgen"]
+----
+include::proxy_cache_attach.msc[]
+----
+
+==== MSC Requests More Auth Tuples
+
+As soon as the MSC has run out of fresh auth tuples, it will ask the HLR proxy for more. Without proxy caching, this
+request would be directly forwarded to the home HLR. Instead, the proxy HLR finds unused auth tuples in the cache and
+directly sends those (3). Even if there is a reliable link, the home HLR is not contacted at this point.
+
+Directly after completing the Send Auth Info Result, the proxy HLR finds that less tuples than requested by the D-GSM
+configuration are cached, and asks the home HLR for more tuples, to fill up the cache (4). If there currently is no
+reliable link, this will fail, and the proxy HLR will retry periodically (5) / upon GSUP reconnect.
+
+.When the MSC has used up all of its auth tuples, but the proxy HLR still has unused auth tuples in the cache
+["mscgen"]
+----
+include::proxy_cache_more_tuples.msc[]
+----
+
+==== Running Out of Auth Tuples
+
+When all fresh tuples from the proxy HLR have been used up, and the home HLR remains unreachable, the proxy HLR normally
+fails and rejects the subscriber (default configuration).
+
+If explicitly enabled in the configuration, the proxy HLR will attempt to fall back to GSM AKA and resend already spent
+tuples, deliberately omitting UMTS AKA parts (6).
+
+Note that an attempt to refill the tuple cache in the proxy HLR always happens asynchronously. If there are no tuples,
+that means the link to the home HLR is currently broken, and there is no point in trying to contact it now. Tuples will
+be obtained as soon as the link is established again.
+
+.When the MSC has used up all of its auth tuples and the proxy HLR tuple cache is dry
+["mscgen"]
+----
+include::proxy_cache_tuple_cache_dry.msc[]
+----
+
+==== Periodic Location Updating
+
+Each subscriber performs periodic Location Updating to ensure that it is not implicitly detached from the network. When
+the proxy HLR already has a proxy cache for this subscriber, all information to complete the periodic Location Updating
+is already known in the proxy HLR. If the link to the home HLR is unresponsive, the proxy HLR mimicks the Insert
+Subscriber Data Request that the home HLR would normally send, using the cached MSISDN, and then sends the Update
+Location Result. The subscriber remains attached without a responsive link to the home HLR being required.
+
+.Periodic Location Updating when the MSC still has unused auth tuples
+["mscgen"]
+----
+include::proxy_cache_periodic_lu.msc[]
+----
+
+==== UMTS AKA Resync
+
+The AUTS from a UMTS AKA resync needs to reach the home HLR sooner or later, and a resync renders all UMTS AKA tuples in
+the cache stale.
+
+.Cached tuples become unusable from a UMTS AKA resynchronisation request from the USIM.
+["mscgen"]
+----
+include::proxy_cache_umts_aka_resync.msc[]
+----

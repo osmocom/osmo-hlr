@@ -1,0 +1,41 @@
+msc {
+  hscale="2";
+  ms[label="MS,BSS"],__msc[label="MSC"],hlr[label="HLR proxy"],home[label="Home HLR"];
+
+  ms => __msc [label="CM Service Request / Paging Response"];
+  __msc => hlr [label="Send Auth Info Request"];
+  hlr abox hlr [label="there still are unsent auth tuples\nin the cache"];
+  hlr rbox hlr [label="Send cached, fresh tuples"];
+  __msc <= hlr [label="Send Auth Info Result\ncontaining auth tuples\nfrom the proxy cache"];
+  ms <= __msc [label="Authentication Request"];
+  ms => __msc [label="USIM requests UMTS AKA resync\nAuth Failure with AUTS"];
+  __msc => hlr [label="Send Auth Info Request\ncontaining AUTS IE"];
+  hlr rbox hlr [label="Mark all UMTS AKA tuples as stale"];
+  --- [label="If the home HLR responds in time"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result\nwith 5 auth tuples"];
+  hlr rbox hlr [label="clear tuple cache, store new tuples"];
+  __msc <= hlr [label="Send Auth Info Result"];
+  ms rbox __msc [label="Authentication"];
+  hlr rbox hlr [label="fill up the tuple cache as necessary"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result"];
+  ...;
+  --- [label="If the home HLR is unreachable"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr abox hlr [label="no link\nor\nresponse timeout"];
+  hlr rbox hlr [label="Store the AUTS received earlier,\nand set up a timer to retry SAI\n(a few minutes?)"];
+  --- [label="If no GSM AKA fallback is allowed"];
+  __msc <= hlr [label="Send Auth Info Error"];
+  ms rbox __msc [label="Detach"];
+  --- [label="If GSM AKA fallback is allowed"];
+  hlr rbox hlr [label="Resend only GSM AKA tuples, already sent earlier"];
+  __msc <= hlr [label="Send Auth Info Result\ncontaining GSM AKA auth tuples\nfrom the proxy cache"];
+  ms rbox __msc [label="2G: Authentication\n3G: Detach"];
+  ---;
+  hlr abox hlr [label="AUTS timer triggers"];
+  hlr => home [label="Send Auth Info Request"];
+  hlr <= home [label="Send Auth Info Result"];
+  hlr rbox hlr [label="clear tuple cache, store new tuples"];
+  hlr rbox hlr [label="continue to fill up the cache as necessary"];
+}

@@ -87,6 +87,27 @@ CREATE TABLE ind (
 	UNIQUE (vlr)
 );
 
+CREATE TABLE proxy_auth_cache {
+	id	INTEGER PRIMARY KEY,
+	vlr	TEXT NOT NULL,
+	imsi	TEXT NOT NULL,
+	sent_count INTEGER
+};
+
+CREATE TABLE proxy_auth_cache_vector {
+	-- belongs to this proxy_auth_cache entry
+	proxy_auth_cache_id INTEGER,
+	rand	VARCHAR(32),
+	autn	VARCHAR(32),
+	ck	VARCHAR(32),
+	ik	VARCHAR(32),
+	res	VARCHAR(32),
+	kc[8]	VARCHAR(16),
+	sres[4]	VARCHAR(8),
+	-- enum osmo_sub_auth_type bitmask
+	auth_types INTEGER
+};
+
 CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
