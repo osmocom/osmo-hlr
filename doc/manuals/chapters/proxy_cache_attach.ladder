@@ -1,0 +1,39 @@
+{hscale=2}
+ms = MS,BSS
+msc = MSC
+hlr = HLR proxy
+home = Home HLR
+
+ms -> msc	Location Updating Request (IMSI Attach)
+msc -> hlr	Send Auth Info Request
+hlr <> hlr	No proxy cache data available for this subscriber
+hlr () home	mslookup finds the home HLR
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+		with 5 auth tuples
+hlr () .	(1) Keep a copy of the auth tuples
+msc <- hlr	Send Auth Info Result
+msc () .	MSC stores 5 auth tuples,
+		uses the first one now,
+		and keeps the rest for later requests
+ms () msc	Authentication
+msc -> hlr	Update Location Request
+hlr -> home	Update Location Request
+hlr <- home	Insert Subscriber Data Request
+		(with subscriber's MSISDN)
+hlr () .	proxy HLR caches the MSISDN
+msc <- hlr	Insert Subscriber Data Request
+msc -> hlr	Insert Subscriber Data Result
+hlr -> home	Insert Subscriber Data Result
+hlr <- home	Update Location Result
+msc <- hlr	Update Location Result
+ms <- msc	Location Updating Accept
+hlr <> .	After successful Update Location, check the cache
+hlr () .	(2) Ask for more auth tuples to cache
+		(amount of tuples configurable)
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+hlr () .	store 5 more tuples
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+hlr () .	store yet 5 more tuples

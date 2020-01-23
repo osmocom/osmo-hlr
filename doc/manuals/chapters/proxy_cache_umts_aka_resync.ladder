@@ -1,0 +1,55 @@
+{hscale=2}
+ms = MS,BSS
+msc = MSC
+hlr = HLR proxy
+home = Home HLR
+
+ms -> msc	CM Service Request / Paging Response
+msc -> hlr	Send Auth Info Request
+hlr <> .	there still are unsent auth tuples
+		in the cache
+hlr () .	Send cached, fresh tuples
+msc <- hlr	Send Auth Info Result
+		containing auth tuples
+		from the proxy cache
+ms <- msc	Authentication Request
+ms -> msc	USIM requests UMTS AKA resync
+		Auth Failure with AUTS
+msc -> hlr	Send Auth Info Request
+		containing AUTS IE
+hlr () .	Mark all UMTS AKA tuples as stale
+---		If the home HLR responds in time
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+		with 5 auth tuples
+hlr () .	clear tuple cache, store new tuples
+msc <- hlr	Send Auth Info Result
+ms () msc	Authentication
+hlr () .	fill up the tuple cache as necessary
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+...
+---		If the home HLR is unreachable
+hlr -> home	Send Auth Info Request
+hlr <> .	no link
+		or
+		response timeout
+hlr () .	Store the AUTS received earlier,
+		and set up a timer to retry SAI
+		(a few minutes?)
+---		If no GSM AKA fallback is allowed
+msc <- hlr	Send Auth Info Error
+ms () msc	Detach
+---		If GSM AKA fallback is allowed
+hlr () .	Resend only GSM AKA tuples, already sent earlier
+msc <- hlr	Send Auth Info Result
+		containing GSM AKA auth tuples
+		from the proxy cache
+ms () msc	2G: Authentication
+		3G: Detach
+---
+hlr <> .	AUTS timer triggers
+hlr -> home	Send Auth Info Request
+hlr <- home	Send Auth Info Result
+hlr () .	clear tuple cache, store new tuples
+hlr () .	continue to fill up the cache as necessary

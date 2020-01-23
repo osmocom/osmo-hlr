@@ -1,0 +1,21 @@
+{hscale=2}
+ms = MS,BSS
+msc = MSC
+hlr = HLR proxy
+home = Home HLR
+
+ms -> msc	CM Service Request / Paging Response
+msc -> hlr	Send Auth Info Request
+hlr () .	Use already set up proxy path
+hlr <> .	All cached auth tuples have been sent to the MSC before
+---		If no GSM AKA fallback is allowed
+msc <- hlr	Send Auth Info Error
+ms () msc	Detach
+---		If GSM AKA fallback is allowed
+hlr () .	(6) Resend only GSM AKA tuples, already sent earlier
+msc <- hlr	Send Auth Info Result
+		containing GSM AKA auth tuples
+		from the proxy cache
+ms () msc	2G: Authentication
+		3G: Detach
+ms () msc	Continue the CM Service / Paging action

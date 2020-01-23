@@ -1,0 +1,31 @@
+{hscale=2}
+ms = MS,BSS
+msc = MSC
+hlr = HLR proxy
+home = Home HLR
+
+ms -> msc	CM Service Request / Paging Response
+msc -> hlr	Send Auth Info Request
+hlr () .	Use already set up proxy path
+hlr <> .	there still are unsent auth tuples
+		in the cache
+hlr () .	(3) Send cached, fresh tuples
+msc <- hlr	Send Auth Info Result
+		containing auth tuples
+		from the proxy cache
+ms () msc	Authentication
+ms () msc	Continue the CM Service / Paging action
+hlr <> .	Note that there are no/few unused tuples in the cache, fill up again
+hlr () .	(4) Ask for more auth tuples to cache
+hlr -> home	Send Auth Info Request
+---		If the home HLR link is not working
+hlr <> .	no link
+		or
+		response timeout
+hlr () .	(5) Set up a timer to retry SAI
+		(a few minutes?)
+hlr <> .	Timer triggers
+hlr -> home	Send Auth Info Request
+---		If the home HLR link is functional
+hlr <- home	Send Auth Info Result
+hlr () .	store 5 more tuples

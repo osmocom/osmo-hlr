@@ -1,0 +1,47 @@
+{hscale=2}
+ms = MS,BSS
+msc = MSC
+hlr = HLR proxy
+home = Home HLR
+
+ms -> msc	Location Updating Request (Periodic)
+ms () msc	Authentication,
+		using the next of 5 auth tuples the MSC has stored
+msc -> hlr	Update Location Request
+hlr () .	Use already set up proxy path
+hlr <> .	(8) proxy cache already has all information to answer
+msc <- hlr	Insert Subscriber Data Request
+msc -> hlr	Insert Subscriber Data Result
+msc <- hlr	Update Location Result
+ms <- msc	Location Updating Accept
+hlr () .	(9) Verify Update Location with home HLR
+|||
+---		if the home HLR has no changes and accepts
+hlr -> home	Update Location Request
+hlr <- home	Insert Subscriber Data Request
+hlr -> home	Insert Subscriber Data Result
+hlr <> .	Notice identical MSISDN
+hlr <- home	Update Location Result
+|||
+---		if the home HLR is unreachable
+hlr -> home	Update Location Request
+hlr <> .	no link
+		or
+		response timeout
+hlr () .	Don't care, carry on
+|||
+---		if the home HLR has a modified MSISDN, and accepts
+hlr -> home	Update Location Request
+hlr <- home	Insert Subscriber Data Request
+hlr -> home	Insert Subscriber Data Result
+hlr <> .	Notice changed MSISDN
+msc <- hlr	Insert Subscriber Data Request
+msc -> hlr	Insert Subscriber Data Result
+hlr <- home	Update Location Result
+|||
+---		if the home HLR rejects
+hlr -> home	Update Location Request
+hlr <- home	Update Location Error
+msc <- hlr	Cancel Location Request
+msc -> hlr	Cancel Location Result
+hlr () .	Clear subscriber cache
