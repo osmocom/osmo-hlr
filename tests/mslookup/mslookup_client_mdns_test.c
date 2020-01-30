@@ -225,8 +225,8 @@ bool is_multicast_enabled()
 int main()
 {
 	if (!is_multicast_enabled()) {
-		fprintf(stderr, "WARNING: multicast is disabled, skipping the test! (OS#4361)");
-		return 77;
+		fprintf(stderr, "ERROR: multicast is disabled! (OS#4361)");
+		return 1;
 	}
 
 	talloc_enable_null_tracking();
