@@ -49,7 +49,12 @@ set -x
 
 cd "$base"
 autoreconf --install --force
-./configure --enable-sanitize --enable-external-tests --enable-werror $CONFIG
+./configure \
+	--enable-sanitize \
+	--enable-external-tests \
+	--enable-mslookup-client-mdns-test \
+	--enable-werror \
+	$CONFIG
 $MAKE $PARALLEL_MAKE
 $MAKE check || cat-testlogs.sh
 DISTCHECK_CONFIGURE_FLAGS="$CONFIG" $MAKE distcheck || cat-testlogs.sh

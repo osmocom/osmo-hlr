@@ -58,7 +58,9 @@ cat $abs_srcdir/mslookup/mslookup_client_test.err > experr
 AT_CHECK([$abs_top_builddir/tests/mslookup/mslookup_client_test], [0], [ignore], [experr])
 AT_CLEANUP
 
+# AT_SKIP_IF: disable without --enable-mslookup-client-mdns-test (OS#4385)
 AT_SETUP([mslookup_client_mdns])
+AT_SKIP_IF([! test -e $abs_top_builddir/tests/mslookup/mslookup_client_mdns_test ])
 AT_KEYWORDS([mslookup_client_mdns])
 cat $abs_srcdir/mslookup/mslookup_client_mdns_test.err > experr
 AT_CHECK([$abs_top_builddir/tests/mslookup/mslookup_client_mdns_test], [0], [ignore], [experr])

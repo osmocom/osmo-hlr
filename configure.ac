@@ -107,6 +107,15 @@ AC_MSG_CHECKING([whether to enable VTY/CTRL tests])
 AC_MSG_RESULT([$enable_ext_tests])
 AM_CONDITIONAL(ENABLE_EXT_TESTS, test "x$enable_ext_tests" = "xyes")
 
+# mslookup_client_mdns_test (OS#4385: does not work everywhere)
+AC_ARG_ENABLE([mslookup_client_mdns_test],
+		AC_HELP_STRING([--enable-mslookup-client-mdns-test],
+				[Include the mslookup_client_mdns_test in make check [default=no]]),
+		[enable_mslookup_client_mdns_test="$enableval"],[enable_mslookup_client_mdns_test="no"])
+AC_MSG_CHECKING([whether to enable mslookup_client_mdns_test])
+AC_MSG_RESULT([$enable_mslookup_client_mdns_test])
+AM_CONDITIONAL(ENABLE_MSLOOKUP_CLIENT_MDNS_TEST, test "x$enable_mslookup_client_mdns_test" = "xyes")
+
 # Generate manuals
 AC_ARG_ENABLE(manuals,
 	[AS_HELP_STRING(
