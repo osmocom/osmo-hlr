@@ -535,9 +535,11 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 
 	char *err_msg;
 	rc = sqlite3_exec(dbc->db, "PRAGMA journal_mode=WAL; PRAGMA synchonous = NORMAL;", 0, 0, &err_msg);
-	if (rc != SQLITE_OK)
+	if (rc != SQLITE_OK) {
 		LOGP(DDB, LOGL_ERROR, "Unable to set Write-Ahead Logging: %s\n",
 			err_msg);
+		sqlite3_free(err_msg);
+	}
 
 	version = db_get_user_version(dbc);
 	if (version < 0) {
