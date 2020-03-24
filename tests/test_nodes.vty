@@ -89,7 +89,7 @@ log stderr
  logging level main notice
  logging level db notice
  logging level auc notice
- logging level ss info
+ logging level ss notice
  logging level mslookup notice
  logging level lu notice
  logging level dgsm notice
