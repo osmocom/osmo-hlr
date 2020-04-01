@@ -85,6 +85,7 @@ DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 2
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 3
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 4
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 5
+DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 6
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.
 
 Resulting db:
@@ -159,6 +160,15 @@ subscriber_id|INTEGER|0||0
 
 Table subscriber_apn contents:
 
+Table: subscriber_imsi_pseudo
+name|type|notnull|dflt_value|pk
+id|INTEGER|0||1
+imsi_pseudo|VARCHAR(15)|1||0
+imsi_pseudo_i|INTEGER|1|0|0
+subscriber_id|INTEGER|1||0
+
+Table subscriber_imsi_pseudo contents:
+
 Table: subscriber_multi_msisdn
 name|type|notnull|dflt_value|pk
 msisdn|VARCHAR(15)|1||0
@@ -171,5 +181,5 @@ osmo-hlr --database $db --db-check --config-file $srcdir/osmo-hlr.cfg
 rc = 0
 DMAIN hlr starting
 DDB using database: <PATH>test.db
-DDB Database <PATH>test.db' has HLR DB schema version 5
+DDB Database <PATH>test.db' has HLR DB schema version 6
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.

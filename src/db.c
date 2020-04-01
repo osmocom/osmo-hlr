@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	5
+#define CURRENT_SCHEMA_VERSION	6
 
 #define SEL_COLUMNS \
 	"id," \
@@ -479,6 +479,28 @@ static int db_upgrade_v5(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v6(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"CREATE TABLE subscriber_imsi_pseudo (\n"
+		"-- https://osmocom.org/projects/imsi-pseudo/wiki\n"
+			"id		INTEGER PRIMARY KEY,\n"
+			"subscriber_id	INTEGER NOT NULL,	-- subscriber.id\n"
+			"imsi_pseudo	VARCHAR(15) UNIQUE NOT NULL,\n"
+			"imsi_pseudo_i	INTEGER default 0 NOT NULL\n"
+		")",
+		"PRAGMA user_version = 6"
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 6\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -486,6 +508,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v3,
 	db_upgrade_v4,
 	db_upgrade_v5,
+	db_upgrade_v6,
 };
 
 static int db_get_user_version(struct db_context *dbc)

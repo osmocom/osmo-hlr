@@ -62,6 +62,16 @@ CREATE TABLE subscriber_multi_msisdn (
 	msisdn		VARCHAR(15) NOT NULL
 );
 
+CREATE TABLE subscriber_imsi_pseudo (
+-- https://osmocom.org/projects/imsi-pseudo/wiki
+	id		INTEGER PRIMARY KEY,
+	subscriber_id	INTEGER NOT NULL,	-- subscriber.id
+	imsi_pseudo	VARCHAR(15) UNIQUE NOT NULL,
+	imsi_pseudo_i	INTEGER default 0 NOT NULL
+);
+
+/* FIXME: index for imsi_pseudo and subscriber_id for better performance */
+
 CREATE TABLE auc_2g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_2g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
@@ -83,4 +93,4 @@ CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 5;
+PRAGMA user_version = 6;
