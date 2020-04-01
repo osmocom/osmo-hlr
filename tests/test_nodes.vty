@@ -41,6 +41,7 @@ OsmoHLR(config-hlr)# ?
   ncss-guard-timeout           Set guard timer for NCSS (call independent SS) session activity
   store-imei                   Save the IMEI in the database when receiving Check IMEI requests. Note that an MSC does not necessarily send Check IMEI requests (for OsmoMSC, you may want to set 'check-imei-rqd 1').
   subscriber-create-on-demand  Make a new record when a subscriber is first seen.
+  imsi-pseudo                  Enable IMSI Pseudonymization
 OsmoHLR(config-hlr)# list
 ...
   gsup
@@ -57,6 +58,8 @@ OsmoHLR(config-hlr)# list
   no store-imei
   subscriber-create-on-demand (no-msisdn|<3-15>) (none|cs|ps|cs+ps)
   no subscriber-create-on-demand
+  imsi-pseudo
+  no imsi-pseudo
 
 OsmoHLR(config-hlr)# gsup
 OsmoHLR(config-hlr-gsup)# ?

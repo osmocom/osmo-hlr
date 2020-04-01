@@ -94,6 +94,8 @@ static int config_write_hlr(struct vty *vty)
 		else
 			vty_out(vty, " subscriber-create-on-demand no-msisdn %s%s", flags_str, VTY_NEWLINE);
 	}
+	if (g_hlr->imsi_pseudo)
+		vty_out(vty, " imsi-pseudo%s", VTY_NEWLINE);
 	return CMD_SUCCESS;
 }
 
@@ -408,6 +410,21 @@ DEFUN(cfg_no_subscr_create_on_demand, cfg_no_subscr_create_on_demand_cmd,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_imsi_pseudo, cfg_imsi_pseudo_cmd,
+	"imsi-pseudo",
+	"Enable IMSI Pseudonymization\n")
+{
+	g_hlr->imsi_pseudo = true;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_imsi_pseudo, cfg_no_imsi_pseudo_cmd,
+	"no imsi-pseudo",
+	"Disable IMSI Pseudonymization\n")
+{
+	g_hlr->imsi_pseudo = false;
+	return CMD_SUCCESS;
+}
 /***********************************************************************
  * Common Code
  ***********************************************************************/
@@ -479,6 +496,8 @@ void hlr_vty_init(void)
 	install_element(HLR_NODE, &cfg_no_store_imei_cmd);
 	install_element(HLR_NODE, &cfg_subscr_create_on_demand_cmd);
 	install_element(HLR_NODE, &cfg_no_subscr_create_on_demand_cmd);
+	install_element(HLR_NODE, &cfg_imsi_pseudo_cmd);
+	install_element(HLR_NODE, &cfg_no_imsi_pseudo_cmd);
 
 	hlr_vty_subscriber_init();
 }

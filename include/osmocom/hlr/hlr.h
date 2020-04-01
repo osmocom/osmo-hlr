@@ -71,6 +71,8 @@ struct hlr {
 	uint8_t subscr_create_on_demand_flags;
 	unsigned int subscr_create_on_demand_rand_msisdn_len;
 
+	bool imsi_pseudo;
+
 	struct {
 		bool allow_startup;
 		struct {
