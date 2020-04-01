@@ -9,6 +9,7 @@ noinst_HEADERS = \
 	hlr_ussd.h \
 	hlr_vty.h \
 	hlr_vty_subscr.h \
+	imsi_pseudo.h \
 	logging.h \
 	lu_fsm.h \
 	mslookup_server.h \

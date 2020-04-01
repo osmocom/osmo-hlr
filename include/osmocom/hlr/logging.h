@@ -8,6 +8,7 @@ enum {
 	DGSUP,
 	DAUC,
 	DSS,
+	DPSEUDO,
 	DMSLOOKUP,
 	DLU,
 	DDGSM,

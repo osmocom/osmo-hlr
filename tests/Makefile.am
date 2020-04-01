@@ -45,6 +45,7 @@ if ENABLE_EXT_TESTS
 python-tests:
 # don't run vty and ctrl tests concurrently so that the ports don't conflict
 	$(MAKE) vty-test
+	$(MAKE) vty-test-imsi-pseudo
 	$(MAKE) ctrl-test
 	$(MAKE) db-upgrade-equivalence-test
 else
@@ -66,6 +67,16 @@ vty-test:
 		-n OsmoHLR -p 4258 \
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
 		$(U) $(srcdir)/$(VTY_TEST)
+	-rm -f $(VTY_TEST_DB) $(VTY_TEST_DB)-*
+
+# IMSI pseudon VTY tests: don't share the DB with other VTY tests, so we can have deterministic "random" pseudo IMSIs
+vty-test-imsi-pseudo:
+	-rm -f $(VTY_TEST_DB)
+	sqlite3 $(VTY_TEST_DB) < $(top_srcdir)/sql/hlr.sql
+	osmo_verify_transcript_vty.py -v \
+		-n OsmoHLR -p 4258 \
+		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(VTY_TEST_DB)" \
+		$(U) $(srcdir)/imsi_pseudo/imsi_pseudo.vty
 	-rm -f $(VTY_TEST_DB) $(VTY_TEST_DB)-*
 
 CTRL_TEST_DB = hlr_ctrl_test.db

@@ -31,6 +31,7 @@
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/timestamp.h>
+#include <osmocom/hlr/imsi_pseudo.h>
 
 struct vty;
 
@@ -69,6 +70,18 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 	}
 }
 
+static void dump_imsi_pseudo(struct vty *vty, struct hlr_subscriber *subscr)
+{
+	struct imsi_pseudo_data data;
+
+	if (db_get_imsi_pseudo_data(g_hlr->dbc, subscr->id, &data) != 0)
+		return;
+	if (data.alloc_count >= 1)
+		vty_out(vty, "    Pseudonymous IMSI (current): %s, i: %" PRId64 "%s", data.current, data.i, VTY_NEWLINE);
+	if (data.alloc_count == 2)
+		vty_out(vty, "    Pseudonymous IMSI (previous): %s%s", data.previous, VTY_NEWLINE);
+}
+
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
@@ -78,6 +91,7 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
 	vty_out(vty, "    IMSI: %s%s", *subscr->imsi ? subscr->imsi : "none", VTY_NEWLINE);
+	dump_imsi_pseudo(vty, subscr);
 	vty_out(vty, "    MSISDN: %s%s", *subscr->msisdn ? subscr->msisdn : "none", VTY_NEWLINE);
 
 	if (*subscr->imei) {
@@ -203,6 +217,7 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 #define SUBSCR_UPDATE		SUBSCR "update "
 #define SUBSCR_UPDATE_HELP	SUBSCR_HELP "Set or update subscriber data\n"
 #define SUBSCR_MSISDN_HELP	"Set MSISDN (phone number) of the subscriber\n"
+#define SUBSCR_IMSI_PSEUDO_HELP "Allocate or deallocate pseudonymous IMSI of the subscriber\n"
 
 DEFUN(subscriber_show,
       subscriber_show_cmd,
@@ -625,6 +640,85 @@ DEFUN(subscriber_nam,
 	return CMD_SUCCESS;
 }
 
+DEFUN(subscriber_imsi_pseudo_alloc,
+      subscriber_imsi_pseudo_alloc_cmd,
+      SUBSCR_UPDATE "imsi-pseudo alloc",
+      SUBSCR_UPDATE_HELP
+      SUBSCR_IMSI_PSEUDO_HELP
+      "Allocate a new pseudonymous IMSI (max. 2)\n")
+{
+	struct hlr_subscriber subscr;
+	struct imsi_pseudo_data pseudo;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	char imsi_pseudo[GSM23003_IMSI_MAX_DIGITS+1];
+	int rc;
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	if (db_get_imsi_pseudo_data(g_hlr->dbc, subscr.id, &pseudo) != 0)
+		return CMD_WARNING;
+
+	if (pseudo.alloc_count == 2) {
+		vty_out(vty, "%% Error: subscriber already has two pseudonymous IMSI allocated%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	rc = db_get_imsi_pseudo_next(g_hlr->dbc, imsi_pseudo);
+	switch (rc) {
+	case -1:
+		vty_out(vty, "%% Error: all IMSIs are already allocated as pseudonymous IMSI%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	case -2:
+		vty_out(vty, "%% Error: failed to get next pseudonymous IMSI (SQL error)%s", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (db_alloc_imsi_pseudo(g_hlr->dbc, subscr.id, imsi_pseudo, pseudo.i + 1) != 0) {
+		vty_out(vty, "%% Error: failed to allocate pseudonymous IMSI '%s'%s", imsi_pseudo, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	vty_out(vty, "%% New pseudonymous IMSI allocated: %s%s", imsi_pseudo, VTY_NEWLINE);
+	return CMD_SUCCESS;
+}
+
+DEFUN(subscriber_imsi_pseudo_dealloc,
+      subscriber_imsi_pseudo_dealloc_cmd,
+      SUBSCR_UPDATE "imsi-pseudo dealloc IMSI_PSEUDO",
+      SUBSCR_UPDATE_HELP
+      SUBSCR_IMSI_PSEUDO_HELP
+      "Deallocate a pseudonymous IMSI\n"
+      "Pseudonymous IMSI to deallocate\n")
+{
+	struct hlr_subscriber subscr;
+	struct imsi_pseudo_data pseudo;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	const char *imsi_pseudo = argv[2];
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	if (db_get_imsi_pseudo_data(g_hlr->dbc, subscr.id, &pseudo) != 0)
+		return CMD_WARNING;
+
+	if ((pseudo.alloc_count >= 1 && strcmp(imsi_pseudo, pseudo.current) == 0) ||
+	    (pseudo.alloc_count == 2 && strcmp(imsi_pseudo, pseudo.previous) == 0)) {
+		/* Pseudonymous IMSI is allocated for given subscriber */
+		if (db_dealloc_imsi_pseudo(g_hlr->dbc, imsi_pseudo) != 0) {
+			vty_out(vty, "Failed to deallocate pseudonymous IMSI%s", VTY_NEWLINE);
+			return CMD_WARNING;
+		}
+	} else {
+		vty_out(vty, "%% Error: pseudonymous IMSI '%s' is not allocated to given subscriber%s", imsi_pseudo,
+			VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	return CMD_SUCCESS;
+}
 
 void hlr_vty_subscriber_init(void)
 {
@@ -639,4 +733,6 @@ void hlr_vty_subscriber_init(void)
 	install_element(ENABLE_NODE, &subscriber_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_imei_cmd);
 	install_element(ENABLE_NODE, &subscriber_nam_cmd);
+	install_element(ENABLE_NODE, &subscriber_imsi_pseudo_alloc_cmd);
+	install_element(ENABLE_NODE, &subscriber_imsi_pseudo_dealloc_cmd);
 }

@@ -85,6 +85,23 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
+	[DB_STMT_PSEUDO_BY_ID] =
+		"SELECT imsi_pseudo, imsi_pseudo_i"
+		" FROM subscriber_imsi_pseudo"
+		" WHERE subscriber_id = $subscriber_id"
+		" ORDER BY imsi_pseudo_i DESC",
+	[DB_STMT_PSEUDO_INSERT] =
+		"INSERT INTO subscriber_imsi_pseudo (subscriber_id, imsi_pseudo, imsi_pseudo_i)"
+		" VALUES($subscriber_id, $imsi_pseudo, $imsi_pseudo_i)",
+	[DB_STMT_PSEUDO_DELETE] =
+		"DELETE FROM subscriber_imsi_pseudo WHERE imsi_pseudo = $imsi_pseudo",
+	[DB_STMT_PSEUDO_NEXT] = /* Proof of concept! Verify performance and entropy usage before using in real world! */
+		"SELECT imsi"
+		" FROM subscriber"
+		" LEFT JOIN subscriber_imsi_pseudo ON imsi = imsi_pseudo"
+		" WHERE imsi_pseudo IS NULL"
+		" ORDER BY RANDOM()"
+		" LIMIT 1",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

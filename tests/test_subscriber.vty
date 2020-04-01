@@ -13,6 +13,8 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
+  subscriber (imsi|msisdn|id|imei) IDENT update imsi-pseudo alloc
+  subscriber (imsi|msisdn|id|imei) IDENT update imsi-pseudo dealloc IMSI_PSEUDO
   show mslookup services
 
 OsmoHLR# subscriber?
@@ -132,6 +134,7 @@ OsmoHLR# subscriber imsi 123456789023000 update ?
   aud3g                Set UMTS authentication data (3G, and 2G with UMTS AKA)
   imei                 Set IMEI of the subscriber (normally populated from MSC, no need to set this manually)
   network-access-mode  Set Network Access Mode (NAM) of the subscriber
+  imsi-pseudo          Allocate or deallocate pseudonymous IMSI of the subscriber
 
 OsmoHLR# subscriber imsi 123456789023000 update msisdn ?
   none    Remove MSISDN (phone number)

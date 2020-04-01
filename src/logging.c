@@ -25,6 +25,12 @@ const struct log_info_cat hlr_log_info_cat[] = {
 		.color = "\033[1;34m",
 		.enabled = 1, .loglevel = LOGL_NOTICE,
 	},
+	[DPSEUDO] = {
+		.name = "DPSEUDO",
+		.description = "IMSI Pseudonymization",
+		.color = "\033[1;36m",
+		.enabled = 1, .loglevel = LOGL_NOTICE,
+	},
 	[DMSLOOKUP] = {
 		.name = "DMSLOOKUP",
 		.description = "Mobile Subscriber Lookup",

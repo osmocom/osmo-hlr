@@ -44,6 +44,7 @@ osmo_hlr_SOURCES = \
 	db.c \
 	db_auc.c \
 	db_hlr.c \
+	db_imsi_pseudo.c \
 	gsup_router.c \
 	gsup_server.c \
 	hlr.c \

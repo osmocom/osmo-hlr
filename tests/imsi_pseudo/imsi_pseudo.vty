@@ -1,0 +1,42 @@
+OsmoHLR> enable
+OsmoHLR# subscriber imsi 111111111111111 create
+...
+OsmoHLR# subscriber id 1 update imsi-pseudo alloc
+% New pseudonymous IMSI allocated: 111111111111111
+OsmoHLR# subscriber imsi 222222222222222 create
+...
+OsmoHLR# subscriber id 1 update imsi-pseudo alloc
+% New pseudonymous IMSI allocated: 222222222222222
+OsmoHLR# subscriber id 1 update imsi-pseudo dealloc 111111111111111
+OsmoHLR# subscriber id 2 update imsi-pseudo alloc
+% New pseudonymous IMSI allocated: 111111111111111
+OsmoHLR# subscriber imsi 333333333333333 create
+...
+OsmoHLR# subscriber id 1 update imsi-pseudo alloc
+% New pseudonymous IMSI allocated: 333333333333333
+OsmoHLR# subscriber id 1 show
+    ID: 1
+    IMSI: 111111111111111
+    Pseudonymous IMSI (current): 333333333333333, i: 3
+    Pseudonymous IMSI (previous): 222222222222222
+    MSISDN: none
+OsmoHLR# subscriber id 2 show
+    ID: 2
+    IMSI: 222222222222222
+    Pseudonymous IMSI (current): 111111111111111, i: 1
+    MSISDN: none
+OsmoHLR# subscriber id 3 show
+    ID: 3
+    IMSI: 333333333333333
+    MSISDN: none
+
+OsmoHLR# subscriber id 3 update imsi-pseudo alloc
+% Error: all IMSIs are already allocated as pseudonymous IMSI
+
+OsmoHLR# subscriber id 1 update imsi-pseudo dealloc 123
+% Error: pseudonymous IMSI '123' is not allocated to given subscriber
+
+OsmoHLR# subscriber imsi 444444444444444 create
+...
+OsmoHLR# subscriber id 1 update imsi-pseudo alloc
+% Error: subscriber already has two pseudonymous IMSI allocated
