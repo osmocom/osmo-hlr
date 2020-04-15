@@ -194,7 +194,7 @@ void lu_op_tx_ack(struct lu_operation *luop)
 	lu_op_free(luop);
 }
 
-/*! Send Cancel Location to old VLR/SGSN */
+/*! Send Cancel Location to old VLR/SGSN (FIXME: OS#4491) */
 void lu_op_tx_cancel_old(struct lu_operation *luop)
 {
 	struct osmo_gsup_message gsup;

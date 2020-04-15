@@ -401,7 +401,7 @@ static int rx_upd_loc_req(struct osmo_gsup_conn *conn,
 	/* TODO: Set subscriber tracing = deactive in VLR/SGSN */
 
 #if 0
-	/* Cancel in old VLR/SGSN, if new VLR/SGSN differs from old */
+	/* Cancel in old VLR/SGSN, if new VLR/SGSN differs from old (FIXME: OS#4491) */
 	if (luop->is_ps == false &&
 	    strcmp(subscr->vlr_number, vlr_number)) {
 		lu_op_tx_cancel_old(luop);
