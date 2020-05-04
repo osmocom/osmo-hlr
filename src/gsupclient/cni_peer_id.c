@@ -154,6 +154,12 @@ int osmo_cni_peer_id_set_str(struct osmo_cni_peer_id *cni_peer_id, enum osmo_cni
 
 int osmo_cni_peer_id_cmp(const struct osmo_cni_peer_id *a, const struct osmo_cni_peer_id *b)
 {
+	if (a == b)
+		return 0;
+	if (!a)
+		return -1;
+	if (!b)
+		return 1;
 	if (a->type != b->type)
 		return OSMO_CMP(a->type, b->type);
 	switch (a->type) {
