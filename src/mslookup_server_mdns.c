@@ -71,7 +71,7 @@ static int osmo_mslookup_server_mdns_rx(struct osmo_fd *osmo_fd, unsigned int wh
 
 	/* Parse the message and print it */
 	n = read(osmo_fd->fd, buffer, sizeof(buffer));
-	if (n < 0)
+	if (n <= 0)
 		return n;
 
 	ctx = talloc_named_const(server, 0, __func__);
