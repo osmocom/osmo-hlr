@@ -274,7 +274,7 @@ static int osmo_gsup_server_ccm_cb(struct ipa_server_conn *conn,
 {
 	struct osmo_gsup_conn *clnt = (struct osmo_gsup_conn *)conn->data;
 	uint8_t *addr = NULL;
-	size_t addr_len;
+	int addr_len;
 
 	LOGP(DLGSUP, LOGL_INFO, "CCM Callback\n");
 
