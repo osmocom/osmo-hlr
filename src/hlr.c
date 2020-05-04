@@ -268,9 +268,9 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 	if (nam_val)
 		return 0;
 
-	if (subscr->vlr_number && osmo_ipa_name_set_str(&vlr_name, subscr->vlr_number))
+	if (subscr->vlr_number[0] && !osmo_ipa_name_set_str(&vlr_name, subscr->vlr_number))
 		osmo_gsup_enc_send_to_ipa_name(g_hlr->gs, &vlr_name, &gsup_del_data);
-	if (subscr->sgsn_number && osmo_ipa_name_set_str(&vlr_name, subscr->sgsn_number))
+	if (subscr->sgsn_number[0] && !osmo_ipa_name_set_str(&vlr_name, subscr->sgsn_number))
 		osmo_gsup_enc_send_to_ipa_name(g_hlr->gs, &vlr_name, &gsup_del_data);
 	return 0;
 }
