@@ -107,6 +107,12 @@ struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_cni_peer_id
 	struct osmo_gsup_req *req;
 	int rc;
 
+	if (!from_peer) {
+		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from NULL peer is not allowed\n");
+		msgb_free(msg);
+		return NULL;
+	}
+
 	if (!msgb_l2(msg) || !msgb_l2len(msg)) {
 		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from %s: missing or empty L2 data\n",
 		     osmo_cni_peer_id_to_str(from_peer));
@@ -121,8 +127,7 @@ struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_cni_peer_id
 	req->msg = msg;
 	req->send_response_cb = send_response_cb;
 	req->cb_data = cb_data;
-	if (from_peer)
-		req->source_name = *from_peer;
+	req->source_name = *from_peer;
 	rc = osmo_gsup_decode(msgb_l2(req->msg), msgb_l2len(req->msg), (struct osmo_gsup_message*)&req->gsup);
 	if (rc < 0) {
 		LOGP(DLGSUP, LOGL_ERROR, "Rx GSUP from %s: cannot decode (rc=%d)\n", osmo_cni_peer_id_to_str(from_peer), rc);
