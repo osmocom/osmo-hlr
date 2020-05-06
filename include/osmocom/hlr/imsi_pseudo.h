@@ -17,3 +17,4 @@ int db_get_imsi_pseudo_data(struct db_context *dbc, int64_t subscr_id, struct im
 int db_alloc_imsi_pseudo(struct db_context *dbc, int64_t subscr_id, const char *imsi_pseudo, int64_t imsi_pseudo_i);
 int db_dealloc_imsi_pseudo(struct db_context *dbc, const char *imsi_pseudo);
 int db_get_imsi_pseudo_next(struct db_context *dbc, char *imsi_pseudo);
+int db_get_imsi_pseudo_resolve(struct db_context *dbc, const char *imsi_pseudo, char *imsi);

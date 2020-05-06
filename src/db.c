@@ -102,6 +102,11 @@ static const char *stmt_sql[] = {
 		" WHERE imsi_pseudo IS NULL"
 		" ORDER BY RANDOM()"
 		" LIMIT 1",
+	[DB_STMT_PSEUDO_RESOLVE] =
+		"SELECT imsi"
+		" FROM subscriber"
+		" LEFT JOIN subscriber_imsi_pseudo ON subscriber_id = subscriber.id"
+		" WHERE imsi_pseudo = $imsi_pseudo",
 };
 
 static void sql3_error_log_cb(void *arg, int err_code, const char *msg)

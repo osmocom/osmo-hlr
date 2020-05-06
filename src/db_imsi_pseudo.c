@@ -141,3 +141,37 @@ int db_get_imsi_pseudo_next(struct db_context *dbc, char *imsi_pseudo)
 	db_remove_reset(stmt);
 	return ret;
 }
+
+/*! Resolve a pseudo IMSI to the real IMSI.
+ *  \param[in] dbc database context.
+ *  \param[in] imsi_pseudo the IMSI to be resolved
+ *  \param[out] imsi buffer with length GSM23003_IMSI_MAX_DIGITS+1.
+ *  \returns 0: success, -1: no associated real IMSI, -2: SQL error. */
+int db_get_imsi_pseudo_resolve(struct db_context *dbc, const char *imsi_pseudo, char *imsi)
+{
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_PSEUDO_RESOLVE];
+	int rc, ret=0;
+
+	if (!db_bind_text(stmt, "$imsi_pseudo", imsi_pseudo))
+		return -EIO;
+
+	rc = sqlite3_step(stmt);
+	switch (rc) {
+	case SQLITE_ROW:
+		/* Can't use copy_sqlite3_text_to_buf, as it assumes the wrong size for imsi_pseudo */
+		osmo_strlcpy(imsi, (const char *)sqlite3_column_text(stmt, 0), GSM23003_IMSI_MAX_DIGITS + 1);
+		break;
+	case SQLITE_DONE:
+		LOGP(DPSEUDO, LOGL_NOTICE, "cannot resolve pseudonymous IMSI '%s': no associated real IMSI found\n",
+		     imsi_pseudo);
+		ret = -1;
+		break;
+	default:
+		LOGP(DPSEUDO, LOGL_ERROR, "cannot resolve pseudonymous IMSI '%s': SQL error: %d\n", imsi_pseudo, rc);
+		ret = -2;
+		break;
+	}
+
+	db_remove_reset(stmt);
+	return ret;
+}

@@ -48,6 +48,7 @@
 #include <osmocom/hlr/rand.h>
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/imsi_pseudo.h>
 #include <osmocom/hlr/dgsm.h>
 #include <osmocom/hlr/proxy.h>
 #include <osmocom/hlr/lu_fsm.h>
@@ -510,6 +511,19 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	    || osmo_sockaddr_str_is_nonzero(&g_hlr->mslookup.client.gsup_gateway_proxy)) {
 		if (dgsm_check_forward_gsup_msg(req))
 			return 0;
+	}
+
+	/* Resolve pseudonymous IMSI */
+	if (g_hlr->imsi_pseudo) {
+		char imsi[OSMO_IMSI_BUF_SIZE];
+		if (db_get_imsi_pseudo_resolve(g_hlr->dbc, req->gsup.imsi, imsi) == 0) {
+			LOGP(DPSEUDO, LOGL_DEBUG, "pseudo IMSI resolve: '%s' => '%s'\n", req->gsup.imsi, imsi);
+			strncpy(req->imsi_pseudo, req->gsup.imsi, sizeof(req->imsi_pseudo));
+			strncpy((char *)req->gsup.imsi, imsi, sizeof(req->gsup.imsi));
+		} else {
+			osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN, "pseudonymous IMSI unknown");
+			return -1;
+		}
 	}
 
 	/* HLR related messages that are handled at this HLR instance */

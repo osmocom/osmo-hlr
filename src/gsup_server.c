@@ -30,6 +30,7 @@
 
 #include <osmocom/hlr/gsup_server.h>
 #include <osmocom/hlr/gsup_router.h>
+#include <osmocom/hlr/logging.h>
 
 #define LOG_GSUP_CONN(conn, level, fmt, args...) \
 	LOGP(DLGSUP, level, "GSUP peer %s: " fmt, \
@@ -93,6 +94,11 @@ static void gsup_server_send_req_response(struct osmo_gsup_req *req, struct osmo
 		LOG_GSUP_REQ(req, LOGL_ERROR, "GSUP client that sent this request not found, cannot respond\n");
 		msgb_free(msg);
 		return;
+	}
+
+	if (req->imsi_pseudo[0]) {
+		LOGP(DPSEUDO, LOGL_DEBUG, "pseudo IMSI scramble: '%s' => '%s'\n", response->imsi, req->imsi_pseudo);
+		strncpy(response->imsi, req->imsi_pseudo, sizeof(response->imsi));
 	}
 
 	rc = osmo_gsup_encode(msg, response);

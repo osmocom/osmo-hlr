@@ -80,6 +80,10 @@ struct osmo_gsup_req {
 	/* A decoded GSUP message still points into the received msgb. For a decoded osmo_gsup_message to remain valid,
 	 * we also need to keep the msgb. */
 	struct msgb *msg;
+
+	/* The pseudonymous IMSI in gsup->imsi is replaced with the real IMSI right after receiving the message. A
+	 * copy of the pseudonymous IMSI is stored here for the reply. */
+	char imsi_pseudo[OSMO_IMSI_BUF_SIZE];
 };
 
 struct osmo_gsup_req *osmo_gsup_req_new(void *ctx, const struct osmo_cni_peer_id *from_peer, struct msgb *msg,
