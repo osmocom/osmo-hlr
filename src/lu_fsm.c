@@ -31,6 +31,7 @@
 #include <osmocom/hlr/logging.h>
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/gsup_server.h>
+#include <osmocom/hlr/imsi_pseudo.h>
 
 #include <osmocom/hlr/db.h>
 
@@ -79,6 +80,48 @@ static struct osmo_tdef_state_timeout lu_fsm_timeouts[32] = {
 	[LU_ST_WAIT_INSERT_DATA_RESULT] = { .T = -4222 },
 	[LU_ST_WAIT_LOCATION_CANCEL_RESULT] = { .T = -4222 },
 };
+
+/*! Deallocate the previous pseudonymous IMSI, if the subscriber has two allocated ones and has initiated the LU with
+ *  the newer pseudonymous IMSI.
+ *  \param[in] subscr  The subscriber.
+ *  \param[in] imsi_pseudo  The pseudonymous IMSI used in the location update.
+ *  \param[out] imsi_pseudo_prev  The pseudonymous IMSI that was deallocated if return == 0. Must be a buffer of size
+ *  				  OSMO_IMSI_BUF.
+ *  \returns 0: successful deallocation, >0: successful, no pseudo IMSI to deallocate, <0: error
+ */
+int imsi_pseudo_prev_dealloc(struct hlr_subscriber *subscr, const char *imsi_pseudo, char *imsi_pseudo_prev)
+{
+	struct imsi_pseudo_data data;
+
+	if (db_get_imsi_pseudo_data(g_hlr->dbc, subscr->id, &data) != 0) {
+		LOGPSEUDO(subscr->id, LOGL_ERROR, "failed to get pseudo IMSI data from DB\n");
+		return -EIO;
+	}
+	if (data.alloc_count == 0) {
+		LOGPSEUDO(subscr->id, LOGL_ERROR, "does not have any pseudo IMSI allocated\n");
+		return -EIO;
+	}
+	if (data.alloc_count != 2) {
+		LOGPSEUDO(subscr->id, LOGL_DEBUG, "has only one pseudo IMSI allocated, not deallocating any\n");
+		return 1;
+	}
+	if (strcmp(data.previous, imsi_pseudo) == 0) {
+		LOGPSEUDO(subscr->id, LOGL_NOTICE, "did LU with previous pseudo IMSI (next pseudo IMSI SMS did not"
+						   " arrive?)\n");
+		return 2;
+	}
+
+	LOGPSEUDO(subscr->id, LOGL_DEBUG, "used current pseudo IMSI '%s' in LU, deallocating previous: '%s'\n",
+		  imsi_pseudo, data.previous);
+
+	if (db_dealloc_imsi_pseudo(g_hlr->dbc, data.previous) != 0) {
+		LOGPSEUDO(subscr->id, LOGL_ERROR, "failed to deallocate previous pseudo IMSI '%s'\n", data.previous);
+		return -EIO;
+	}
+
+	strncpy(imsi_pseudo_prev, data.previous, OSMO_IMSI_BUF_SIZE);
+	return 0;
+}
 
 #define lu_state_chg(lu, state) \
 	osmo_tdef_fsm_inst_state_chg((lu)->fi, state, lu_fsm_timeouts, g_hlr_tdefs, 5)
@@ -197,6 +240,32 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 	/* TODO: Reset Flag MS Purged (cs/ps) */
 	/* TODO: Control_Tracing_HLR / Control_Tracing_HLR_with_SGSN */
 
+	/* IMSI pseudonymization: deallocate and cancel previous pseudo IMSI */
+	if (g_hlr->imsi_pseudo) {
+		char imsi_pseudo_prev[OSMO_IMSI_BUF_SIZE];
+		int rc = imsi_pseudo_prev_dealloc(&lu->subscr, update_location_req->imsi_pseudo, imsi_pseudo_prev);
+
+		if (rc < 0) {
+			lu_failure(lu, GMM_CAUSE_NET_FAIL, "Failed to deallocate previous pseudonymous IMSI");
+			return;
+		}
+		if (rc == 0) {
+			struct osmo_gsup_message gsup;
+			enum osmo_gsup_cn_domain cn_domain = lu->is_ps
+							     ? OSMO_GSUP_CN_DOMAIN_PS
+							     : OSMO_GSUP_CN_DOMAIN_CS;
+
+			osmo_gsup_create_location_cancel_msg(&gsup, imsi_pseudo_prev, cn_domain,
+							     OSMO_GSUP_CANCEL_TYPE_WITHDRAW);
+
+			/* FIXME: _osmo_gsup_req_respond() fails with 'Invalid response (rc=1)' */
+			osmo_gsup_req_respond(update_location_req, &gsup, false, false);
+
+			lu_state_chg(lu, LU_ST_WAIT_LOCATION_CANCEL_RESULT);
+			return;
+		}
+	}
+
 	lu_state_chg(lu, LU_ST_WAIT_INSERT_DATA_RESULT);
 }
 
@@ -285,6 +354,33 @@ void lu_fsm_wait_insert_data_result(struct osmo_fsm_inst *fi, uint32_t event, vo
 	}
 }
 
+void lu_fsm_wait_location_cancel_result(struct osmo_fsm_inst *fi, uint32_t event, void *data)
+{
+	struct lu *lu = fi->priv;
+	struct osmo_gsup_req *req;
+
+	switch (event) {
+	case LU_EV_RX_GSUP:
+		req = data;
+		break;
+	default:
+		OSMO_ASSERT(false);
+	}
+
+	switch (req->gsup.message_type) {
+	case OSMO_GSUP_MSGT_LOCATION_CANCEL_ERROR:
+		LOG_LU(lu, LOGL_DEBUG, "got a location cancel error (but this is fine, remote didn't even know the"
+		       " subscriber we tried to make it forget)\n");
+		/* fall through */
+	case OSMO_GSUP_MSGT_LOCATION_CANCEL_RESULT:
+		lu_state_chg(lu, LU_ST_WAIT_INSERT_DATA_RESULT);
+		break;
+	default:
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_MSGT_INCOMP_P_STATE, "unexpected message type in this state");
+		break;
+	}
+}
+
 #define S(x) (1 << (x))
 
 static const struct osmo_fsm_state lu_fsm_states[] = {
@@ -292,6 +388,7 @@ static const struct osmo_fsm_state lu_fsm_states[] = {
 		.name = "UNVALIDATED",
 		.out_state_mask = 0
 			| S(LU_ST_WAIT_INSERT_DATA_RESULT)
+			| S(LU_ST_WAIT_LOCATION_CANCEL_RESULT)
 			,
 	},
 	[LU_ST_WAIT_INSERT_DATA_RESULT] = {
@@ -301,6 +398,13 @@ static const struct osmo_fsm_state lu_fsm_states[] = {
 			,
 		.onenter = lu_fsm_wait_insert_data_result_onenter,
 		.action = lu_fsm_wait_insert_data_result,
+	},
+	[LU_ST_WAIT_LOCATION_CANCEL_RESULT] = {
+		.name = "WAIT_LOCATION_CANCEL_RESULT",
+		.in_event_mask = 0
+			| S(LU_EV_RX_GSUP)
+			,
+		.action = lu_fsm_wait_location_cancel_result,
 	},
 };
 

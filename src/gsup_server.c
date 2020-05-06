@@ -520,6 +520,29 @@ int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, 
 	return 0;
 }
 
+/**
+ * Populate a gsup message structure with a Location Cancel Message.
+ * All required memory buffers for data pointed to by pointers in struct omso_gsup_message
+ * must be allocated by the caller and should have the same lifetime as the gsup parameter.
+ *
+ * \param[out] gsup  The gsup message to populate.
+ * \param[in] imsi  The subscriber's IMSI.
+ * \param[in] cn_domain  The CN Domain of the subscriber connection.
+ * \param[in] cancel_type  The cancellation type.
+ */
+void osmo_gsup_create_location_cancel_msg(struct osmo_gsup_message *gsup, const char *imsi,
+					  enum osmo_gsup_cn_domain cn_domain, enum osmo_gsup_cancel_type cancel_type)
+{
+	OSMO_ASSERT(gsup);
+	*gsup = (struct osmo_gsup_message){
+		.message_type = OSMO_GSUP_MSGT_LOCATION_CANCEL_REQUEST,
+		.cn_domain = cn_domain,
+		.cancel_type = cancel_type
+	};
+
+	osmo_strlcpy(gsup->imsi, imsi, sizeof(gsup->imsi));
+}
+
 int osmo_gsup_forward_to_local_peer(struct osmo_gsup_server *server, const struct osmo_cni_peer_id *to_peer,
 				    struct osmo_gsup_req *req, struct osmo_gsup_message *modified_gsup)
 {
