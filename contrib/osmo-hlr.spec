@@ -13,12 +13,8 @@
 # license that conforms to the Open Source Definition (Version 1.9)
 # published by the Open Source Initiative.
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
-#
-
-
 Name:           osmo-hlr
-Version:        1.2.0.48
+Version:        0.0.0
 Release:        0
 Summary:        Osmocom Home Location Register for GSUP protocol towards OsmoSGSN and OsmoCSCN
 License:        AGPL-3.0-or-later AND GPL-2.0-or-later
@@ -29,8 +25,12 @@ BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  pkgconfig >= 0.20
-BuildRequires:  python2
+BuildRequires:  python3
+%if 0%{?centos_ver}
+BuildRequires:  systemd
+%else
 BuildRequires:  systemd-rpm-macros
+%endif
 BuildRequires:  pkgconfig(libosmoabis) >= 0.6.0
 BuildRequires:  pkgconfig(libosmocore) >= 1.2.0
 BuildRequires:  pkgconfig(libosmoctrl) >= 1.2.0
@@ -128,6 +128,7 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %check
 make %{?_smp_mflags} check || (find . -name testsuite.log -exec cat {} +)
 
+%if 0%{?suse_version}
 %preun
 %service_del_preun %{name}.service
 
@@ -139,6 +140,7 @@ make %{?_smp_mflags} check || (find . -name testsuite.log -exec cat {} +)
 
 %post
 %service_add_post %{name}.service
+%endif
 
 %post   -n libosmo-gsup-client0 -p /sbin/ldconfig
 %postun -n libosmo-gsup-client0 -p /sbin/ldconfig
