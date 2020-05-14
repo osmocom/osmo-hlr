@@ -200,6 +200,7 @@ AC_OUTPUT(
 	contrib/Makefile
 	contrib/systemd/Makefile
 	contrib/dgsm/Makefile
+	contrib/osmo-hlr.spec
 	tests/Makefile
 	tests/auc/Makefile
 	tests/auc/gen_ts_55_205_test_sets/Makefile
