@@ -11,6 +11,8 @@ SUBDIRS = \
 
 EXTRA_DIST = \
 	.version \
+	contrib/osmo-hlr.spec.in \
+	debian \
 	$(NULL)
 
 AM_DISTCHECK_CONFIGURE_FLAGS = \
