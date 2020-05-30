@@ -461,7 +461,7 @@ int osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
 
 /**
  * Populate a gsup message structure with an Insert Subscriber Data Message.
- * All required memory buffers for data pointed to by pointers in struct omso_gsup_message
+ * All required memory buffers for data pointed to by pointers in struct osmo_gsup_message
  * must be allocated by the caller and should have the same lifetime as the gsup parameter.
  *
  * \param[out] gsup  The gsup message to populate.
