@@ -584,11 +584,11 @@ void respond_result(const char *query_str, const struct osmo_mslookup_result *r)
 	llist_for_each_entry_safe(c, n, &globals.socket_clients, entry) {
 		if (!strcmp(query_str, c->query_str)) {
 			socket_client_respond_result(c, g_buf);
-			if (r->last)
+			if (!r || r->last)
 				socket_client_close(c);
 		}
 	}
-	if (r->last)
+	if (!r || r->last)
 		globals.requests_handled++;
 }
 
