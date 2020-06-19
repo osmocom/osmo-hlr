@@ -576,6 +576,7 @@ static void print_help()
 	printf("  -U --db-upgrade            Allow HLR database schema upgrades.\n");
 	printf("  -C --db-check              Quit after opening (and upgrading) the database.\n");
 	printf("  -V --version               Print the version of OsmoHLR.\n");
+	printf("  --vty-ref-xml              Generate the VTY reference XML output and exit.\n");
 }
 
 static struct {
@@ -595,6 +596,7 @@ static void handle_options(int argc, char **argv)
 {
 	while (1) {
 		int option_index = 0, c;
+		static int long_option = 0;
 		static struct option long_options[] = {
 			{"help", 0, 0, 'h'},
 			{"config-file", 1, 0, 'c'},
@@ -607,6 +609,7 @@ static void handle_options(int argc, char **argv)
 			{"db-upgrade", 0, 0, 'U' },
 			{"db-check", 0, 0, 'C' },
 			{"version", 0, 0, 'V' },
+			{"vty-ref-xml", 0, &long_option, 1},
 			{0, 0, 0, 0}
 		};
 
@@ -620,6 +623,15 @@ static void handle_options(int argc, char **argv)
 			print_usage();
 			print_help();
 			exit(0);
+		case 0:
+			switch (long_option) {
+			case 1:
+				vty_dump_xml_ref(stdout);
+				exit(0);
+			default:
+				fprintf(stderr, "error parsing cmdline options\n");
+				exit(2);
+			}
 		case 'c':
 			cmdline_opts.config_file = optarg;
 			break;
