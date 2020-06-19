@@ -16,6 +16,11 @@ if BUILD_MANUALS
   VTY_REFERENCE = osmohlr-vty-reference.xml
   include $(OSMO_GSM_MANUALS_DIR)/build/Makefile.vty-reference.inc
 
+  BUILT_REFERENCE_XML = $(builddir)/vty/hlr_vty_reference.xml
+  $(builddir)/vty/hlr_vty_reference.xml: $(top_builddir)/src/osmo-hlr
+	mkdir -p $(builddir)/vty
+	$(top_builddir)/src/osmo-hlr --vty-ref-xml > $@
+
   OSMO_REPOSITORY = osmo-hlr
   include $(OSMO_GSM_MANUALS_DIR)/build/Makefile.common.inc
 endif
