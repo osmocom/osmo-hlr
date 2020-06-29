@@ -54,7 +54,7 @@ this database file will be created in the current working directory.
 
 Alternatively, you may use the `osmo-hlr-db-tool`, which is installed along
 with `osmo-hlr`, to bootstrap an empty database, or to migrate subscriber data
-from an old 'OsmoNITB' database. See `osmo-hlr-db-tool --help`.
+from an old 'OsmoNITB' database. See <<db_import_nitb>>.
 
 === Multiple instances
 

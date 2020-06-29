@@ -127,3 +127,83 @@ OsmoHLR# subscriber imei 35761300444848 show
 ----
 <1> Randomly generated 5 digit MSISDN
 <2> Disabled CS and PS NAM prevent the subscriber from accessing the network
+
+
+=== Import Subscriber Data
+
+==== Scripted Import
+
+WARNING: It is not generally a good idea to depend on the HLR database's internal table structure, but in the lack of an
+automated import procedure, this example is provided as an ad-hoc method to aid automated subscriber import. This is not
+guaranteed to remain valid.
+
+NOTE: We may add CSV and other import methods to the `osmo-hlr-db-tool`, but so far that is not implemented. Contact the
+community if you are interested in such a feature being implemented.
+
+NOTE: `sqlite3` is available from your distribution packages or `sqlite.org`.
+
+Currently, probably the easiest way to automatically import subscribers to OsmoHLR is to write out a text file with SQL
+commands per subscriber, and feed that to `sqlite3`, as described below.
+
+A difficulty is to always choose subscriber IDs that are not yet in use. For an initial import, the subscriber ID may be
+incremented per subscriber record. If adding more subscribers to an existing database, it is necessary to choose
+subscriber IDs that are not yet in use. Get the highest ID in use with:
+
+----
+sqlite3 hlr.db 'select max(id) from subscriber'
+----
+
+A full SQL example of adding a single subscriber with id 23, IMSI 001010123456789, MSISDN 1234, Ki for COMP128v1, and K
+and OPC for Milenage:
+
+----
+INSERT subscriber (id, imsi, msisdn) VALUES (23, '001010123456789', '1234');
+
+INSERT INTO auc_2g (subscriber_id, algo_id_2g, ki)
+VALUES(23, 1, '0123456789abcdef0123456789abcdef');
+
+INSERT INTO auc_3g (subscriber_id, algo_id_3g, k, op, opc)
+VALUES(23, 5, '0123456789abcdef0123456789abcdef',NULL,'0123456789abcdef0123456789abcdef');
+----
+
+Table entries to `auc_2g` and/or `auc_3g` may be omitted if no such key material is required.
+
+UMTS Milenage auth (on both 2G and 3G RAN) is configured by the `auc_3g` table. `algo_id_3g` must currently always be 5
+(MILENAGE).
+
+The algorithm IDs for `algo_id_2g` and `algo_id_3g` are:
+
+.Algorithm IDs in OsmoHLR's database
+[options="header",width="50%",cols="40%,60%"]
+|===
+|`algo_id_2g` / `algo_id_3g` | Authentication Algorithm
+| 1 | COMP128v1
+| 2 | COMP128v2
+| 3 | COMP128v3
+| 4 | XOR
+| 5 | MILENAGE
+|===
+
+Create an empty HLR database with
+
+----
+osmo-hlr-db-tool -l hlr.db create
+----
+
+Repeat above SQL commands per subscriber, incrementing the subscriber ID for each block, then feed the SQL commands for
+the subscribers to be imported to the `sqlite3` command line tool:
+
+----
+sqlite3 hlr.db < subscribers.sql
+----
+
+[[db_import_nitb]]
+==== Import OsmoNITB database
+
+To upgrade from old OsmoNITB to OsmoHLR, use `osmo-hlr-db-tool`:
+
+----
+osmo-hlr-db-tool -l hlr.db import-nitb-db nitb.db
+----
+
+Be aware that the import is lossy, only the IMSI, MSISDN, nam_cs/ps and 2G auth data are set.
