@@ -31,6 +31,7 @@
 #include <osmocom/vty/command.h>
 #include <osmocom/vty/telnet_interface.h>
 #include <osmocom/vty/ports.h>
+#include <osmocom/vty/cpu_sched_vty.h>
 #include <osmocom/ctrl/control_vty.h>
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm48_ie.h>
@@ -732,6 +733,7 @@ int main(int argc, char **argv)
 	handle_options(argc, argv);
 	hlr_vty_init();
 	dgsm_vty_init();
+	osmo_cpu_sched_vty_init(hlr_ctx);
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {

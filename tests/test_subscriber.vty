@@ -14,6 +14,7 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
   show mslookup services
+...
 
 OsmoHLR# subscriber?
   subscriber  Subscriber management commands
