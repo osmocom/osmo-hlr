@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <string.h>
+#include <errno.h>
 
 #include <osmocom/core/logging.h>
 #include <osmocom/core/application.h>
@@ -70,8 +71,9 @@ static void print_help()
 	printf("                             (All commands imply this if none exists yet.)\n");
 	printf("\n");
 	printf("  import-nitb-db <nitb.db>   Add OsmoNITB db's subscribers to OsmoHLR db.\n");
-	printf("                             Be aware that the import is lossy, only the\n");
-	printf("                             IMSI, MSISDN, nam_cs/ps and 2G auth data are set.\n");
+	printf("                             Be aware that the import is somewhat lossy, only the IMSI,\n");
+	printf("                             MSISDN, IMEI, nam_cs/ps, 2G auth data and last seen LU are set.\n");
+	printf("                             The most recently associated IMEI from the Equipment table is used.\n");
 }
 
 static void print_version(int print_copyright)
@@ -212,9 +214,15 @@ enum nitb_stmt {
 
 static const char *nitb_stmt_sql[] = {
 	[NITB_SELECT_SUBSCR] =
-		"SELECT imsi, id, extension, authorized"
-		" FROM Subscriber"
-		" ORDER BY id",
+		"SELECT s.imsi, s.id, s.extension, s.authorized,"
+		" SUBSTR(e.imei,0,15), STRFTIME('%s', s.expire_lu)"
+		" FROM Subscriber s LEFT JOIN"
+		" (SELECT imei, subscriber_id, MAX(Equipment.updated) AS updated"
+		" FROM Equipment,EquipmentWatch"
+		" WHERE Equipment.id = EquipmentWatch.equipment_id"
+		" GROUP BY EquipmentWatch.subscriber_id) e"
+		" ON e.subscriber_id = s.id"
+		" ORDER by s.id",
 	[NITB_SELECT_AUTH_KEYS] =
 		"SELECT algorithm_id, a3a8_ki from authkeys"
 		" WHERE subscriber_id = $subscr_id",
@@ -222,7 +230,64 @@ static const char *nitb_stmt_sql[] = {
 
 sqlite3_stmt *nitb_stmt[ARRAY_SIZE(nitb_stmt_sql)] = {};
 
+enum hlr_db_stmt {
+	HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI,
+};
+
+static const char *hlr_db_stmt_sql[] = {
+	[HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI] =
+		"UPDATE subscriber SET last_lu_seen = datetime($last_lu, 'unixepoch') WHERE imsi = $imsi",
+};
+
+sqlite3_stmt *hlr_db_stmt[ARRAY_SIZE(hlr_db_stmt_sql)] = {};
+
 size_t _dbd_decode_binary(const unsigned char *in, unsigned char *out);
+
+/*! Set a subscriber's LU timestamp in the HLR database.
+ * In normal operations there is never any need to explicitly
+ * update the value of last_lu_seen, so this function can live here.
+ *
+ * \param[in,out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits
+ * \param[in] imei  ASCII string of identifier digits, or NULL to remove the IMEI.
+ * \returns 0 on success, -ENOENT when the given subscriber does not exist,
+ *         -EIO on database errors.
+ */
+int db_subscr_update_lu_by_imsi(struct db_context *dbc, const char* imsi, const int last_lu)
+{
+	int rc, ret = 0;
+
+	sqlite3_stmt *stmt = hlr_db_stmt[HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI];
+
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+	if (last_lu && !db_bind_int(stmt, "$last_lu", last_lu))
+		return -EIO;
+
+	/* execute the statement */
+	rc = sqlite3_step(stmt);
+	if (rc != SQLITE_DONE) {
+		LOGP(DAUC, LOGL_ERROR, "Update last_lu_seen for subscriber IMSI='%s': SQL Error: %s\n", imsi,
+		     sqlite3_errmsg(dbc->db));
+		ret = -EIO;
+		goto out;
+	}
+
+	/* verify execution result */
+	rc = sqlite3_changes(dbc->db);
+	if (!rc) {
+		LOGP(DAUC, LOGL_ERROR, "Cannot update last_lu_seen for subscriber IMSI='%s': no such subscriber\n", imsi);
+		ret = -ENOENT;
+	} else if (rc != 1) {
+		LOGP(DAUC, LOGL_ERROR, "Update last_lu_seen for subscriber IMSI='%s': SQL modified %d rows (expected 1)\n",
+		     imsi, rc);
+		ret = -EIO;
+	}
+
+out:
+	db_remove_reset(stmt);
+	return ret;
+}
 
 void import_nitb_subscr_aud(sqlite3 *nitb_db, const char *imsi, int64_t nitb_id, int64_t hlr_id)
 {
@@ -297,6 +362,7 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 	int64_t imsi;
 	char imsi_str[32];
 	bool authorized;
+	int last_lu_int;
 
 	imsi = sqlite3_column_int64(stmt, 0);
 
@@ -315,8 +381,18 @@ void import_nitb_subscr(sqlite3 *nitb_db, sqlite3_stmt *stmt)
 	nitb_id = sqlite3_column_int64(stmt, 1);
 	copy_sqlite3_text_to_buf(subscr.msisdn, stmt, 2);
 	authorized = sqlite3_column_int(stmt, 3) ? true : false;
+	copy_sqlite3_text_to_buf(subscr.imei, stmt, 4);
+	/* Default periodic LU was 30 mins and the expire_lu
+	 * was twice that + 1 min
+	 */
+	last_lu_int = sqlite3_column_int(stmt, 5) - 3660;
 
 	db_subscr_update_msisdn_by_imsi(dbc, imsi_str, subscr.msisdn);
+	/* In case the subscriber was somehow never seen, invent an IMEI */
+	if (strlen(subscr.imei) == 14)
+		db_subscr_update_imei_by_imsi(dbc, imsi_str, subscr.imei);
+	db_subscr_update_lu_by_imsi(dbc, imsi_str, last_lu_int);
+
 	db_subscr_nam(dbc, imsi_str, authorized, true);
 	db_subscr_nam(dbc, imsi_str, authorized, false);
 
@@ -361,6 +437,17 @@ int import_nitb_db(void)
 		}
 	}
 
+	for (i = 0; i < ARRAY_SIZE(hlr_db_stmt_sql); i++) {
+		sql = hlr_db_stmt_sql[i];
+		rc = sqlite3_prepare_v2(g_hlr_db_tool_ctx->dbc->db, hlr_db_stmt_sql[i], -1,
+					&hlr_db_stmt[i], NULL);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "OsmoHLR DB: Unable to prepare SQL statement '%s'\n", sql);
+			ret = -1;
+			goto out_free;
+		}
+	}
+
 	stmt = nitb_stmt[NITB_SELECT_SUBSCR];
 
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
@@ -387,6 +474,7 @@ int main(int argc, char **argv)
 {
 	int rc;
 	int (*main_action)(void);
+	int i;
 	main_action = NULL;
 
 	g_hlr_db_tool_ctx = talloc_zero(NULL, struct hlr_db_tool_ctx);
@@ -430,6 +518,11 @@ int main(int argc, char **argv)
 	if (main_action)
 		rc = (*main_action)();
 
+	/* db_close will only finalize statments in g_hlr_db_tool_ctx->dbc->stmt
+	 * it is ok to call finalize on NULL */
+	for (i = 0; i < ARRAY_SIZE(hlr_db_stmt); i++) {
+		sqlite3_finalize(hlr_db_stmt[i]);
+	}
 	db_close(g_hlr_db_tool_ctx->dbc);
 	log_fini();
 	exit(rc ? EXIT_FAILURE : EXIT_SUCCESS);
