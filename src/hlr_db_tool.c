@@ -230,6 +230,17 @@ static const char *nitb_stmt_sql[] = {
 
 sqlite3_stmt *nitb_stmt[ARRAY_SIZE(nitb_stmt_sql)] = {};
 
+enum hlr_db_stmt {
+	HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI,
+};
+
+static const char *hlr_db_stmt_sql[] = {
+	[HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI] =
+		"UPDATE subscriber SET last_lu_seen = datetime($last_lu, 'unixepoch') WHERE imsi = $imsi",
+};
+
+sqlite3_stmt *hlr_db_stmt[ARRAY_SIZE(hlr_db_stmt_sql)] = {};
+
 size_t _dbd_decode_binary(const unsigned char *in, unsigned char *out);
 
 /*! Set a subscriber's LU timestamp in the HLR database.
@@ -246,7 +257,7 @@ int db_subscr_update_lu_by_imsi(struct db_context *dbc, const char* imsi, const 
 {
 	int rc, ret = 0;
 
-	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_SET_IMPLICIT_LU_BY_IMSI];
+	sqlite3_stmt *stmt = hlr_db_stmt[HLR_DB_STMT_SET_IMPLICIT_LU_BY_IMSI];
 
 	if (!db_bind_text(stmt, "$imsi", imsi))
 		return -EIO;
@@ -419,6 +430,17 @@ int import_nitb_db(void)
 		rc = sqlite3_prepare_v2(nitb_db, sql, -1, &nitb_stmt[i], NULL);
 		if (rc != SQLITE_OK) {
 			LOGP(DDB, LOGL_ERROR, "OsmoNITB DB: Unable to prepare SQL statement '%s'\n", sql);
+			ret = -1;
+			goto out_free;
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(hlr_db_stmt_sql); i++) {
+		sql = hlr_db_stmt_sql[i];
+		rc = sqlite3_prepare_v2(g_hlr_db_tool_ctx->dbc->db, hlr_db_stmt_sql[i], -1,
+					&hlr_db_stmt[i], NULL);
+		if (rc != SQLITE_OK) {
+			LOGP(DDB, LOGL_ERROR, "OsmoHLR DB: Unable to prepare SQL statement '%s'\n", sql);
 			ret = -1;
 			goto out_free;
 		}
