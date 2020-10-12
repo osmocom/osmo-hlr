@@ -18,6 +18,8 @@
  */
 
 #include <errno.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
 
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/logging.h>
@@ -352,6 +354,19 @@ void osmo_gsup_server_add_conn(struct llist_head *clients,
 	llist_add(&conn->list, &prev_conn->list);
 }
 
+static void update_fd_settings(int fd)
+{
+	int ret;
+	int val;
+
+	/*TODO: Set keepalive settings here. See OS#4312 */
+
+	val = 1;
+	ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val));
+	if (ret < 0)
+		LOGP(DLGSUP, LOGL_ERROR, "Failed to set TCP_NODELAY: %s\n", strerror(errno));
+}
+
 /* a client has connected to the server socket and we have accept()ed it */
 static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 {
@@ -375,6 +390,8 @@ static int osmo_gsup_server_accept_cb(struct ipa_server_link *link, int fd)
 
 	LOGP(DLGSUP, LOGL_INFO, "New GSUP client %s:%d (IND=%u)\n",
 	     conn->conn->addr, conn->conn->port, conn->auc_3g_ind);
+
+	update_fd_settings(fd);
 
 	/* request the identity of the client */
 	rc = ipa_ccm_send_id_req(fd);

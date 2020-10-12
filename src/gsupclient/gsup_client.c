@@ -31,6 +31,8 @@
 
 #include <errno.h>
 #include <string.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
 
 static void start_test_procedure(struct osmo_gsup_client *gsupc);
 
@@ -129,6 +131,19 @@ static void gsup_client_oap_register(struct osmo_gsup_client *gsupc)
 	client_send(gsupc, IPAC_PROTO_EXT_OAP, msg_tx);
 }
 
+static void update_fd_settings(int fd)
+{
+	int ret;
+	int val;
+
+	/*TODO: Set keepalive settings here. See OS#4312 */
+
+	val = 1;
+	ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val));
+	if (ret < 0)
+		LOGP(DLGSUP, LOGL_ERROR, "Failed to set TCP_NODELAY: %s\n", strerror(errno));
+}
+
 static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 {
 	struct osmo_gsup_client *gsupc = link->data;
@@ -139,6 +154,7 @@ static void gsup_client_updown_cb(struct ipa_client_conn *link, int up)
 	gsupc->is_connected = up;
 
 	if (up) {
+		update_fd_settings(link->ofd->fd);
 		start_test_procedure(gsupc);
 
 		if (gsupc->oap_state.state == OSMO_OAP_INITIALIZED)
