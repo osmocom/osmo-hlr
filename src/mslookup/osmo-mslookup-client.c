@@ -487,7 +487,7 @@ static int socket_cb(struct osmo_fd *ofd, unsigned int flags)
 {
 	int rc = 0;
 
-	if (flags & BSC_FD_READ)
+	if (flags & OSMO_FD_READ)
 		rc = socket_read_cb(ofd);
 	if (rc < 0)
 		return rc;
@@ -512,7 +512,7 @@ int socket_accept(struct osmo_fd *ofd, unsigned int flags)
 	c = talloc_zero(globals.ctx, struct socket_client);
 	OSMO_ASSERT(c);
 	c->ofd.fd = rc;
-	c->ofd.when = BSC_FD_READ;
+	c->ofd.when = OSMO_FD_READ;
 	c->ofd.cb = socket_cb;
 	c->ofd.data = c;
 
@@ -543,7 +543,7 @@ int socket_init(const char *sock_path)
 		return -1;
 	}
 
-	ofd->when = BSC_FD_READ;
+	ofd->when = OSMO_FD_READ;
 	ofd->cb = socket_accept;
 
 	rc = osmo_fd_register(ofd);
