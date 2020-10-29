@@ -305,7 +305,7 @@ DEFUN(cfg_no_euse, cfg_no_euse_cmd,
 {
 	struct hlr_euse *euse = euse_find(g_hlr, argv[0]);
 	if (!euse) {
-		vty_out(vty, "%% Cannot remove non-existant EUSE %s%s", argv[0], VTY_NEWLINE);
+		vty_out(vty, "%% Cannot remove non-existent EUSE %s%s", argv[0], VTY_NEWLINE);
 		return CMD_WARNING;
 	}
 	if (g_hlr->euse_default == euse) {
