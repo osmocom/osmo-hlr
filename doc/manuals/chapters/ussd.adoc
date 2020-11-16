@@ -67,7 +67,9 @@ USSD requests internally.  It features a set of simple handlers, which
 can be assigned to one or more USSD request prefixes:
 
 * `own-msisdn` returns subscriber's MSISDN (if assigned);
-* `own-imsi` returns subscriber's IMSI.
+* `own-imsi` returns subscriber's IMSI;
+* `test-idle` keeps the session idle until the MS terminates it, or
+  the guard timer expires (may be useful for testing).
 
 Additional handlers can be added on request.
 

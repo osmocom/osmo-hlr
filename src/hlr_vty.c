@@ -174,10 +174,11 @@ DEFUN(cfg_hlr_gsup_ipa_name,
 #define UROUTE_STR "Routing Configuration\n"
 #define PREFIX_STR "Prefix-Matching Route\n" "USSD Prefix\n"
 
-#define INT_CHOICE "(own-msisdn|own-imsi)"
+#define INT_CHOICE "(own-msisdn|own-imsi|test-idle)"
 #define INT_STR "Internal USSD Handler\n" \
 		"Respond with subscribers' own MSISDN\n" \
-		"Respond with subscribers' own IMSI\n"
+		"Respond with subscribers' own IMSI\n" \
+		"Keep the session idle (useful for testing)\n"
 
 #define EXT_STR "External USSD Handler\n" \
 		"Name of External USSD Handler (IPA CCM ID)\n"

@@ -51,7 +51,7 @@ OsmoHLR(config-hlr)# list
   database PATH
   euse NAME
   no euse NAME
-  ussd route prefix PREFIX internal (own-msisdn|own-imsi)
+  ussd route prefix PREFIX internal (own-msisdn|own-imsi|test-idle)
   ussd route prefix PREFIX external EUSE
   no ussd route prefix PREFIX
   ussd default-route external EUSE

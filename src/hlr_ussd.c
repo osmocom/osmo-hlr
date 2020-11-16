@@ -379,6 +379,19 @@ static int handle_ussd_own_imsi(struct ss_session *ss,
 	return 0;
 }
 
+/* This handler just keeps the session idle unless the guard timer expires. */
+static int handle_ussd_test_idle(struct ss_session *ss,
+				 const struct osmo_gsup_message *gsup,
+				 const struct ss_request *req)
+{
+	char buf[GSM0480_USSD_7BIT_STRING_LEN + 1];
+	snprintf(buf, sizeof(buf), "Keeping your session idle, it will expire "
+		 "at most in %u seconds.", g_hlr->ncss_guard_timeout);
+	ss->state = OSMO_GSUP_SESSION_STATE_CONTINUE;
+	ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, buf);
+	return 0;
+}
+
 
 static const struct hlr_iuse hlr_iuses[] = {
 	{
@@ -388,6 +401,10 @@ static const struct hlr_iuse hlr_iuses[] = {
 	{
 		.name = "own-imsi",
 		.handle_ussd = handle_ussd_own_imsi,
+	},
+	{
+		.name = "test-idle",
+		.handle_ussd = handle_ussd_test_idle,
 	},
 };
 
