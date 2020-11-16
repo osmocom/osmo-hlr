@@ -279,19 +279,20 @@ static int ss_gsup_send_to_ms(struct ss_session *ss, struct osmo_gsup_server *gs
 }
 
 static int ss_tx_to_ms(struct ss_session *ss, enum osmo_gsup_message_type gsup_msg_type,
-			bool final, struct msgb *ss_msg)
+		       struct msgb *ss_msg)
 
 {
-	struct osmo_gsup_message resp = {0};
+	struct osmo_gsup_message resp;
 	int rc;
 
-	resp.message_type = gsup_msg_type;
+	resp = (struct osmo_gsup_message) {
+		.message_type = gsup_msg_type,
+		.session_id = ss->session_id,
+		.session_state = ss->state,
+	};
+
 	OSMO_STRLCPY_ARRAY(resp.imsi, ss->imsi);
-	if (final)
-		resp.session_state = OSMO_GSUP_SESSION_STATE_END;
-	else
-		resp.session_state = OSMO_GSUP_SESSION_STATE_CONTINUE;
-	resp.session_id = ss->session_id;
+
 	if (ss_msg) {
 		resp.ss_info = msgb_data(ss_msg);
 		resp.ss_info_len = msgb_length(ss_msg);
@@ -311,7 +312,8 @@ static int ss_tx_reject(struct ss_session *ss, int invoke_id, uint8_t problem_ta
 	LOGPSS(ss, LOGL_NOTICE, "Tx Reject(%u, 0x%02x, 0x%02x)\n", invoke_id,
 		problem_tag, problem_code);
 	OSMO_ASSERT(msg);
-	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
+	ss->state = OSMO_GSUP_SESSION_STATE_END;
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, msg);
 }
 #endif
 
@@ -320,15 +322,16 @@ static int ss_tx_to_ms_error(struct ss_session *ss, uint8_t invoke_id, uint8_t e
 	struct msgb *msg = gsm0480_gen_return_error(invoke_id, error_code);
 	LOGPSS(ss, LOGL_NOTICE, "Tx ReturnError(%u, 0x%02x)\n", invoke_id, error_code);
 	OSMO_ASSERT(msg);
-	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, true, msg);
+	ss->state = OSMO_GSUP_SESSION_STATE_END;
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, msg);
 }
 
-static int ss_tx_to_ms_ussd_7bit(struct ss_session *ss, bool final, uint8_t invoke_id, const char *text)
+static int ss_tx_to_ms_ussd_7bit(struct ss_session *ss, uint8_t invoke_id, const char *text)
 {
 	struct msgb *msg = gsm0480_gen_ussd_resp_7bit(invoke_id, text);
 	LOGPSS(ss, LOGL_INFO, "Tx USSD '%s'\n", text);
 	OSMO_ASSERT(msg);
-	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, final, msg);
+	return ss_tx_to_ms(ss, OSMO_GSUP_MSGT_PROC_SS_RESULT, msg);
 }
 
 /***********************************************************************
@@ -344,6 +347,8 @@ static int handle_ussd_own_msisdn(struct ss_session *ss,
 	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
 	int rc;
 
+	ss->state = OSMO_GSUP_SESSION_STATE_END;
+
 	rc = db_subscr_get_by_imsi(g_hlr->dbc, ss->imsi, &subscr);
 	switch (rc) {
 	case 0:
@@ -351,7 +356,7 @@ static int handle_ussd_own_msisdn(struct ss_session *ss,
 			snprintf(buf, sizeof(buf), "You have no MSISDN!");
 		else
 			snprintf(buf, sizeof(buf), "Your extension is %s", subscr.msisdn);
-		ss_tx_to_ms_ussd_7bit(ss, true, req->invoke_id, buf);
+		ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, buf);
 		break;
 	case -ENOENT:
 		ss_tx_to_ms_error(ss, req->invoke_id, GSM0480_ERR_CODE_UNKNOWN_SUBSCRIBER);
@@ -369,7 +374,8 @@ static int handle_ussd_own_imsi(struct ss_session *ss,
 {
 	char buf[GSM0480_USSD_7BIT_STRING_LEN+1];
 	snprintf(buf, sizeof(buf), "Your IMSI is %s", ss->imsi);
-	ss_tx_to_ms_ussd_7bit(ss, true, req->invoke_id, buf);
+	ss->state = OSMO_GSUP_SESSION_STATE_END;
+	ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, buf);
 	return 0;
 }
 
@@ -496,8 +502,9 @@ static int handle_ussd(struct ss_session *ss, bool is_euse_originated, const str
 		} else {
 			/* Handle internally */
 			ss->u.iuse->handle_ussd(ss, gsup, req);
-			/* Release session immediately */
-			ss_session_free(ss);
+			/* Release session if the handler has changed its state to END */
+			if (ss->state == OSMO_GSUP_SESSION_STATE_END)
+				ss_session_free(ss);
 		}
 	}
 
