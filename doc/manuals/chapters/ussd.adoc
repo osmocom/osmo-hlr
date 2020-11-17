@@ -52,12 +52,24 @@ routed to the named EUSE.
 `ussd route prefix *#100# internal own-msisdn` installs a prefix route
 to the named internal USSD handler.  The above command will restore
 the old behavior, in which *#100# will return a text message containing
-the subscribers own phone number.  There is one other handler called
-`own-imsi` which will return the IMSI instead of the MSISDN.
+the subscribers own phone number.  More information on internal USSD
+handlers can be found in <<iuse_handlers>>.
 
 `ussd default-route external foobar-00-00-00-00-00-00` installs a
 default route to the named EUSE.  This means that all USSD codes for
 which no more specific route exists will be routed to the named EUSE.
+
+[[iuse_handlers]]
+=== Built-in USSD handlers
+
+OsmoHLR has an Internal USSD Entity (IUSE) that allows to handle some
+USSD requests internally.  It features a set of simple handlers, which
+can be assigned to one or more USSD request prefixes:
+
+* `own-msisdn` returns subscriber's MSISDN (if assigned);
+* `own-imsi` returns subscriber's IMSI.
+
+Additional handlers can be added on request.
 
 === Example EUSE program
 
