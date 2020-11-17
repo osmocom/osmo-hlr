@@ -50,7 +50,7 @@ prefix route to the named EUSE.  All USSD short codes starting with *123 will be
 routed to the named EUSE.
 
 `ussd route prefix *#100# internal own-msisdn` installs a prefix route
-to the named internal USSD handler.  There above command will restore
+to the named internal USSD handler.  The above command will restore
 the old behavior, in which *#100# will return a text message containing
 the subscribers own phone number.  There is one other handler called
 `own-imsi` which will return the IMSI instead of the MSISDN.
