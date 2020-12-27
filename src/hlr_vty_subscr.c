@@ -832,6 +832,8 @@ DEFUN(subscriber_rat,
 		rat = OSMO_RAT_GERAN_A;
 	else if (strcmp(rat_str, "utran-iu") == 0)
 		rat = OSMO_RAT_UTRAN_IU;
+	else
+		rat = OSMO_RAT_UNKNOWN;
 
 	allowed = (strcmp(allowed_forbidden, "allowed") == 0);
 
