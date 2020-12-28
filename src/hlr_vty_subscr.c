@@ -551,6 +551,55 @@ DEFUN(subscriber_aud3g,
 	return CMD_SUCCESS;
 }
 
+DEFUN(subscriber_aud3g_xor,
+      subscriber_aud3g_xor_cmd,
+      SUBSCR_UPDATE "aud3g xor k K"
+      " [ind-bitlen] [<0-28>]",
+      SUBSCR_UPDATE_HELP
+      "Set UMTS authentication data (3G, and 2G with UMTS AKA)\n"
+      "Use XOR algorithm\n"
+      "Set Encryption Key K\n" "K as 32 hexadecimal characters\n"
+      "Set IND bit length\n" "IND bit length value (default: 5)\n")
+{
+	struct hlr_subscriber subscr;
+	int minlen = 0;
+	int maxlen = 0;
+	int rc;
+	const char *id_type = argv[0];
+	const char *id = argv[1];
+	const char *k = argv[2];
+	int ind_bitlen = argc > 4? atoi(argv[4]) : 5;
+	struct sub_auth_data_str aud3g = {
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.u.umts = {
+			.k = k,
+			.opc_is_op = 0,
+			.opc = "00000000000000000000000000000000",
+			.ind_bitlen = ind_bitlen,
+		},
+	};
+
+	if (!auth_algo_parse("xor", &aud3g.algo, &minlen, &maxlen)) {
+		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", "xor", VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (!is_hexkey_valid(vty, "K", aud3g.u.umts.k, minlen, maxlen))
+		return CMD_WARNING;
+
+	if (get_subscr_by_argv(vty, id_type, id, &subscr))
+		return CMD_WARNING;
+
+	rc = db_subscr_update_aud_by_id(g_hlr->dbc, subscr.id, &aud3g);
+
+	if (rc) {
+		vty_out(vty, "%% Error: cannot set 3G auth data for IMSI='%s'%s",
+			subscr.imsi, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	return CMD_SUCCESS;
+}
+
 DEFUN(subscriber_imei,
       subscriber_imei_cmd,
       SUBSCR_UPDATE "imei (none|IMEI)",
@@ -637,6 +686,7 @@ void hlr_vty_subscriber_init(void)
 	install_element(ENABLE_NODE, &subscriber_aud2g_cmd);
 	install_element(ENABLE_NODE, &subscriber_no_aud3g_cmd);
 	install_element(ENABLE_NODE, &subscriber_aud3g_cmd);
+	install_element(ENABLE_NODE, &subscriber_aud3g_xor_cmd);
 	install_element(ENABLE_NODE, &subscriber_imei_cmd);
 	install_element(ENABLE_NODE, &subscriber_nam_cmd);
 }

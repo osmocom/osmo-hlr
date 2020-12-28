@@ -11,6 +11,7 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g none
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
+  subscriber (imsi|msisdn|id|imei) IDENT update aud3g xor k K [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
   show mslookup services
@@ -268,6 +269,7 @@ OsmoHLR# subscriber id 101 show
 OsmoHLR# subscriber imsi 123456789023000 update aud3g ?
   none      Delete 3G authentication data
   milenage  Use Milenage algorithm
+  xor       Use XOR algorithm
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage ?
   k  Set Encryption Key K
