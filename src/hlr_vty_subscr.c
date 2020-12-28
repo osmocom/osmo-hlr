@@ -355,9 +355,10 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 	"Use COMP128v3 algorithm\n" \
 	"Use XOR algorithm\n"
 
-#define AUTH_ALG_TYPES_3G "milenage"
+#define AUTH_ALG_TYPES_3G "(milenage|xor)"
 #define AUTH_ALG_TYPES_3G_HELP \
-	"Use Milenage algorithm\n"
+	"Use Milenage algorithm\n" \
+	"Use XOR algorithm\n"
 
 #define A38_XOR_MIN_KEY_LEN	12
 #define A38_XOR_MAX_KEY_LEN	16
@@ -511,11 +512,11 @@ DEFUN(subscriber_aud3g,
 	int rc;
 	const char *id_type = argv[0];
 	const char *id = argv[1];
-	const char *alg_type = AUTH_ALG_TYPES_3G;
-	const char *k = argv[2];
-	bool opc_is_op = (strcasecmp("op", argv[3]) == 0);
-	const char *op_opc = argv[4];
-	int ind_bitlen = argc > 6? atoi(argv[6]) : 5;
+	const char *alg_type = argv[2];
+	const char *k = argv[3];
+	bool opc_is_op = (strcasecmp("op", argv[4]) == 0);
+	const char *op_opc = argv[5];
+	int ind_bitlen = argc > 7? atoi(argv[7]) : 5;
 	struct sub_auth_data_str aud3g = {
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.u.umts = {

@@ -454,6 +454,50 @@ static void test_gen_vectors_3g_only(void)
 	comment_end();
 }
 
+static void test_gen_vectors_3g_xor(void)
+{
+	struct osmo_sub_auth_data aud2g;
+	struct osmo_sub_auth_data aud3g;
+	struct osmo_auth_vector vec;
+	int rc;
+
+	comment_start();
+
+	aud2g = (struct osmo_sub_auth_data){ 0 };
+
+	aud3g = (struct osmo_sub_auth_data){
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.algo = OSMO_AUTH_ALG_XOR,
+		.u.umts.sqn = 0,
+	};
+
+	osmo_hexparse("000102030405060708090a0b0c0d0e0f",
+		      aud3g.u.umts.k, sizeof(aud3g.u.umts.k));
+	osmo_hexparse("00000000000000000000000000000000",
+		      aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc));
+	next_rand("b5039c57e4a75051551d1a390a71ce48", true);
+
+	vec = (struct osmo_auth_vector){ {0} };
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
+	VERBOSE_ASSERT(rc, == 1, "%d");
+	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 0, "%"PRIu64);
+
+	VEC_IS(&vec,
+	       "  rand: b5039c57e4a75051551d1a390a71ce48\n"
+	       "  autn: 54e0a256565d0000b5029e54e0a25656\n"
+	       "  ck: 029e54e0a256565d141032067cc047b5\n"
+	       "  ik: 9e54e0a256565d141032067cc047b502\n"
+	       "  res: b5029e54e0a256565d141032067cc047\n"
+	       "  res_len: 10\n"
+	       "  kc: 98e880384887f9fe\n"
+	       "  sres: 0ec81877\n"
+	       "  auth_types: 03000000\n"
+	      );
+
+	comment_end();
+}
+
 void test_gen_vectors_bad_args()
 {
 	struct osmo_auth_vector vec;
@@ -622,6 +666,7 @@ int main(int argc, char **argv)
 	test_gen_vectors_2g_only();
 	test_gen_vectors_2g_plus_3g();
 	test_gen_vectors_3g_only();
+	test_gen_vectors_3g_xor();
 	test_gen_vectors_bad_args();
 
 	printf("Done\n");
