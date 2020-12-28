@@ -264,11 +264,11 @@ int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 		switch (aud->algo) {
 		case OSMO_AUTH_ALG_NONE:
 		case OSMO_AUTH_ALG_MILENAGE:
+		case OSMO_AUTH_ALG_XOR:
 			break;
 		case OSMO_AUTH_ALG_COMP128v1:
 		case OSMO_AUTH_ALG_COMP128v2:
 		case OSMO_AUTH_ALG_COMP128v3:
-		case OSMO_AUTH_ALG_XOR:
 			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
 			     " auth algo not suited for 3G: %s\n",
 			     osmo_auth_alg_name(aud->algo));

@@ -217,6 +217,29 @@ DAUC vector [2]: auth_types = 0x3
 ===== test_gen_vectors_3g_only: SUCCESS
 
 
+===== test_gen_vectors_3g_xor
+aud3g.u.umts.sqn == 0
+DAUC Computing 1 auth vector: 3G only (2G derived from 3G keys)
+DAUC 3G: k = 000102030405060708090a0b0c0d0e0f
+DAUC 3G: opc = 00000000000000000000000000000000
+DAUC 3G: for sqn ind 0, previous sqn was 0
+DAUC vector [0]: rand = b5039c57e4a75051551d1a390a71ce48
+DAUC vector [0]: sqn = 0
+DAUC vector [0]: autn = 54e0a256565d0000b5029e54e0a25656
+DAUC vector [0]: ck = 029e54e0a256565d141032067cc047b5
+DAUC vector [0]: ik = 9e54e0a256565d141032067cc047b502
+DAUC vector [0]: res = b5029e54e0a256565d141032067cc047
+DAUC vector [0]: res_len = 16
+DAUC vector [0]: deriving 2G from 3G
+DAUC vector [0]: kc = 98e880384887f9fe
+DAUC vector [0]: sres = 0ec81877
+DAUC vector [0]: auth_types = 0x3
+rc == 1
+aud3g.u.umts.sqn == 0
+vector matches expectations
+===== test_gen_vectors_3g_xor: SUCCESS
+
+
 ===== test_gen_vectors_bad_args
 
 - no auth data (a)
