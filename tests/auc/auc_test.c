@@ -113,6 +113,7 @@ int rand_get(uint8_t *rand, unsigned int len)
 	return len;
 }
 
+/* Subscriber with 2G-only (COMP128v1) authentication data */
 static void test_gen_vectors_2g_only(void)
 {
 	struct osmo_sub_auth_data aud2g;
@@ -174,6 +175,8 @@ static void test_gen_vectors_2g_only(void)
 	comment_end();
 }
 
+/* Subscriber with separate 2G (COMP128v1) and 3G (MILENAGE) authentication data,
+ * reflects the default configuration of sysmoUSIM-SJS1 */
 static void test_gen_vectors_2g_plus_3g(void)
 {
 	struct osmo_sub_auth_data aud2g;
@@ -284,6 +287,9 @@ void _test_gen_vectors_3g_only__expect_vecs(struct osmo_auth_vector vecs[3])
 	      );
 }
 
+/* Subscriber with only 3G (MILENAGE) authentication data,
+ * reflects the default configuration of sysmoISIM-SJA2. Resulting
+ * tuples are suitable for both 2G and 3G authentication */
 static void test_gen_vectors_3g_only(void)
 {
 	struct osmo_sub_auth_data aud2g;
@@ -454,6 +460,10 @@ static void test_gen_vectors_3g_only(void)
 	comment_end();
 }
 
+/* Subscriber with only 3G (XOR) authentication data,
+ * reflects the default configuration of sysmoTSIM-SJAx as well
+ * as many "Test USIM" cards. Resulting tuples are suitable for both
+ * 2G and 3G authentication */
 static void test_gen_vectors_3g_xor(void)
 {
 	struct osmo_sub_auth_data aud2g;
@@ -498,6 +508,7 @@ static void test_gen_vectors_3g_xor(void)
 	comment_end();
 }
 
+/* Test a variety of invalid authentication data combinations */
 void test_gen_vectors_bad_args()
 {
 	struct osmo_auth_vector vec;
