@@ -188,6 +188,7 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 
 #define SUBSCR_CMD "subscriber "
 #define SUBSCR_CMD_HELP "Subscriber management commands\n"
+#define SUBSCR_SHOW_HELP "Show subscriber information\n"
 
 #define SUBSCR_ID "(imsi|msisdn|id|imei) IDENT"
 #define SUBSCR_ID_HELP \
@@ -207,7 +208,7 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 DEFUN(subscriber_show,
       subscriber_show_cmd,
       SUBSCR "show",
-      SUBSCR_HELP "Show subscriber information\n")
+      SUBSCR_HELP SUBSCR_SHOW_HELP)
 {
 	struct hlr_subscriber subscr;
 	const char *id_type = argv[0];
@@ -222,7 +223,7 @@ DEFUN(subscriber_show,
 
 ALIAS(subscriber_show, show_subscriber_cmd,
       "show " SUBSCR_CMD SUBSCR_ID,
-      SHOW_STR SUBSCR_CMD_HELP SUBSCR_ID_HELP);
+      SHOW_STR SUBSCR_SHOW_HELP SUBSCR_ID_HELP);
 
 DEFUN(subscriber_create,
       subscriber_create_cmd,
