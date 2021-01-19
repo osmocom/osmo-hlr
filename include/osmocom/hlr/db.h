@@ -8,6 +8,12 @@
 struct hlr;
 
 enum stmt_idx {
+	DB_STMT_SEL_ALL,
+	DB_STMT_SEL_ALL_ORDER_LAST_SEEN,
+	DB_STMT_SEL_FILTER_MSISDN,
+	DB_STMT_SEL_FILTER_IMSI,
+	DB_STMT_SEL_FILTER_CS,
+	DB_STMT_SEL_FILTER_PS,
 	DB_STMT_SEL_BY_IMSI,
 	DB_STMT_SEL_BY_MSISDN,
 	DB_STMT_SEL_BY_ID,
@@ -148,6 +154,9 @@ int db_subscr_update_imei_by_imsi(struct db_context *dbc, const char* imsi, cons
 int db_subscr_exists_by_imsi(struct db_context *dbc, const char *imsi);
 int db_subscr_exists_by_msisdn(struct db_context *dbc, const char *msisdn);
 
+int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *filter,
+		   void (*get_cb)(struct hlr_subscriber *subscr, void *data), void *data,
+		   int *count, const char **err);
 int db_subscr_get_by_imsi(struct db_context *dbc, const char *imsi,
 			  struct hlr_subscriber *subscr);
 int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,

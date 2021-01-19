@@ -51,6 +51,13 @@
 	"sgsn_via_proxy"
 
 static const char *stmt_sql[] = {
+	[DB_STMT_SEL_ALL] = "SELECT " SEL_COLUMNS " FROM subscriber;",
+	[DB_STMT_SEL_ALL_ORDER_LAST_SEEN] = "SELECT " SEL_COLUMNS " FROM subscriber "
+		"WHERE last_lu_seen IS NOT NULL ORDER BY last_lu_seen;",
+	[DB_STMT_SEL_FILTER_MSISDN] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE msisdn LIKE $search ORDER BY msisdn",
+	[DB_STMT_SEL_FILTER_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi LIKE $search ORDER BY imsi",
+	[DB_STMT_SEL_FILTER_CS] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE nam_cs = $search ORDER BY last_lu_seen",
+	[DB_STMT_SEL_FILTER_PS] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE nam_ps = $search ORDER BY last_lu_seen",
 	[DB_STMT_SEL_BY_IMSI] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE imsi = ?",
 	[DB_STMT_SEL_BY_MSISDN] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE msisdn = ?",
 	[DB_STMT_SEL_BY_ID] = "SELECT " SEL_COLUMNS " FROM subscriber WHERE id = ?",

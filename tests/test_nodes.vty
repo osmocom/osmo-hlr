@@ -13,6 +13,10 @@ OsmoHLR> ?
 OsmoHLR> list
 ...
   show gsup-connections
+  show subscribers all
+  show subscribers (imsi|msisdn) FILTER
+  show subscribers (cs|ps) (on|off)
+  show subscribers last-seen
   subscriber (imsi|msisdn|id|imei) IDENT show
   show subscriber (imsi|msisdn|id|imei) IDENT
   show mslookup services

@@ -44,13 +44,14 @@ static char *get_datestr(const time_t *t, char *buf, size_t bufsize)
 	return buf;
 }
 
-static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen)
+static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t last_lu_seen, bool only_age)
 {
 	uint32_t age;
 	char datebuf[32];
 	if (!last_lu_seen)
 		return;
-	vty_out(vty, "    last LU seen on %s: %s", domain_label, get_datestr(&last_lu_seen, datebuf, sizeof(datebuf)));
+	if (!only_age)
+		vty_out(vty, "    last LU seen on %s: %s", domain_label, get_datestr(&last_lu_seen, datebuf, sizeof(datebuf)));
 	if (!timestamp_age(&last_lu_seen, &age))
 		vty_out(vty, " (invalid timestamp)%s", VTY_NEWLINE);
 	else {
@@ -64,7 +65,10 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 		UNIT_AGO("h", 60*60);
 		UNIT_AGO("m", 60);
 		UNIT_AGO("s", 1);
-		vty_out(vty, " ago)%s", VTY_NEWLINE);
+		if (!only_age)
+			vty_out(vty, " ago)%s", VTY_NEWLINE);
+		else
+			vty_out(vty, " ago)");
 #undef UNIT_AGO
 	}
 }
@@ -108,8 +112,8 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 		vty_out(vty, "    PS disabled%s", VTY_NEWLINE);
 	if (subscr->ms_purged_ps)
 		vty_out(vty, "    PS purged%s", VTY_NEWLINE);
-	dump_last_lu_seen(vty, "CS", subscr->last_lu_seen);
-	dump_last_lu_seen(vty, "PS", subscr->last_lu_seen_ps);
+	dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, false);
+	dump_last_lu_seen(vty, "PS", subscr->last_lu_seen_ps, false);
 
 	if (!*subscr->imsi)
 		return;
@@ -159,6 +163,28 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 	}
 }
 
+static void subscr_dump_summary_vty(struct hlr_subscriber *subscr, void *data)
+{
+	struct vty *vty = data;
+	vty_out(vty, "%-5"PRIu64"  %-12s  %-16s", subscr->id,
+		*subscr->msisdn ? subscr->msisdn : "none",
+		*subscr->imsi ? subscr->imsi : "none");
+
+	if (*subscr->imei) {
+		char checksum = osmo_luhn(subscr->imei, 14);
+		if (checksum == -EINVAL)
+			vty_out(vty, "  %-14s (INVALID LENGTH!)", subscr->imei);
+		else
+			vty_out(vty, "  %-14s%c", subscr->imei, checksum);
+	} else {
+		vty_out(vty,"   ------------- ");
+	}
+	vty_out(vty, "   %-2s%-2s  ", subscr->nam_cs ? "CS" : "", subscr->nam_ps ? "PS" : "");
+	if (subscr->last_lu_seen)
+		dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, true);
+	vty_out_newline(vty);
+}
+
 static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id, struct hlr_subscriber *subscr)
 {
 	char imei_buf[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1];
@@ -186,11 +212,52 @@ static int get_subscr_by_argv(struct vty *vty, const char *type, const char *id,
 	return rc;
 }
 
+static void dump_summary_table_vty(struct vty *vty, bool header, bool show_ls)
+{
+	const char *texts = "ID     MSISDN        IMSI              IMEI              NAM";
+	const char *lines = "-----  ------------  ----------------  ----------------  -----";
+	const char *ls_text = "    LAST SEEN";
+	const char *ls_line = "  ------------";
+	if (header) {
+		if (!show_ls)
+			vty_out(vty, "%s%s%s%s", texts, VTY_NEWLINE, lines, VTY_NEWLINE);
+		else
+			vty_out(vty, "%s%s%s%s%s%s", texts, ls_text, VTY_NEWLINE, lines, ls_line, VTY_NEWLINE);
+	} else {
+		if (!show_ls)
+			vty_out(vty, "%s%s%s%s", lines, VTY_NEWLINE, texts, VTY_NEWLINE);
+		else
+			vty_out(vty, "%s%s%s%s%s%s", lines, ls_line, VTY_NEWLINE, texts, ls_text, VTY_NEWLINE);
+	}
+}
+
+static int get_subscrs(struct vty *vty, const char *filter_type, const char *filter)
+{
+	int rc = -1;
+	int count = 0;
+	const char *err;
+	bool show_ls = (filter_type && strcmp(filter_type, "last_lu_seen") == 0);
+	dump_summary_table_vty(vty, true, show_ls);
+	rc = db_subscrs_get(g_hlr->dbc, filter_type, filter, subscr_dump_summary_vty, vty, &count, &err);
+	if (count > 40) {
+		dump_summary_table_vty(vty, false, show_ls);
+	}
+	if (count > 0)
+		vty_out(vty, " Subscribers Shown: %d%s", count, VTY_NEWLINE);
+	if (rc)
+		vty_out(vty, "%% %s%s", err, VTY_NEWLINE);
+	return rc;
+}
+
+
 #define SUBSCR_CMD "subscriber "
 #define SUBSCR_CMD_HELP "Subscriber management commands\n"
 #define SUBSCR_SHOW_HELP "Show subscriber information\n"
+#define SUBSCRS_SHOW_HELP "Show all subscribers (with filter possibility)\n"
 
 #define SUBSCR_ID "(imsi|msisdn|id|imei) IDENT"
+#define SUBSCR_FILTER "(imsi|msisdn) FILTER"
+
 #define SUBSCR_ID_HELP \
 	"Identify subscriber by IMSI\n" \
 	"Identify subscriber by MSISDN (phone number)\n" \
@@ -224,6 +291,48 @@ DEFUN(subscriber_show,
 ALIAS(subscriber_show, show_subscriber_cmd,
       "show " SUBSCR_CMD SUBSCR_ID,
       SHOW_STR SUBSCR_SHOW_HELP SUBSCR_ID_HELP);
+
+DEFUN(show_subscriber_all,
+      show_subscriber_all_cmd,
+      "show subscribers all",
+      SHOW_STR SUBSCRS_SHOW_HELP "Show summary of all subscribers\n")
+{
+	if (get_subscrs(vty, NULL, NULL))
+		return CMD_WARNING;
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(show_subscriber_filtered,
+      show_subscriber_filtered_cmd,
+      "show subscribers " SUBSCR_FILTER,
+      SHOW_STR SUBSCRS_SHOW_HELP
+      "Filter Subscribers by IMSI\n" "Filter Subscribers by MSISDN\n" "String to match in msisdn or imsi\n")
+{
+	const char *filter_type = argv[0];
+	const char *filter = argv[1];
+
+	if (get_subscrs(vty, filter_type, filter))
+		return CMD_WARNING;
+
+	return CMD_SUCCESS;
+}
+
+ALIAS(show_subscriber_filtered, show_subscriber_filtered_cmd2,
+      "show subscribers (cs|ps) (on|off)",
+      SHOW_STR SUBSCR_SHOW_HELP
+      "Filter Subscribers by CS Network Access Mode\n" "Filter Subscribers by PS Network Access Mode\n"
+      "Authorised\n" "Not Authorised\n");
+
+DEFUN(show_subscriber_order_last_seen, show_subscriber_order_last_seen_cmd,
+      "show subscribers last-seen",
+      SHOW_STR SUBSCR_SHOW_HELP "Show Subscribers Ordered by Last Seen Time\n")
+{
+	if (get_subscrs(vty, "last_lu_seen", NULL))
+		return CMD_WARNING;
+
+	return CMD_SUCCESS;
+}
 
 DEFUN(subscriber_create,
       subscriber_create_cmd,
@@ -678,6 +787,10 @@ DEFUN(subscriber_nam,
 
 void hlr_vty_subscriber_init(void)
 {
+	install_element_ve(&show_subscriber_all_cmd);
+	install_element_ve(&show_subscriber_filtered_cmd);
+	install_element_ve(&show_subscriber_filtered_cmd2);
+	install_element_ve(&show_subscriber_order_last_seen_cmd);
 	install_element_ve(&subscriber_show_cmd);
 	install_element_ve(&show_subscriber_cmd);
 	install_element(ENABLE_NODE, &subscriber_create_cmd);

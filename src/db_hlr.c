@@ -627,6 +627,96 @@ int db_subscr_get_by_msisdn(struct db_context *dbc, const char *msisdn,
 
 /*! Retrieve subscriber data from the HLR database.
  * \param[in,out] dbc  database context.
+ * \param[in] filter_type  ASCII string of identifier type to search.
+ * \param[in] filter  ASCII string to search.
+ * \param[in] get_cb  pointer to call back function for data.
+ * \param[in,out] data  pointer to pass to callback function.
+ * \param[in,out] count  counter for number of matched subscribers.
+ * \param[in,our] err
+ * \returns 0 on success, -ENOENT if no subscriber was found, -EIO on
+ *          database error.
+ */
+int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *filter,
+		   void (*get_cb)(struct hlr_subscriber *subscr, void *data), void *data,
+		   int *count, const char **err)
+{
+	sqlite3_stmt *stmt;
+	char search[256];
+	int rc;
+	struct hlr_subscriber subscr;
+	bool show_ls = false;
+
+	if (!filter_type) {
+		stmt = dbc->stmt[DB_STMT_SEL_ALL];
+	} else if (strcmp(filter_type, "imsi") == 0) {
+		stmt = dbc->stmt[DB_STMT_SEL_FILTER_IMSI];
+	} else if (strcmp(filter_type, "msisdn") == 0) {
+		stmt = dbc->stmt[DB_STMT_SEL_FILTER_MSISDN];
+	} else if (strcmp(filter_type, "cs") == 0) {
+		stmt = dbc->stmt[DB_STMT_SEL_FILTER_CS];
+	} else if (strcmp(filter_type, "ps") == 0) {
+		stmt = dbc->stmt[DB_STMT_SEL_FILTER_PS];
+	} else if (strcmp(filter_type, "last_lu_seen") == 0) {
+		show_ls = true;
+		stmt = dbc->stmt[DB_STMT_SEL_ALL_ORDER_LAST_SEEN];
+	} else {
+		return -EIO;
+	}
+
+	if (filter && strcmp(filter_type, "last_lu_seen") != 0) {
+		if (strcmp(filter, "on") == 0) {
+			sprintf(search, "%s", "1");
+		} else if (strcmp(filter, "off") == 0) {
+			sprintf(search, "%s", "0");
+		} else {
+			sprintf(search, "%%%s%%", filter);
+		}
+		if (!db_bind_text(stmt, "$search", search)) {
+			*err = sqlite3_errmsg(dbc->db);
+			return -EIO;
+		}
+	}
+
+	rc = sqlite3_step(stmt);
+
+	if (rc == SQLITE_DONE) {
+		db_remove_reset(stmt);
+		*err = "No matching subscriber(s)";
+		return -ENOENT;
+	}
+
+	while (rc == SQLITE_ROW) {
+		subscr = (struct hlr_subscriber){
+			  .id = sqlite3_column_int64(stmt, 0),};
+		copy_sqlite3_text_to_buf(subscr.imsi, stmt, 1);
+		copy_sqlite3_text_to_buf(subscr.msisdn, stmt, 2);
+		copy_sqlite3_text_to_buf(subscr.imei, stmt, 3);
+		subscr.nam_cs = sqlite3_column_int(stmt, 9);
+		subscr.nam_ps = sqlite3_column_int(stmt, 10);
+		if (show_ls)
+			parse_last_lu_seen(&subscr.last_lu_seen, (const char *)sqlite3_column_text(stmt, 14),
+					   subscr.imsi, "CS");
+		get_cb(&subscr, data);
+		rc = sqlite3_step(stmt);
+		(*count)++;
+	}
+
+	db_remove_reset(stmt);
+	if (rc != SQLITE_DONE) {
+		*err = sqlite3_errmsg(dbc->db);
+		return -EIO;
+	} else if (rc == SQLITE_DONE) {
+		*err = NULL;
+		return 0;
+	} else {
+		*err = sqlite3_errmsg(dbc->db);
+		LOGP(DAUC, LOGL_ERROR, "Cannot read subscribers from db:: %s\n", *err);
+		return rc;
+	}
+}
+
+/*! Retrieve subscriber data from the HLR database.
+ * \param[in,out] dbc  database context.
  * \param[in] id  ID of the subscriber in the HLR db.
  * \param[out] subscr  place retrieved data in this struct.
  * \returns 0 on success, -ENOENT if no such subscriber was found, -EIO on
