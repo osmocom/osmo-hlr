@@ -663,7 +663,7 @@ int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *
 		return -EIO;
 	}
 
-	if (filter && strcmp(filter_type, "last_lu_seen") != 0) {
+	if (filter_type && filter && strcmp(filter_type, "last_lu_seen") != 0) {
 		if (strcmp(filter, "on") == 0) {
 			sprintf(search, "%s", "1");
 		} else if (strcmp(filter, "off") == 0) {
@@ -704,15 +704,11 @@ int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *
 	db_remove_reset(stmt);
 	if (rc != SQLITE_DONE) {
 		*err = sqlite3_errmsg(dbc->db);
-		return -EIO;
-	} else if (rc == SQLITE_DONE) {
-		*err = NULL;
-		return 0;
-	} else {
-		*err = sqlite3_errmsg(dbc->db);
 		LOGP(DAUC, LOGL_ERROR, "Cannot read subscribers from db:: %s\n", *err);
 		return rc;
 	}
+	*err = NULL;
+	return 0;
 }
 
 /*! Retrieve subscriber data from the HLR database.
