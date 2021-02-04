@@ -26,6 +26,7 @@ m4
 *.m4
 missing
 .deps
+*~
 
 *.pc
 .libs
