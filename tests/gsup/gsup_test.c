@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 {
 	ctx = talloc_named_const(NULL, 0, "gsup_test");
 	osmo_init_logging2(ctx, &info);
-	log_set_print_filename(osmo_stderr_target, 0);
+	log_set_print_filename2(osmo_stderr_target, LOG_FILENAME_NONE);
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);
 	log_set_print_category(osmo_stderr_target, 1);

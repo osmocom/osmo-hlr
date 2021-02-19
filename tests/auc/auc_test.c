@@ -668,9 +668,13 @@ int main(int argc, char **argv)
 	void *tall_ctx = talloc_named_const(NULL, 1, "auc_test");
 
 	osmo_init_logging2(tall_ctx, &hlr_log_info);
-	log_set_print_filename(osmo_stderr_target, cmdline_opts.verbose);
+	log_set_print_filename2(osmo_stderr_target,
+				cmdline_opts.verbose ?
+					LOG_FILENAME_BASENAME :
+					LOG_FILENAME_NONE);
 	log_set_print_timestamp(osmo_stderr_target, 0);
 	log_set_use_color(osmo_stderr_target, 0);
+	log_set_print_category_hex(osmo_stderr_target, 0);
 	log_set_print_category(osmo_stderr_target, 1);
 	log_parse_category_mask(osmo_stderr_target, "DMAIN,1:DDB,1:DAUC,1");
 
