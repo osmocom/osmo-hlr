@@ -1,3 +1,103 @@
+osmo-hlr (1.3.0) unstable; urgency=medium
+
+  [ Alexander Couzens ]
+  * hlr: respect the num_auth_vectors requested
+  * hlr: remove unused internal USSD list
+
+  [ Oliver Smith ]
+  * add libosmo-mslookup abstract client
+  * add mDNS lookup method to libosmo-mslookup
+  * Makefile.am: fix pkgconfig_DATA
+  * add mDNS lookup method to libosmo-mslookup (#2)
+  * contrib/dgsm/ add example esme and dialplan
+  * mslookup_client.c: fix dereferencing null pointer
+  * mdns_msg.c: always call va_end
+  * mslookup_client_mdns.c: fix dereferencing null
+  * osmo-mslookup-client.c: fix dereferencing null
+  * osmo-mslookup-client: fix dereferencing null
+  * mdns_sock.c: fix resource leak of sock
+  * mdns_rfc.c: fix possible access of uninit. mem
+  * mslookup_client_mdns_test: disable by default
+  * mslookup_client_mdns_test: no automatic skip
+  * Cosmetic: mention OS#4491 in location cancel code
+  * hlr_vty_subscr: prettier output for last LU seen
+  * contrib: import RPM spec
+  * contrib: integrate RPM spec
+  * Makefile.am: EXTRA_DIST: debian, contrib/*.spec.in
+  * contrib/jenkins: don't build osmo-gsm-manuals
+  * configure.ac: set -std=gnu11
+
+  [ Neels Hofmeyr ]
+  * add osmo-mslookup-client program
+  * add osmo-mslookup-client program (#2)
+  * fix missing braces in LOGP_GSUP_FWD
+  * gsup_client.c: fix deprecation for client create func
+  * 1/2: refactor: add and use lu_fsm, osmo_gsup_req, osmo_ipa_name
+  * 2/2: wrap ipa_name in osmo_cni_peer_id with type enum and union
+  * gsup client: add up_down_cb(), add osmo_gsup_client_create3()
+  * db v5: prep for D-GSM: add vlr_via_proxy and sgsn_via_proxy
+  * enlarge the GSUP message headroom
+  * test_nodes.vty: remove cruft
+  * D-GSM 1/n: add mslookup server in osmo-hlr
+  * D-GSM 2/n: implement mDNS method of mslookup server
+  * D-GSM 3/n: implement roaming by mslookup in osmo-hlr
+  * gsup_server: send routing error back to the correct peer
+  * adoc: add D-GSM chapter to osmohlr-usermanual
+  * drop error log for when a subscriber does not exist
+  * vty: show subscriber: change format of 'last LU seen'
+  * vty: show subscriber: show lu d,h,m,s ago, not just seconds
+  * auc3g: officially wrap IND around IND_bitlen space
+  * make osmo_cni_peer_id_cmp() NULL safe
+  * osmo_gsup_req_new(): require from_peer != NULL
+  * gsup_server.c: properly handle negative rc from osmo_gsup_conn_ccm_get()
+  * osmo_mslookup_server_mdns_rx(): handle read() rc == 0
+  * hlr_subscr_nam(): fix condition to fix nam=false notifications
+  * esme_dgsm.py: add --always-fail option for debugging SMPP
+  * osmo-mslookup-client: fix segfault for respond_error() caller
+  * manual: describe subscriber import by SQL
+
+  [ Harald Welte ]
+  * Revert "add osmo-mslookup-client program"
+  * Revert "add mDNS lookup method to libosmo-mslookup"
+  * Use OSMO_FD_* instead of deprecated BSC_FD_*
+  * support the XOR algorithm for UMTS AKA
+  * auc_test.c: Add some comments on what the test cases actually do
+  * main: add --vty-ref-mode, use vty_dump_xml_ref_mode()
+  * manuals: generate vty reference xml at build time
+
+  [ Vadim Yanitskiy ]
+  * db: fix possible SQLite3 allocated memory leak in db_open()
+  * gsup_server: fix typo: s/omso_gsup_message/osmo_gsup_message/
+  * debian/control: change maintainer to the Osmocom team / mailing list
+  * cosmetic: fix spelling in logging message: existAnt -> existEnt
+  * doc/manuals: fix s/There/The/ in 'USSD Configuration'
+  * doc/manuals: re-organize description of internal USSD handlers
+  * USSD: fix handle_ussd(): do not free() unconditionally
+  * USSD: add special 'idle' handler to IUSE for testing
+
+  [ Eric ]
+  * configure.ac: fix libtool issue  with clang and sanitizer
+
+  [ Philipp Maier ]
+  * doc: do not use loglevel info for log category ss
+
+  [ Pau Espin Pedrol ]
+  * configure.ac: Fix trailing whitespace
+  * doc: Update VTY reference xml file
+  * Support setting rt-prio and cpu-affinity mask through VTY
+  * Set TCP NODELAY sockopt to GSUP cli and srv connections
+  * contrib/jenkins: Enable parallel make in make distcheck
+  * .gitignore: Ignore new autofoo tmp files
+  * tests: Replace deprecated API log_set_print_filename
+
+  [ Keith ]
+  * osmo-hlr-db-tool: Make import from osmo-nitb less "lossy"
+  * Correct vty inline help for show subscriber
+  * Add vty command to show summary of all or filtered subscribers
+  * Fix Coverity Warnings
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Tue, 23 Feb 2021 18:13:53 +0100
+
 osmo-hlr (1.2.0) unstable; urgency=medium
 
   [ Ruben Undheim ]
