@@ -1,9 +1,9 @@
 AUTOMAKE_OPTIONS = foreign dist-bzip2
 
 SUBDIRS = \
-	doc \
 	src \
 	include \
+	doc \
 	sql \
 	contrib \
 	tests \
