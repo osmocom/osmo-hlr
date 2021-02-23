@@ -577,6 +577,10 @@ static void print_help()
 	printf("  -U --db-upgrade            Allow HLR database schema upgrades.\n");
 	printf("  -C --db-check              Quit after opening (and upgrading) the database.\n");
 	printf("  -V --version               Print the version of OsmoHLR.\n");
+
+	printf("\nVTY reference generation:\n");
+	printf("     --vty-ref-mode MODE        VTY reference generation mode (e.g. 'expert').\n");
+	printf("     --vty-ref-xml              Generate the VTY reference XML output and exit.\n");
 }
 
 static struct {
@@ -592,10 +596,37 @@ static struct {
 	.db_upgrade = false,
 };
 
+static void handle_long_options(const char *prog_name, const int long_option)
+{
+	static int vty_ref_mode = VTY_REF_GEN_MODE_DEFAULT;
+
+	switch (long_option) {
+	case 1:
+		vty_ref_mode = get_string_value(vty_ref_gen_mode_names, optarg);
+		if (vty_ref_mode < 0) {
+			fprintf(stderr, "%s: Unknown VTY reference generation "
+				"mode '%s'\n", prog_name, optarg);
+			exit(2);
+		}
+		break;
+	case 2:
+		fprintf(stderr, "Generating the VTY reference in mode '%s' (%s)\n",
+			get_value_string(vty_ref_gen_mode_names, vty_ref_mode),
+			get_value_string(vty_ref_gen_mode_desc, vty_ref_mode));
+		vty_dump_xml_ref_mode(stdout, (enum vty_ref_gen_mode) vty_ref_mode);
+		exit(0);
+	default:
+		fprintf(stderr, "%s: error parsing cmdline options\n", prog_name);
+		exit(2);
+	}
+
+}
+
 static void handle_options(int argc, char **argv)
 {
 	while (1) {
 		int option_index = 0, c;
+		static int long_option = 0;
 		static struct option long_options[] = {
 			{"help", 0, 0, 'h'},
 			{"config-file", 1, 0, 'c'},
@@ -608,6 +639,8 @@ static void handle_options(int argc, char **argv)
 			{"db-upgrade", 0, 0, 'U' },
 			{"db-check", 0, 0, 'C' },
 			{"version", 0, 0, 'V' },
+			{"vty-ref-mode", 1, &long_option, 1},
+			{"vty-ref-xml", 0, &long_option, 2},
 			{0, 0, 0, 0}
 		};
 
@@ -617,6 +650,9 @@ static void handle_options(int argc, char **argv)
 			break;
 
 		switch (c) {
+		case 0:
+			handle_long_options(argv[0], long_option);
+			break;
 		case 'h':
 			print_usage();
 			print_help();
@@ -730,10 +766,10 @@ int main(int argc, char **argv)
 	osmo_stats_init(hlr_ctx);
 	vty_init(&vty_info);
 	ctrl_vty_init(hlr_ctx);
-	handle_options(argc, argv);
 	hlr_vty_init();
 	dgsm_vty_init();
 	osmo_cpu_sched_vty_init(hlr_ctx);
+	handle_options(argc, argv);
 
 	rc = vty_read_config_file(cmdline_opts.config_file, NULL);
 	if (rc < 0) {
