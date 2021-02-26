@@ -442,7 +442,7 @@ int config_write_mslookup(struct vty *vty)
 
 		msc = mslookup_server_msc_get(&mslookup_server_msc_wildcard, false);
 		if (msc)
-			config_write_msc_services(vty, " ", msc);
+			config_write_msc_services(vty, "  ", msc);
 
 		llist_for_each_entry(msc, &g_hlr->mslookup.server.local_site_services, entry) {
 			if (!osmo_ipa_name_cmp(&mslookup_server_msc_wildcard, &msc->name))

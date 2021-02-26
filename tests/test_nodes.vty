@@ -107,6 +107,7 @@ hlr
  database hlr_vty_test.db
  gsup
   bind ip 127.0.0.1
+  ipa-name unnamed-HLR
  ussd route prefix *#100# internal own-msisdn
  ussd route prefix *#101# internal own-imsi
 end
@@ -345,9 +346,9 @@ OsmoHLR(config-mslookup-server-msc)# show running-config
 mslookup
  server
   mdns bind 239.192.23.42 4266
- service foo.bar at 123.45.67.89 1011
- service baz.bar at 121.31.41.5 1617
- service baz.bar at a:b:c::d 1819
+  service foo.bar at 123.45.67.89 1011
+  service baz.bar at 121.31.41.5 1617
+  service baz.bar at a:b:c::d 1819
  msc MSC-1
  msc msc-901-70-23
   service foo.bar at 76.54.32.10 1234
@@ -401,8 +402,8 @@ OsmoHLR(config-mslookup-client)# show running-config
 mslookup
  server
   mdns bind 239.192.23.42 4266
- service foo.bar at 123.45.67.89 1011
- service baz.bar at 121.31.41.5 1617
+  service foo.bar at 123.45.67.89 1011
+  service baz.bar at 121.31.41.5 1617
  msc MSC-1
  msc msc-901-70-23
   service foo.bar at 76.54.32.10 1234
@@ -433,9 +434,9 @@ OsmoHLR(config-mslookup-server)# show running-config
 mslookup
  server
   mdns bind 239.192.23.42 4266
- service foo.bar at 123.45.67.89 1011
- service baz.bar at 121.31.41.5 1617
- service gsup.hlr at 23.42.17.11 4223
+  service foo.bar at 123.45.67.89 1011
+  service baz.bar at 121.31.41.5 1617
+  service gsup.hlr at 23.42.17.11 4223
  msc MSC-1
  msc msc-901-70-23
   service foo.bar at 76.54.32.10 1234

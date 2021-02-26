@@ -102,6 +102,8 @@ static int config_write_hlr_gsup(struct vty *vty)
 	vty_out(vty, " gsup%s", VTY_NEWLINE);
 	if (g_hlr->gsup_bind_addr)
 		vty_out(vty, "  bind ip %s%s", g_hlr->gsup_bind_addr, VTY_NEWLINE);
+	if (g_hlr->gsup_unit_name.serno)
+		vty_out(vty, "  ipa-name %s%s", g_hlr->gsup_unit_name.serno, VTY_NEWLINE);
 	return CMD_SUCCESS;
 }
 
