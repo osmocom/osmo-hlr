@@ -192,7 +192,7 @@ static void subscr_dump_summary_vty(struct hlr_subscriber *subscr, void *data)
 	}
 	vty_out(vty, "   %-2s%-2s  ", subscr->nam_cs ? "CS" : "", subscr->nam_ps ? "PS" : "");
 	if (subscr->last_lu_seen)
-		dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, true);
+		dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, true, subscr->last_lu_rat_cs);
 	vty_out_newline(vty);
 }
 
