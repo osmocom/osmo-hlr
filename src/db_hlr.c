@@ -648,6 +648,8 @@ int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *
 
 	if (!filter_type) {
 		stmt = dbc->stmt[DB_STMT_SEL_ALL];
+	} else if (strcmp(filter_type, "imei") == 0) {
+		stmt = dbc->stmt[DB_STMT_SEL_FILTER_IMEI];
 	} else if (strcmp(filter_type, "imsi") == 0) {
 		stmt = dbc->stmt[DB_STMT_SEL_FILTER_IMSI];
 	} else if (strcmp(filter_type, "msisdn") == 0) {

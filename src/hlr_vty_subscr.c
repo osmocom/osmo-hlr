@@ -256,7 +256,7 @@ static int get_subscrs(struct vty *vty, const char *filter_type, const char *fil
 #define SUBSCRS_SHOW_HELP "Show all subscribers (with filter possibility)\n"
 
 #define SUBSCR_ID "(imsi|msisdn|id|imei) IDENT"
-#define SUBSCR_FILTER "(imsi|msisdn) FILTER"
+#define SUBSCR_FILTER "(imei|imsi|msisdn) FILTER"
 
 #define SUBSCR_ID_HELP \
 	"Identify subscriber by IMSI\n" \
@@ -307,7 +307,8 @@ DEFUN(show_subscriber_filtered,
       show_subscriber_filtered_cmd,
       "show subscribers " SUBSCR_FILTER,
       SHOW_STR SUBSCRS_SHOW_HELP
-      "Filter Subscribers by IMSI\n" "Filter Subscribers by MSISDN\n" "String to match in msisdn or imsi\n")
+      "Filter Subscribers by IMEI\n" "Filter Subscribers by IMSI\n" "Filter Subscribers by MSISDN\n"
+      "String to match in imei, imsi or msisdn\n")
 {
 	const char *filter_type = argv[0];
 	const char *filter = argv[1];
