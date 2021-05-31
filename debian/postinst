@@ -1,0 +1,5 @@
+#!/bin/sh -e
+# Debian's postinst script is called on both installation and upgrade. Call the
+# post-upgrade script in both cases, it won't do anything if there is nothing
+# to do.
+/usr/share/osmocom/osmo-hlr-post-upgrade.sh

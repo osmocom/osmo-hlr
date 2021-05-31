@@ -136,10 +136,13 @@ make %{?_smp_mflags} check || (find . -name testsuite.log -exec cat {} +)
 
 %pre
 %service_add_pre %{name}.service
+%endif
 
 %post
+%if 0%{?suse_version}
 %service_add_post %{name}.service
 %endif
+/usr/share/osmocom/osmo-hlr-post-upgrade.sh
 
 %post   -n libosmo-gsup-client0 -p /sbin/ldconfig
 %postun -n libosmo-gsup-client0 -p /sbin/ldconfig
@@ -162,6 +165,8 @@ make %{?_smp_mflags} check || (find . -name testsuite.log -exec cat {} +)
 %dir %{_sysconfdir}/osmocom
 %config %{_sysconfdir}/osmocom/osmo-hlr.cfg
 %{_unitdir}/osmo-hlr.service
+%dir %{_datadir}/osmocom
+%{_datadir}/osmocom/osmo-hlr-post-upgrade.sh
 
 %files -n libosmo-gsup-client0
 %{_libdir}/libosmo-gsup-client.so.0*
