@@ -5,4 +5,5 @@
 /usr/share/doc/osmo-hlr/sql/hlr.sql
 /usr/share/doc/osmo-hlr/sql/hlr_data.sql
 /usr/share/doc/osmo-hlr/examples/osmo-hlr.cfg
+/usr/share/osmocom/osmo-hlr-post-upgrade.sh
 /var/lib/osmocom
