@@ -234,7 +234,7 @@ void db_close(struct db_context *dbc)
 
 static int db_run_statements(struct db_context *dbc, const char **statements, size_t statements_count)
 {
-	int rc;
+	int rc = 0;
 	int i;
 	for (i = 0; i < statements_count; i++) {
 		const char *stmt_str = statements[i];
