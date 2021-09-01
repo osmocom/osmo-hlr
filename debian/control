@@ -5,7 +5,6 @@ Maintainer: Osmocom team <openbsc@lists.osmocom.org>
 Build-Depends: debhelper (>= 9),
                pkg-config,
                dh-autoreconf,
-               dh-systemd (>= 1.5),
                autotools-dev,
                python3-minimal,
                libosmocore-dev (>= 1.5.0),
