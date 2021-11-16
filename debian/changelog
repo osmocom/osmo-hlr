@@ -1,3 +1,24 @@
+osmo-hlr (1.4.0) unstable; urgency=medium
+
+  [ Keith ]
+  * Correct configuration written from vty
+  * vty: enable show subscribers filtered by IMEI
+
+  [ Harald Welte ]
+  * add README.md file as customary for cgit, github, gitlab, etc.
+
+  [ Oliver Smith ]
+  * Add post-upgrade script for automatic db upgrade
+  * debian/control: remove dh-systemd build-depend
+
+  [ Pau Espin Pedrol ]
+  * db: Avoid use uninitialized rc if running 0 statements
+
+  [ Neels Hofmeyr ]
+  * db v6: determine 3G AUC IND from VLR name
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Tue, 16 Nov 2021 14:56:41 +0100
+
 osmo-hlr (1.3.0) unstable; urgency=medium
 
   [ Alexander Couzens ]
