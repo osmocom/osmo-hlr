@@ -80,6 +80,16 @@ Description: Development headers of Osmocom MS lookup library
   .
   This package contains the development headers.
 
+Package: osmo-mslookup-utils
+Architecture: any
+Section: utils
+Depends: ${shlibs:Depends},
+	 libosmo-mslookup0 (= ${binary:Version}),
+         ${misc:Depends}
+Multi-Arch: same
+Description: Utilities for Osmocom MS lookup
+  This package contains a simple MS lookup client utility.
+
 Package: osmo-hlr-doc
 Architecture: all
 Section: doc
