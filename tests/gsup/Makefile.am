@@ -17,7 +17,7 @@ EXTRA_DIST = \
 	gsup_test.err \
 	$(NULL)
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	gsup_test \
 	$(NULL)
 
