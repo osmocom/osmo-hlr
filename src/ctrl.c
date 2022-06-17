@@ -388,6 +388,57 @@ static int set_subscr_cs_enabled(struct ctrl_cmd *cmd, void *data)
 	return set_subscr_cs_ps_enabled(cmd, data, false);
 }
 
+CTRL_CMD_DEFINE(subscr_msisdn, "msisdn");
+static int verify_subscr_msisdn(struct ctrl_cmd *cmd, const char *value, void *data)
+{
+	struct hlr_subscriber subscr;
+	if (!value)
+		return 1;
+	if (strlen(value) > sizeof(subscr.msisdn) - 1)
+		return 1;
+	if (strcmp(value, "none") != 0 && !osmo_msisdn_str_valid(value))
+		return 1;
+	return 0;
+}
+static int get_subscr_msisdn(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *by_selector = cmd->node;
+
+	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
+		return CTRL_CMD_ERROR;
+
+	if (strlen(subscr.msisdn) == 0)
+		snprintf(subscr.msisdn, sizeof(subscr.msisdn), "none");
+
+	cmd->reply = talloc_asprintf(cmd, "%s", subscr.msisdn);
+	return CTRL_CMD_REPLY;
+}
+static int set_subscr_msisdn(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *by_selector = cmd->node;
+	const char *msisdn;
+
+	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
+		return CTRL_CMD_ERROR;
+
+	if (strcmp(cmd->value, "none") == 0)
+		msisdn = NULL;
+	else
+		msisdn = cmd->value;
+
+	if (db_subscr_update_msisdn_by_imsi(g_hlr->dbc, subscr.imsi, msisdn)) {
+		cmd->reply = "Update MSISDN failed";
+		return CTRL_CMD_ERROR;
+	}
+
+	cmd->reply = "OK";
+	return CTRL_CMD_REPLY;
+}
+
 static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 				void **node_data, int *i)
 {
@@ -424,6 +475,7 @@ static int hlr_ctrl_cmds_install()
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_all);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_ps_enabled);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_cs_enabled);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_msisdn);
 
 	return rc;
 }

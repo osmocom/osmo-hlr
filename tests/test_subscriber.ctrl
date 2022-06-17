@@ -624,3 +624,49 @@ ms_purged_ps	0
 periodic_lu_timer	0
 periodic_rau_tau_timer	0
 lmsi	00000000
+
+GET 103 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 103 subscriber.by-imsi-901991234567891.msisdn none
+
+SET 104 subscriber.by-imsi-901991234567891.msisdn 555666
+SET_REPLY 104 subscriber.by-imsi-901991234567891.msisdn OK
+
+GET 105 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 105 subscriber.by-imsi-901991234567891.msisdn 555666
+
+SET 106 subscriber.by-imsi-901991234567891.msisdn 888000
+SET_REPLY 106 subscriber.by-imsi-901991234567891.msisdn OK
+
+GET 107 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 107 subscriber.by-imsi-901991234567891.msisdn 888000
+
+GET 108 subscriber.by-imsi-901991234567891.info
+GET_REPLY 108 subscriber.by-imsi-901991234567891.info 
+id	124
+imsi	901991234567891
+msisdn	888000
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
+
+SET 109 subscriber.by-imsi-901991234567891.msisdn none
+SET_REPLY 109 subscriber.by-imsi-901991234567891.msisdn OK
+
+GET 110 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 110 subscriber.by-imsi-901991234567891.msisdn none
+
+GET 111 subscriber.by-imsi-901991234567891.info
+GET_REPLY 111 subscriber.by-imsi-901991234567891.info 
+id	124
+imsi	901991234567891
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000

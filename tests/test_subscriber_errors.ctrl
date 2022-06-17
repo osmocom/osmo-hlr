@@ -114,3 +114,6 @@ ERROR 49 Invalid IMSI value.
 
 SET 50 subscriber.create 901990000000001
 ERROR 50 Subscriber already exists.
+
+SET 51 subscriber.by-imsi-1234567890123456.msisdn hellobadmsisdn
+ERROR 51 Value failed verification.
