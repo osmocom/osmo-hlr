@@ -69,6 +69,9 @@ vty-test:
 
 CTRL_TEST_DB = hlr_ctrl_test.db
 
+# Run a specific test with: 'make ctrl-test CTRL_TEST=test_subscriber.ctrl'
+CTRL_TEST ?= *.ctrl
+
 # To update the CTRL script from current application behavior,
 # pass -u to ctrl_script_runner.py by doing:
 #   make ctrl-test U=-u
@@ -79,7 +82,7 @@ ctrl-test:
 	osmo_verify_transcript_ctrl.py -v \
 		-p 4259 \
 		-r "$(top_builddir)/src/osmo-hlr -c $(top_srcdir)/doc/examples/osmo-hlr.cfg -l $(CTRL_TEST_DB)" \
-		$(U) $(srcdir)/*.ctrl
+		$(U) $(srcdir)/$(CTRL_TEST)
 	-rm -f $(CTRL_TEST_DB)
 	-rm $(CTRL_TEST_DB)-*
 
