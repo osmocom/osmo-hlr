@@ -262,13 +262,13 @@ static void test_subscr_create_update_sel_delete()
 	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), 0);
 	ASSERT_SEL(imsi, imsi2, 0);
 	id2 = g_subscr.id;
-	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EEXIST);
 	ASSERT_SEL(imsi, imsi0, 0);
-	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
-	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EEXIST);
+	ASSERT_RC(db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EEXIST);
 	ASSERT_SEL(imsi, imsi1, 0);
-	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
-	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EIO);
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EEXIST);
+	ASSERT_RC(db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EEXIST);
 	ASSERT_SEL(imsi, imsi2, 0);
 
 	ASSERT_RC(db_subscr_create(dbc, "123456789 000003", DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS), -EINVAL);

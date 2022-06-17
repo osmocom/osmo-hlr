@@ -27,7 +27,7 @@ struct hlr_subscriber {
   .imsi = '123456789000002',
 }
 
-db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
+db_subscr_create(dbc, imsi0, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EEXIST
 DAUC IMSI='123456789000000': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi0, &g_subscr) --> 0
@@ -36,10 +36,10 @@ struct hlr_subscriber {
   .imsi = '123456789000000',
 }
 
-db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EEXIST
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
-db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
+db_subscr_create(dbc, imsi1, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EEXIST
 DAUC IMSI='123456789000001': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi1, &g_subscr) --> 0
@@ -48,10 +48,10 @@ struct hlr_subscriber {
   .imsi = '123456789000001',
 }
 
-db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EEXIST
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
-db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EIO
+db_subscr_create(dbc, imsi2, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS) --> -EEXIST
 DAUC IMSI='123456789000002': Cannot create subscriber: SQL error: (2067) UNIQUE constraint failed: subscriber.imsi
 
 db_subscr_get_by_imsi(dbc, imsi2, &g_subscr) --> 0

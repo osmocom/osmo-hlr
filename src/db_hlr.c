@@ -45,7 +45,8 @@
  * \param[in,out] dbc  database context.
  * \param[in] imsi  ASCII string of IMSI digits, is validated.
  * \param[in] flags  Bitmask of DB_SUBSCR_FLAG_*.
- * \returns 0 on success, -EINVAL on invalid IMSI, -EIO on database error.
+ * \returns 0 on success, -EINVAL on invalid IMSI, -EEXIST if subscriber with
+ *          provided imsi already exists, -EIO on other database errors.
  */
 int db_subscr_create(struct db_context *dbc, const char *imsi, uint8_t flags)
 {
@@ -73,6 +74,8 @@ int db_subscr_create(struct db_context *dbc, const char *imsi, uint8_t flags)
 	if (rc != SQLITE_DONE) {
 		LOGHLR(imsi, LOGL_ERROR, "Cannot create subscriber: SQL error: (%d) %s\n",
 		       rc, sqlite3_errmsg(dbc->db));
+		if (rc == SQLITE_CONSTRAINT_UNIQUE)
+			return -EEXIST;
 		return -EIO;
 	}
 
