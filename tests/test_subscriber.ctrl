@@ -610,5 +610,3 @@ periodic_lu_timer	0
 periodic_rau_tau_timer	0
 lmsi	00000000
 
-GET 101 subscriber.by-id-0x0123.info
-ERROR 101 Invalid value part of 'by-xxx-value' selector.

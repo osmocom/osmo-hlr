@@ -105,3 +105,6 @@ GET 46 subscriber.by-imsi-1234567890123456.ps-enabled
 ERROR 46 Invalid value part of 'by-xxx-value' selector.
 GET 47 subscriber.by-imsi-1234567890123456.cs-enabled
 ERROR 47 Invalid value part of 'by-xxx-value' selector.
+
+GET 48 subscriber.by-id-0x0123.info
+ERROR 48 Invalid value part of 'by-xxx-value' selector.
