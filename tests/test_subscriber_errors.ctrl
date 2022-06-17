@@ -108,3 +108,9 @@ ERROR 47 Invalid value part of 'by-xxx-value' selector.
 
 GET 48 subscriber.by-id-0x0123.info
 ERROR 48 Invalid value part of 'by-xxx-value' selector.
+
+SET 49 subscriber.create zzz
+ERROR 49 Invalid IMSI value.
+
+SET 50 subscriber.create 901990000000001
+ERROR 50 Subscriber already exists.

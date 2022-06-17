@@ -43,6 +43,12 @@ const struct log_info_cat hlr_log_info_cat[] = {
 		.color = "\033[1;35m",
 		.enabled = 1, .loglevel = LOGL_NOTICE,
 	},
+	[DCTRL] = {
+		.name = "DCTRL",
+		.description = "Osmocom CTRL interface",
+		.color = "\033[1;30m",
+		.enabled = 1, .loglevel = LOGL_NOTICE,
+	},
 };
 
 const struct log_info hlr_log_info = {

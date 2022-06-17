@@ -197,6 +197,43 @@ static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_d
 		aud->u.umts.sqn);
 }
 
+CTRL_CMD_DEFINE_WO_NOVRF(subscr_create, "create");
+static int set_subscr_create(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *imsi = cmd->value;
+	int rc;
+
+	if (!osmo_imsi_str_valid(imsi)) {
+		cmd->reply = "Invalid IMSI value.";
+		return CTRL_CMD_ERROR;
+	}
+
+	/* Create the subscriber in the DB */
+	rc = db_subscr_create(g_hlr->dbc, imsi, DB_SUBSCR_FLAG_NAM_CS | DB_SUBSCR_FLAG_NAM_PS);
+	if (rc) {
+		if (rc == -EEXIST)
+			cmd->reply = "Subscriber already exists.";
+		else
+			cmd->reply = "Cannot create subscriber.";
+		return CTRL_CMD_ERROR;
+	}
+
+	LOGP(DCTRL, LOGL_INFO, "Created subscriber IMSI='%s'\n",
+	     imsi);
+
+	/* Retrieve data of newly created subscriber: */
+	rc = db_subscr_get_by_imsi(hlr->dbc, imsi, &subscr);
+	if (rc < 0) {
+		cmd->reply = "Failed retrieving ID of newly created subscriber.";
+		return CTRL_CMD_ERROR;
+	}
+
+	cmd->reply = talloc_asprintf(cmd, "%" PRIu64, subscr.id);
+	return CTRL_CMD_REPLY;
+}
+
 CTRL_CMD_DEFINE_RO(subscr_info, "info");
 static int get_subscr_info(struct ctrl_cmd *cmd, void *data)
 {
@@ -379,6 +416,8 @@ static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 static int hlr_ctrl_cmds_install()
 {
 	int rc = 0;
+
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR, &cmd_subscr_create);
 
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_aud);

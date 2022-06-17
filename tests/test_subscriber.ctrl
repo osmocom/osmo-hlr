@@ -610,3 +610,17 @@ periodic_lu_timer	0
 periodic_rau_tau_timer	0
 lmsi	00000000
 
+SET 101 subscriber.create 901991234567891
+SET_REPLY 101 subscriber.create 124
+
+GET 102 subscriber.by-id-124.info
+GET_REPLY 102 subscriber.by-id-124.info 
+id	124
+imsi	901991234567891
+nam_cs	1
+nam_ps	1
+ms_purged_cs	0
+ms_purged_ps	0
+periodic_lu_timer	0
+periodic_rau_tau_timer	0
+lmsi	00000000
