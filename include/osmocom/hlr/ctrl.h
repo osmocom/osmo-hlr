@@ -30,5 +30,4 @@ enum hlr_ctrl_node {
 	_LAST_CTRL_NODE_HLR
 };
 
-int hlr_ctrl_cmds_install();
 struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr);

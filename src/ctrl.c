@@ -351,19 +351,6 @@ static int set_subscr_cs_enabled(struct ctrl_cmd *cmd, void *data)
 	return set_subscr_cs_ps_enabled(cmd, data, false);
 }
 
-int hlr_ctrl_cmds_install()
-{
-	int rc = 0;
-
-	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info);
-	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_aud);
-	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_all);
-	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_ps_enabled);
-	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_cs_enabled);
-
-	return rc;
-}
-
 static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 				void **node_data, int *i)
 {
@@ -387,6 +374,19 @@ static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 	}
 
 	return 1;
+}
+
+static int hlr_ctrl_cmds_install()
+{
+	int rc = 0;
+
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_aud);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_all);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_ps_enabled);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_cs_enabled);
+
+	return rc;
 }
 
 struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr)
