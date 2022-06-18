@@ -23,10 +23,9 @@ GIT Repository
 
 You can clone from the official osmo-hlr.git repository using
 
-	git clone git://git.osmocom.org/osmo-hlr.git
-	git clone https://git.osmocom.org/osmo-hlr.git
+	git clone https://gitea.osmocom.org/cellular-infrastructure/osmo-hlr
 
-There is a cgit interface at https://git.osmocom.org/osmo-hlr/
+There is a web interface at <https://gitea.osmocom.org/cellular-infrastructure/osmo-hlr>
 
 Documentation
 -------------
