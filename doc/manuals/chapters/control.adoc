@@ -5,6 +5,16 @@ The actual protocol is described in <<common-control-if>>, the variables common
 to all programs using it are described in <<ctrl_common_vars>>. This section
 describes the CTRL interface variables specific to OsmoHLR.
 
+Subscribers can be created and deleted using the following SET commands:
+
+.Subscriber management commands available on OsmoHLR's Control interface
+[options="header",width="100%",cols="35%,65%"]
+|===
+|Command|Comment
+|subscriber.create '123456'|Create a new subscriber with IMSI "123456" to the database. Returns database ID of the subscriber being created.
+|subscriber.delete '123456'|Delete subscriber with IMSI "123456" from database. Returns database ID of the subscriber being deleted.
+|===
+
 All subscriber variables are available by different selectors, which are freely
 interchangeable:
 
@@ -28,6 +38,9 @@ Each of the above selectors feature all of these control variables:
 |subscriber.by-\*.*info-all*|R|No||List both 'info' and 'info-aud' in one
 |subscriber.by-\*.*cs-enabled*|RW|No|'1' or '0'|Enable/disable circuit-switched access
 |subscriber.by-\*.*ps-enabled*|RW|No|'1' or '0'|Enable/disable packet-switched access
+|subscriber.by-\*.*msisdn*|RW|No|valid MSISDN string|Get/Set assigned MSISDN
+|subscriber.by-\*.*aud2g*|RW|No|'algo[,KI]'|Get/Set 2g Authentication Data
+|subscriber.by-\*.*aud2g*|RW|No|'algo[,KI,("op"|"opc"),OP_C[,ind_bitlen]]'|Get/Set 3g Authentication Data
 |===
 
 === subscriber.by-*.info, info-aud, info-all
@@ -103,4 +116,64 @@ commands:
 
 ----
 include::../example_subscriber_cs_ps_enabled.ctrl[]
+----
+
+=== subscriber.by-*.msisdn
+
+Get or set the MSISDN currently assigned to a subscriber.
+
+
+This is an example transcript that illustrates use of this command:
+
+----
+include::../example_subscriber_msisdn.ctrl[]
+----
+
+=== subscriber.by-*.aud2g
+
+Get or set the 2G Authentication data of a subscriber.
+
+The information is stored/retrieved as a comma separated list of fields:
+
+----
+algo[,KI]
+----
+
+Where::
+* *KI* is the KI as a hexadecimal string.
+* *algo* is one of the following algorithms: _none, xor, comp128v1, comp128v2,
+  comp128v3_.
+
+All values are case insensitive.
+
+This is an example transcript that illustrates use of this command:
+
+----
+include::../example_subscriber_aud2g.ctrl[]
+----
+
+=== subscriber.by-*.aud3g
+
+Get or set the 3G Authentication data of a subscriber.
+
+The information is stored/retrieved as a comma separated list of fields:
+
+----
+algo[,KI,("op"|"opc"),OP_C[,ind_bitlen]]
+----
+
+Where:
+* *KI* is the KI as a hexadecimal string.
+* *algo* is one of the following algorithms: _none, xor, milenage_.
+* "op" or "opc" indicates whether next field is an OP or OPC value.
+* *OP_C* contains an OP or OPC values as hexadecimal string, based on what the
+  previous field specifies.
+* *ind_bitlen* is set to 5 by default if not provided.
+
+All values are case insensitive.
+
+This is an example transcript that illustrates use of this command:
+
+----
+include::../example_subscriber_aud3g.ctrl[]
 ----

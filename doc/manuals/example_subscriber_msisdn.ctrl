@@ -1,0 +1,8 @@
+GET 1 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 1 subscriber.by-imsi-901991234567891.msisdn none
+
+SET 2 subscriber.by-imsi-901991234567891.msisdn 555666
+SET_REPLY 2 subscriber.by-imsi-901991234567891.msisdn OK
+
+GET 3 subscriber.by-imsi-901991234567891.msisdn
+GET_REPLY 3 subscriber.by-imsi-901991234567891.msisdn 555666

@@ -1,6 +1,10 @@
-EXTRA_DIST = example_subscriber_add_update_delete.vty \
+EXTRA_DIST = \
+    example_subscriber_add_update_delete.vty \
+    example_subscriber_aud2g.ctrl \
+    example_subscriber_aud3g.ctrl \
     example_subscriber_cs_ps_enabled.ctrl \
     example_subscriber_info.ctrl \
+    example_subscriber_msisdn.ctrl \
     osmohlr-usermanual.adoc \
     osmohlr-usermanual-docinfo.xml \
     osmohlr-vty-reference.xml \

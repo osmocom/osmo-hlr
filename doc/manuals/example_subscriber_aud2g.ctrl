@@ -1,0 +1,14 @@
+GET 1 subscriber.by-imsi-901991234567891.aud2g
+GET_REPLY 1 subscriber.by-imsi-901991234567891.aud2g none
+
+SET 2 subscriber.by-imsi-901991234567891.aud2g xor,c01ffedc1cadaeac1d1f1edacac1ab0a
+SET_REPLY 2 subscriber.by-imsi-901991234567891.aud2g OK
+
+GET 3 subscriber.by-imsi-901991234567891.aud2g
+GET_REPLY 3 subscriber.by-imsi-901991234567891.aud2g XOR,c01ffedc1cadaeac1d1f1edacac1ab0a
+
+SET 4 subscriber.by-imsi-901991234567891.aud2g none
+SET_REPLY 4 subscriber.by-imsi-901991234567891.aud2g OK
+
+GET 5 subscriber.by-imsi-901991234567891.aud2g
+GET_REPLY 5 subscriber.by-imsi-901991234567891.aud2g none
