@@ -123,3 +123,12 @@ ERROR 52 Subscriber doesn't exist.
 
 SET 53 subscriber.delete zzz
 ERROR 53 Invalid IMSI value.
+
+SET 54 subscriber.by-imsi-901990000000003.aud2g foobar
+ERROR 54 Value failed verification.
+
+SET 55 subscriber.by-imsi-901990000000003.aud2g foobar,2134
+ERROR 55 Unknown auth algorithm.
+
+SET 56 subscriber.by-imsi-901990000000003.aud2g xor,2134
+ERROR 56 Invalid KI.

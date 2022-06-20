@@ -476,8 +476,8 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 
 #define MILENAGE_KEY_LEN 16
 
-static bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
-			    int *minlen, int *maxlen)
+bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
+		     int *minlen, int *maxlen)
 {
 	if (!strcasecmp(alg_str, "none")) {
 		*algo = OSMO_AUTH_ALG_NONE;
