@@ -234,6 +234,40 @@ static int set_subscr_create(struct ctrl_cmd *cmd, void *data)
 	return CTRL_CMD_REPLY;
 }
 
+CTRL_CMD_DEFINE_WO_NOVRF(subscr_delete, "delete");
+static int set_subscr_delete(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *imsi = cmd->value;
+	int rc;
+
+	if (!osmo_imsi_str_valid(imsi)) {
+		cmd->reply = "Invalid IMSI value.";
+		return CTRL_CMD_ERROR;
+	}
+
+	/* Retrieve data of newly created subscriber: */
+	rc = db_subscr_get_by_imsi(hlr->dbc, imsi, &subscr);
+	if (rc < 0) {
+		cmd->reply = "Subscriber doesn't exist.";
+		return CTRL_CMD_ERROR;
+	}
+
+	/* Create the subscriber in the DB */
+	rc = db_subscr_delete_by_id(g_hlr->dbc, subscr.id);
+	if (rc) {
+		cmd->reply = "Cannot delete subscriber.";
+		return CTRL_CMD_ERROR;
+	}
+
+	LOGP(DCTRL, LOGL_INFO, "Deleted subscriber IMSI='%s'\n",
+	     imsi);
+
+	cmd->reply = talloc_asprintf(cmd, "%" PRIu64, subscr.id);
+	return CTRL_CMD_REPLY;
+}
+
 CTRL_CMD_DEFINE_RO(subscr_info, "info");
 static int get_subscr_info(struct ctrl_cmd *cmd, void *data)
 {
@@ -469,6 +503,7 @@ static int hlr_ctrl_cmds_install()
 	int rc = 0;
 
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR, &cmd_subscr_create);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR, &cmd_subscr_delete);
 
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_aud);

@@ -670,3 +670,6 @@ ms_purged_ps	0
 periodic_lu_timer	0
 periodic_rau_tau_timer	0
 lmsi	00000000
+
+SET 112 subscriber.delete 901991234567891
+SET_REPLY 112 subscriber.delete 124

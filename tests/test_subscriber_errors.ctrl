@@ -117,3 +117,9 @@ ERROR 50 Subscriber already exists.
 
 SET 51 subscriber.by-imsi-1234567890123456.msisdn hellobadmsisdn
 ERROR 51 Value failed verification.
+
+SET 52 subscriber.delete 100000
+ERROR 52 Subscriber doesn't exist.
+
+SET 53 subscriber.delete zzz
+ERROR 53 Invalid IMSI value.
