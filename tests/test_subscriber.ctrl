@@ -686,5 +686,26 @@ SET_REPLY 115 subscriber.by-imsi-901991234567891.aud2g OK
 GET 116 subscriber.by-imsi-901991234567891.aud2g
 GET_REPLY 116 subscriber.by-imsi-901991234567891.aud2g none
 
-SET 117 subscriber.delete 901991234567891
-SET_REPLY 117 subscriber.delete 124
+GET 117 subscriber.by-imsi-901991234567891.aud3g
+GET_REPLY 117 subscriber.by-imsi-901991234567891.aud3g none
+
+SET 118 subscriber.by-imsi-901991234567891.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,OP,FB2A3D1B360F599ABAB99DB8669F8308
+SET_REPLY 118 subscriber.by-imsi-901991234567891.aud3g OK
+
+GET 119 subscriber.by-imsi-901991234567891.aud3g
+GET_REPLY 119 subscriber.by-imsi-901991234567891.aud3g MILENAGE,c01ffedc1cadaeac1d1f1edacac1ab0a,OP,fb2a3d1b360f599abab99db8669f8308,5
+
+SET 120 subscriber.by-imsi-901991234567891.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,OPC,FB2A3D1B360F599ABAB99DB8669F8308,7
+SET_REPLY 120 subscriber.by-imsi-901991234567891.aud3g OK
+
+GET 121 subscriber.by-imsi-901991234567891.aud3g
+GET_REPLY 121 subscriber.by-imsi-901991234567891.aud3g MILENAGE,c01ffedc1cadaeac1d1f1edacac1ab0a,OPC,fb2a3d1b360f599abab99db8669f8308,7
+
+SET 122 subscriber.by-imsi-901991234567891.aud3g none
+SET_REPLY 122 subscriber.by-imsi-901991234567891.aud3g OK
+
+GET 123 subscriber.by-imsi-901991234567891.aud3g
+GET_REPLY 123 subscriber.by-imsi-901991234567891.aud3g none
+
+SET 124 subscriber.delete 901991234567891
+SET_REPLY 124 subscriber.delete 124

@@ -37,6 +37,12 @@ enum hlr_vty_node {
 	MSLOOKUP_CLIENT_NODE,
 };
 
+
+#define A38_XOR_MIN_KEY_LEN	12
+#define A38_XOR_MAX_KEY_LEN	16
+#define A38_COMP128_KEY_LEN	16
+#define MILENAGE_KEY_LEN	16
+
 int hlr_vty_is_config_node(struct vty *vty, int node);
 int hlr_vty_go_parent(struct vty *vty);
 void hlr_vty_init(void);

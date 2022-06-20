@@ -31,6 +31,7 @@
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/ctrl.h>
 #include <osmocom/hlr/db.h>
+#include <osmocom/hlr/hlr_vty.h>
 
 #define SEL_BY "by-"
 #define SEL_BY_IMSI SEL_BY "imsi-"
@@ -576,6 +577,153 @@ static int set_subscr_aud2g(struct ctrl_cmd *cmd, void *data)
 	return CTRL_CMD_REPLY;
 }
 
+/* value format: <algo[,KI,(op|opc),OP_C[,ind_bitlen]]> */
+CTRL_CMD_DEFINE(subscr_aud3g, "aud3g");
+static int verify_subscr_aud3g(struct ctrl_cmd *cmd, const char *value, void *data)
+{
+	if (!value)
+		return 1;
+	if (strcasecmp(value, "none") != 0 && !strchr(value, ','))
+		return 1;
+	return 0;
+}
+static int get_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *by_selector = cmd->node;
+	struct osmo_sub_auth_data aud2g_unused;
+	struct osmo_sub_auth_data aud3g;
+	int rc;
+
+	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
+		return CTRL_CMD_ERROR;
+
+	rc = db_get_auth_data(hlr->dbc, subscr.imsi, &aud2g_unused, &aud3g, NULL);
+	switch (rc) {
+	case 0:
+		break;
+	case -ENOENT:
+	case -ENOKEY:
+		aud3g.algo = OSMO_AUTH_ALG_NONE;
+		break;
+	default:
+		cmd->reply = "Error retrieving data from database.";
+		return CTRL_CMD_ERROR;
+	}
+
+	if (aud3g.algo ==  OSMO_AUTH_ALG_NONE) {
+		cmd->reply = "none";
+		return CTRL_CMD_REPLY;
+	}
+
+	cmd->reply = talloc_asprintf(cmd, "%s,%s,%s,%s,%u", osmo_auth_alg_name(aud3g.algo),
+				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.k, sizeof(aud3g.u.umts.k)),
+				     aud3g.u.umts.opc_is_op ? "OP" : "OPC",
+				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc)),
+				     aud3g.u.umts.ind_bitlen);
+	return CTRL_CMD_REPLY;
+}
+static int set_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *by_selector = cmd->node;
+	char *tmp = NULL, *tok, *saveptr;
+	int minlen = 0;
+	int maxlen = 0;
+	struct sub_auth_data_str aud3g = {
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.u.umts = {
+			.ind_bitlen = 5,
+		},
+	};
+	bool ind_bitlen_present;
+
+	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
+		return CTRL_CMD_ERROR;
+
+	tmp = talloc_strdup(cmd, cmd->value);
+	if (!tmp) {
+		cmd->reply = "OOM";
+		return CTRL_CMD_ERROR;
+	}
+
+	/* Parse alg_type: */
+	tok = strtok_r(tmp, ",", &saveptr);
+	if (!tok) {
+		cmd->reply = "Invalid format.";
+		return CTRL_CMD_ERROR;
+	}
+	if (strcmp(tok, "none") == 0) {
+		aud3g.algo = OSMO_AUTH_ALG_NONE;
+	} else if (!auth_algo_parse(tok, &aud3g.algo, &minlen, &maxlen)) {
+		cmd->reply = "Unknown auth algorithm.";
+		return CTRL_CMD_ERROR;
+	}
+
+	if (aud3g.algo != OSMO_AUTH_ALG_NONE) {
+		/* Parse K */
+		tok = strtok_r(NULL, ",", &saveptr);
+		if (!tok) {
+			cmd->reply = "Invalid format.";
+			return CTRL_CMD_ERROR;
+		}
+		aud3g.u.umts.k = tok;
+		if (!osmo_is_hexstr(aud3g.u.umts.k, minlen * 2, maxlen * 2, true)) {
+			cmd->reply = "Invalid KI.";
+			return CTRL_CMD_ERROR;
+		}
+
+		/* Parse OP/OPC choice */
+		tok = strtok_r(NULL, ",", &saveptr);
+		if (!tok) {
+			cmd->reply = "Invalid format.";
+			return CTRL_CMD_ERROR;
+		}
+		if (strcasecmp(tok, "op") == 0) {
+			aud3g.u.umts.opc_is_op = true;
+		} else if (strcasecmp(tok, "opc") == 0) {
+			aud3g.u.umts.opc_is_op = false;
+		} else {
+			cmd->reply = "Invalid format.";
+			return CTRL_CMD_ERROR;
+		}
+
+		/* Parse OP/OPC value */
+		ind_bitlen_present = !!strchr(saveptr, ',');
+		tok = strtok_r(NULL, ind_bitlen_present ? "," : "\0", &saveptr);
+		if (!tok) {
+			cmd->reply = "Invalid format.";
+			return CTRL_CMD_ERROR;
+		}
+
+		aud3g.u.umts.opc = tok;
+		if (!osmo_is_hexstr(aud3g.u.umts.opc, MILENAGE_KEY_LEN * 2, MILENAGE_KEY_LEN * 2, true)) {
+			cmd->reply = talloc_asprintf(cmd, "Invalid OP/OPC.");
+			return CTRL_CMD_ERROR;
+		}
+
+		if (ind_bitlen_present) {
+			/* Parse bitlen_ind */
+			tok = strtok_r(NULL, "\0", &saveptr);
+			if (!tok || tok[0] == '\0') {
+				cmd->reply = "Invalid format.";
+				return CTRL_CMD_ERROR;
+			}
+			aud3g.u.umts.ind_bitlen = atoi(tok);
+		}
+	}
+
+	if (db_subscr_update_aud_by_id(g_hlr->dbc, subscr.id, &aud3g)) {
+		cmd->reply = "Update aud3g failed.";
+		return CTRL_CMD_ERROR;
+	}
+
+	cmd->reply = "OK";
+	return CTRL_CMD_REPLY;
+}
+
 static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 				void **node_data, int *i)
 {
@@ -615,6 +763,7 @@ static int hlr_ctrl_cmds_install()
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_cs_enabled);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_msisdn);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_aud2g);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_aud3g);
 
 	return rc;
 }

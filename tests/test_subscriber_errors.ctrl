@@ -132,3 +132,24 @@ ERROR 55 Unknown auth algorithm.
 
 SET 56 subscriber.by-imsi-901990000000003.aud2g xor,2134
 ERROR 56 Invalid KI.
+
+SET 57 subscriber.by-imsi-901990000000003.aud3g foobar
+ERROR 57 Value failed verification.
+
+SET 58 subscriber.by-imsi-901990000000003.aud3g foobar,2134
+ERROR 58 Unknown auth algorithm.
+
+SET 60 subscriber.by-imsi-901990000000003.aud3g milenage,2134
+ERROR 60 Invalid KI.
+
+SET 61 subscriber.by-imsi-901990000000003.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,AAA
+ERROR 61 Invalid format.
+
+SET 62 subscriber.by-imsi-901990000000003.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,OPC
+ERROR 62 Invalid format.
+
+SET 63 subscriber.by-imsi-901990000000003.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,OPC,zzz
+ERROR 63 Invalid OP/OPC.
+
+SET 64 subscriber.by-imsi-901990000000003.aud3g milenage,c01ffedc1cadaeac1d1f1edacac1ab0a,OPC,fb2a3d1b360f599abab99db8669f8308,
+ERROR 64 Invalid format.

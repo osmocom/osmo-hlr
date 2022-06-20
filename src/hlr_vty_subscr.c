@@ -31,6 +31,7 @@
 #include <osmocom/hlr/hlr.h>
 #include <osmocom/hlr/db.h>
 #include <osmocom/hlr/timestamp.h>
+#include <osmocom/hlr/hlr_vty.h>
 
 struct vty;
 
@@ -469,12 +470,6 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 #define AUTH_ALG_TYPES_3G "milenage"
 #define AUTH_ALG_TYPES_3G_HELP \
 	"Use Milenage algorithm\n"
-
-#define A38_XOR_MIN_KEY_LEN	12
-#define A38_XOR_MAX_KEY_LEN	16
-#define A38_COMP128_KEY_LEN	16
-
-#define MILENAGE_KEY_LEN 16
 
 bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
 		     int *minlen, int *maxlen)
