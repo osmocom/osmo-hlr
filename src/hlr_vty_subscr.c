@@ -346,7 +346,7 @@ DEFUN(subscriber_create,
 	int rc;
 	struct hlr_subscriber subscr;
 	const char *imsi = argv[0];
-	
+
 	if (!osmo_imsi_str_valid(imsi)) {
 		vty_out(vty, "%% Not a valid IMSI: %s%s", imsi, VTY_NEWLINE);
 		return CMD_WARNING;
@@ -636,7 +636,7 @@ DEFUN(subscriber_aud3g,
 			.ind_bitlen = ind_bitlen,
 		},
 	};
-	
+
 	if (!auth_algo_parse(alg_type, &aud3g.algo, &minlen, &maxlen)) {
 		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", alg_type, VTY_NEWLINE);
 		return CMD_WARNING;
