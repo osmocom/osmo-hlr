@@ -1,3 +1,31 @@
+osmo-hlr (1.5.0) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * treewide: remove FSF address
+
+  [ Vadim Yanitskiy ]
+  * fixup: debian: remove unneeded dependency libdbd-sqlite3
+  * debian: add new 'osmo-mslookup-utils' package
+  * tests: use 'check_PROGRAMS' instead of 'noinst_PROGRAMS'
+
+  [ Pau Espin Pedrol ]
+  * ctrl: Mark function as static
+  * tests: Allow specyfing specific ctrl test to run
+  * tests/ctrl: Move ERROR test scenario to proper file
+  * Fix db_subscr_create() not returning -EEXIST expected by VTY subscriber create cmd
+  * ctrl: Introduce cmd SET subscriber.create <imsi>
+  * ctrl: Introduce CTRL command subscriber.by-*.msisdn
+  * cosmetic: hlr_vty_subscr.c: Fix trailing whitespace
+  * ctrl: Introduce cmd SET subscriber.delete <imsi>
+  * ctrl: Introduce CTRL command subscriber.by-*.aud2g <algo[,ki]>
+  * ctrl: Introduce CTRL command subscriber.by-*.aud3g <algo[,KI,(op|opc),OP_C[,ind_bitlen]]>
+  * doc: Document new subscriber CTRL commands
+
+  [ Harald Welte ]
+  * update git URLs (git -> https; gitea)
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Tue, 28 Jun 2022 18:38:31 +0200
+
 osmo-hlr (1.4.0) unstable; urgency=medium
 
   [ Keith ]
