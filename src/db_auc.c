@@ -95,7 +95,10 @@ static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int c
 		LOGAUC(imsi, LOGL_ERROR, "Error reading %s\n", col_name);
 		return -EIO;
 	}
-	osmo_hexparse((void *)text, dst, dst_len);
+
+	if (osmo_hexparse((void *)text, dst, dst_len) != col_len)
+		return -EINVAL;
+
 	return 0;
 }
 
