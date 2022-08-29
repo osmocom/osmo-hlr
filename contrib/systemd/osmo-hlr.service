@@ -5,6 +5,8 @@ Documentation=https://osmocom.org/projects/osmo-hlr/wiki/OsmoHLR
 [Service]
 Type=simple
 Restart=always
+StateDirectory=osmocom
+WorkingDirectory=%S/osmocom
 ExecStart=/usr/bin/osmo-hlr -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
 RestartSec=2
 
