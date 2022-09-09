@@ -70,3 +70,19 @@ doc/manuals/common
 doc/manuals/build
 
 contrib/osmo-hlr.spec
+/debian/.debhelper/
+/debian/libosmo-gsup-client-dev/
+/debian/files
+/debian/autoreconf.after
+/debian/autoreconf.before
+/debian/libosmo-gsup-client0/
+/debian/libosmo-mslookup0/
+/debian/osmo-hlr-dbg/
+/debian/tmp/
+/doc/manuals/vty/hlr_vty_reference.xml
+/debian/libosmo-mslookup-dev/
+/debian/osmo-hlr-doc/
+/debian/osmo-hlr/
+/debian/osmo-mslookup-utils/
+/debian/*.log
+/debian/*.substvars
