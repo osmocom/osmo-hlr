@@ -127,22 +127,34 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %check
 make %{?_smp_mflags} check || (find . -name testsuite.log -exec cat {} +)
 
-%if 0%{?suse_version}
 %preun
+%if 0%{?suse_version}
 %service_del_preun %{name}.service
+%endif
 
 %postun
+%if 0%{?suse_version}
 %service_del_postun %{name}.service
+%endif
 
 %pre
+getent group osmocom >/dev/null || groupadd --system osmocom
+getent passwd osmocom >/dev/null || useradd --system --gid osmocom --home-dir /var/lib/osmocom \
+                                            --shell /sbin/nologin --comment "Open Source Mobile Communications" osmocom
+%if 0%{?suse_version}
 %service_add_pre %{name}.service
 %endif
+exit 0
 
 %post
 %if 0%{?suse_version}
 %service_add_post %{name}.service
 %endif
 /usr/share/osmocom/osmo-hlr-post-upgrade.sh
+chown osmocom:osmocom /etc/osmocom/osmo-hlr.cfg
+chmod 0660 /etc/osmocom/osmo-hlr.cfg
+chown root:osmocom /etc/osmocom
+chmod 2775 /etc/osmocom
 
 %post   -n libosmo-gsup-client0 -p /sbin/ldconfig
 %postun -n libosmo-gsup-client0 -p /sbin/ldconfig
