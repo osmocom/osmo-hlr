@@ -9,6 +9,7 @@ StateDirectory=osmocom
 WorkingDirectory=%S/osmocom
 ExecStart=/usr/bin/osmo-hlr -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
 RestartSec=2
+ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
