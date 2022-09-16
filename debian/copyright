@@ -3,7 +3,7 @@ Upstream-Name: OsmoHLR
 Source: http://cgit.osmocom.org/osmo-hlr/
 
 Files: *
-Copyright: 2016-2017 Sysmocom s. f. m. c. GmbH <info@sysmocom.de>
+Copyright: 2016-2022 Sysmocom s. f. m. c. GmbH <info@sysmocom.de>
 License: AGPL-3+
 
 License: AGPL-3+
