@@ -22,8 +22,9 @@ Package: osmo-hlr
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Osmocom Home Location Register
- OsmoHLR is a Osmocom implementation of HLR (Home Location Registrar) which works over GSUP
- protocol. The subscribers are store in sqlite DB. It supports both 2G and 3G authentication.
+ OsmoHLR is a Osmocom implementation of HLR (Home Location Registrar) which
+ works over GSUP protocol. The subscribers are store in sqlite DB.
+ It supports both 2G and 3G authentication.
 
 Package: osmo-hlr-dbg
 Architecture: any
