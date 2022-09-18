@@ -158,7 +158,7 @@ DEFUN(cfg_hlr_gsup_ipa_name,
 {
 	if (vty->type != VTY_FILE) {
 		vty_out(vty, "gsup/ipa-name: The GSUP IPA name cannot be changed at run-time; "
-			"It can only be set in the configuraton file.%s", VTY_NEWLINE);
+			"It can only be set in the configuration file.%s", VTY_NEWLINE);
 		return CMD_WARNING;
 	}
 
