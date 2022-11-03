@@ -50,7 +50,7 @@ const char *domains[] = {
 	"qwerty.1.qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnmm",
 };
 
-void test_osmo_mslookup_query_init_from_domain_str()
+void test_osmo_mslookup_query_init_from_domain_str(void)
 {
 	int i;
 	for (i = 0; i < ARRAY_SIZE(domains); i++) {
@@ -68,7 +68,7 @@ void test_osmo_mslookup_query_init_from_domain_str()
 	}
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	ctx = talloc_named_const(NULL, 0, "main");
 	osmo_init_logging2(ctx, NULL);

@@ -80,14 +80,14 @@ static int server_recv(struct osmo_fd *osmo_fd, unsigned int what)
 	return n;
 }
 
-static void server_init()
+static void server_init(void)
 {
 	fprintf(stderr, "%s\n", __func__);
 	server_mc = osmo_mdns_sock_init(ctx, TEST_IP, TEST_PORT, server_recv, NULL, 0);
 	OSMO_ASSERT(server_mc);
 }
 
-static void server_stop()
+static void server_stop(void)
 {
 	fprintf(stderr, "%s\n", __func__);
 	OSMO_ASSERT(server_mc);
@@ -98,7 +98,7 @@ static void server_stop()
 struct osmo_mslookup_client* client;
 struct osmo_mslookup_client_method* client_method;
 
-static void client_init()
+static void client_init(void)
 {
 	fprintf(stderr, "%s\n", __func__);
 	client = osmo_mslookup_client_new(ctx);
@@ -117,7 +117,7 @@ static void client_recv(struct osmo_mslookup_client *client, uint32_t request_ha
 	osmo_mslookup_client_request_cancel(client, request_handle);
 }
 
-static void client_query()
+static void client_query(void)
 {
 	struct osmo_mslookup_id id = {.type = OSMO_MSLOOKUP_ID_IMSI,
 				      .imsi = "123456789012345"};
@@ -134,7 +134,7 @@ static void client_query()
 	osmo_mslookup_client_request(client, &query, &handling);
 }
 
-static void client_stop()
+static void client_stop(void)
 {
 	fprintf(stderr, "%s\n", __func__);
 	osmo_mslookup_client_free(client);
@@ -154,7 +154,7 @@ const struct timeval fake_time_start_time = { 0, 0 };
 	osmo_timers_update(); \
 } while (0)
 
-static void fake_time_start()
+static void fake_time_start(void)
 {
 	struct timespec *clock_override;
 
@@ -167,7 +167,7 @@ static void fake_time_start()
 	osmo_clock_override_enable(CLOCK_MONOTONIC, true);
 	fake_time_passes(0, 0);
 }
-static void test_server_client()
+static void test_server_client(void)
 {
 	fprintf(stderr, "-- %s --\n", __func__);
 	server_init();
@@ -190,7 +190,7 @@ static void test_server_client()
 	client_stop();
 }
 
-bool is_multicast_enabled()
+bool is_multicast_enabled(void)
 {
 	bool ret = true;
 	struct addrinfo *ai;
@@ -222,7 +222,7 @@ bool is_multicast_enabled()
 /*
  * Run all tests
  */
-int main()
+int main(int argc, char **argv)
 {
 	if (!is_multicast_enabled()) {
 		fprintf(stderr, "ERROR: multicast is disabled! (OS#4361)");

@@ -509,7 +509,7 @@ static void test_gen_vectors_3g_xor(void)
 }
 
 /* Test a variety of invalid authentication data combinations */
-void test_gen_vectors_bad_args()
+void test_gen_vectors_bad_args(void)
 {
 	struct osmo_auth_vector vec;
 	uint8_t auts[14];

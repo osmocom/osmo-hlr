@@ -49,7 +49,7 @@ static void set_result(struct osmo_mslookup_result *result,
 	result->age = age;
 }
 
-const struct mslookup_service_host *mslookup_server_get_local_gsup_addr()
+const struct mslookup_service_host *mslookup_server_get_local_gsup_addr(void)
 {
 	static struct mslookup_service_host gsup_bind = {};
 	struct mslookup_service_host *host;

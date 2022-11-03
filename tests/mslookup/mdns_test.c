@@ -216,7 +216,7 @@ static const struct osmo_mdns_rfc_header header_enc_dec_test_data[] = {
 	},
 };
 
-void test_enc_dec_rfc_header()
+void test_enc_dec_rfc_header(void)
 {
 	int i;
 
@@ -241,7 +241,7 @@ void test_enc_dec_rfc_header()
 	}
 }
 
-void test_enc_dec_rfc_header_einval()
+void test_enc_dec_rfc_header_einval(void)
 {
 	struct osmo_mdns_rfc_header out = {0};
 	struct msgb *msg = msgb_alloc(4096, "dns_test");
@@ -578,7 +578,7 @@ static void test_result_from_answer(void *ctx)
 	}
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	void *ctx = talloc_named_const(NULL, 0, "main");
 	osmo_init_logging2(ctx, NULL);

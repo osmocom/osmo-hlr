@@ -749,7 +749,7 @@ static int hlr_ctrl_node_lookup(void *data, vector vline, int *node_type,
 	return 1;
 }
 
-static int hlr_ctrl_cmds_install()
+static int hlr_ctrl_cmds_install(void)
 {
 	int rc = 0;
 

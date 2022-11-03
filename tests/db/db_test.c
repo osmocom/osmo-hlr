@@ -246,7 +246,7 @@ static int db_subscr_lu_str(struct db_context *dbc, int64_t subscr_id,
 	return db_subscr_lu(dbc, subscr_id, &vlr_nr, is_ps, NULL);
 }
 
-static void test_subscr_create_update_sel_delete()
+static void test_subscr_create_update_sel_delete(void)
 {
 	int64_t id0, id1, id2, id_short;
 	comment_start();
@@ -541,7 +541,7 @@ static const struct sub_auth_data_str *mk_aud_3g(enum osmo_auth_algo algo,
 	return &aud;
 }
 
-static void test_subscr_aud()
+static void test_subscr_aud(void)
 {
 	int64_t id;
 
@@ -783,7 +783,7 @@ static void test_subscr_aud()
 
 /* Make each key too short in this test. Note that we can't set them longer than the allowed size without changing the
  * table structure. */
-static void test_subscr_aud_invalid_len()
+static void test_subscr_aud_invalid_len(void)
 {
 	int64_t id;
 
@@ -845,7 +845,7 @@ static void test_subscr_aud_invalid_len()
 	comment_end();
 }
 
-static void test_subscr_sqn()
+static void test_subscr_sqn(void)
 {
 	int64_t id;
 
@@ -918,7 +918,7 @@ static void test_subscr_sqn()
 	comment_end();
 }
 
-static void test_ind()
+static void test_ind(void)
 {
 	comment_start();
 

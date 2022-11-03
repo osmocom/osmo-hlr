@@ -100,7 +100,7 @@ int rand_get(uint8_t *rand, unsigned int len)
 
 FUNCTIONS
 
-int main()
+int main(int argc, char **argv)
 {
 	printf("3GPP TS 55.205 Test Sets\n");
 	void *tall_ctx = talloc_named_const(NULL, 1, "test");

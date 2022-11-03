@@ -51,7 +51,7 @@ static struct {
 	.db_upgrade = false,
 };
 
-static void print_help()
+static void print_help(void)
 {
 	printf("\n");
 	printf("Usage: osmo-hlr-db-tool [-l <hlr.db>] [create|import-nitb-db <nitb.db>]\n");

@@ -314,7 +314,7 @@ static struct osmo_fsm lu_fsm = {
 	.cleanup = lu_fsm_cleanup,
 };
 
-static __attribute__((constructor)) void lu_fsm_init()
+static __attribute__((constructor)) void lu_fsm_init(void)
 {
 	OSMO_ASSERT(osmo_fsm_register(&lu_fsm) == 0);
 }

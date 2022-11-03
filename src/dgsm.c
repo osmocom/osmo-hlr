@@ -191,7 +191,7 @@ void dgsm_start(void *ctx)
 	dgsm_mdns_client_config_apply();
 }
 
-void dgsm_stop()
+void dgsm_stop(void)
 {
 	g_hlr->mslookup.allow_startup = false;
 	mslookup_server_mdns_config_apply();

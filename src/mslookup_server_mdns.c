@@ -121,7 +121,7 @@ void osmo_mslookup_server_mdns_stop(struct osmo_mslookup_server_mdns *server)
 	talloc_free(server);
 }
 
-void mslookup_server_mdns_config_apply()
+void mslookup_server_mdns_config_apply(void)
 {
 	/* Check whether to start/stop/restart mDNS server */
 	bool should_run;

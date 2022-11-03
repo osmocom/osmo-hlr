@@ -568,12 +568,12 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	return 0;
 }
 
-static void print_usage()
+static void print_usage(void)
 {
 	printf("Usage: osmo-hlr\n");
 }
 
-static void print_help()
+static void print_help(void)
 {
 	printf("  -h --help                  This text.\n");
 	printf("  -c --config-file filename  The config file to use.\n");

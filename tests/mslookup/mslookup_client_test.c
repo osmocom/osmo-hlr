@@ -147,7 +147,7 @@ const struct timeval fake_time_start_time = { 0, 0 };
 	osmo_timers_update(); \
 } while (0)
 
-static void fake_time_start()
+static void fake_time_start(void)
 {
 	struct timespec *clock_override;
 
@@ -169,7 +169,7 @@ static void result_cb_once(struct osmo_mslookup_client *client,
 	LOGP(DMSLOOKUP, LOGL_DEBUG, "result_cb(): %s\n", osmo_mslookup_result_name_c(ctx, query, result));
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	ctx = talloc_named_const(NULL, 0, "main");
 	osmo_init_logging2(ctx, NULL);

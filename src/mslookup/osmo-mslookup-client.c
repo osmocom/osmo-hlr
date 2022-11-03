@@ -53,7 +53,7 @@ static void print_version(void)
 	"\n");
 }
 
-static void print_help()
+static void print_help(void)
 {
 	print_version();
 	printf(
@@ -555,7 +555,7 @@ int socket_init(const char *sock_path)
 	return 0;
 }
 
-void socket_close()
+void socket_close(void)
 {
 	struct socket_client *c, *n;
 	llist_for_each_entry_safe(c, n, &globals.socket_clients, entry)
