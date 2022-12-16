@@ -91,6 +91,7 @@ const struct value_string osmo_mslookup_id_type_names[] = {
 	{ OSMO_MSLOOKUP_ID_NONE, "none" },
 	{ OSMO_MSLOOKUP_ID_IMSI, "imsi" },
 	{ OSMO_MSLOOKUP_ID_MSISDN, "msisdn" },
+	{ OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED, "imsiauth" },
 	{}
 };
 
@@ -134,6 +135,7 @@ bool osmo_mslookup_id_valid(const struct osmo_mslookup_id *id)
 {
 	switch (id->type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
+	case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
 		return osmo_imsi_str_valid(id->imsi);
 	case OSMO_MSLOOKUP_ID_MSISDN:
 		return osmo_msisdn_str_valid(id->msisdn);
@@ -157,6 +159,7 @@ size_t osmo_mslookup_id_name_buf(char *buf, size_t buflen, const struct osmo_msl
 	struct osmo_strbuf sb = { .buf = buf, .len = buflen };
 	switch (id->type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
+	case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
 		OSMO_STRBUF_PRINTF(sb, "%s", id->imsi);
 		break;
 	case OSMO_MSLOOKUP_ID_MSISDN:
@@ -298,6 +301,7 @@ int osmo_mslookup_query_init_from_domain_str(struct osmo_mslookup_query *q, cons
 	id = second_last_dot + 1;
 	switch (q->id.type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
+	case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
 		rc = token(q->id.imsi, sizeof(q->id.imsi), id, last_dot);
 		if (rc)
 			return rc;

@@ -35,6 +35,7 @@ enum osmo_mslookup_id_type {
 	OSMO_MSLOOKUP_ID_NONE = 0,
 	OSMO_MSLOOKUP_ID_IMSI,
 	OSMO_MSLOOKUP_ID_MSISDN,
+	OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED,
 };
 
 extern const struct value_string osmo_mslookup_id_type_names[];
