@@ -37,6 +37,8 @@ typedef void (*osmo_mslookup_cb_t)(struct osmo_mslookup_client *client,
  * This query handling info is not seen by the individual method implementations, to clarify that it is the
  * osmo_mslookup_client layer that takes care of these details. */
 struct osmo_mslookup_query_handling {
+	bool search_all;
+
 	/*! Wait at least this long before returning any results.
 	 *
 	 * If nonzero, result_cb will be called as soon as this delay has elapsed, either with the so far youngest age
