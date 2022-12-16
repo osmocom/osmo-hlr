@@ -133,6 +133,10 @@ CSV_HEADERS "\n"
 "		1000-5000@sip.voice.123.msisdn	Same, but silent for first second\n"
 "		10000-@smpp.sms.567.msisdn	Return 1 result after 10 seconds\n"
 "\n"
+"--search-all -A\n"
+"	Do not stop when a response with age of zero comes in.\n"
+"	This can be used to \"search\" the entire dGSM network if for\n"
+"	example there is a need to track down so-called \"evil twin\" hlr entries.\n"
 "--format -f csv (default)\n"
 "	Format result lines in CSV format.\n"
 "--no-csv-headers -H\n"
@@ -196,6 +200,7 @@ enum result_format {
 };
 
 static struct {
+	bool search_all;
 	bool daemon;
 	struct osmo_sockaddr_str mdns_addr;
 	uint32_t min_delay;
@@ -637,6 +642,7 @@ void start_query_str(const char *query_str)
 	const char *domain_str = query_str;
 	char *at;
 	struct osmo_mslookup_query_handling h = {
+		.search_all = cmdline_opts.search_all,
 		.min_wait_milliseconds = cmdline_opts.min_delay,
 		.result_timeout_milliseconds = cmdline_opts.timeout,
 		.result_cb = mslookup_result_cb,
@@ -739,6 +745,7 @@ int main(int argc, char **argv)
 		int option_index = 0;
 
 		static struct option long_options[] = {
+			{ "search-all", 0, 0, 'A' },
 			{ "format", 1, 0, 'f' },
 			{ "no-csv-headers", 0, 0, 'H' },
 			{ "daemon", 0, 0, 'd' },
@@ -764,12 +771,15 @@ int main(int argc, char **argv)
 		} \
 	} while (0)
 
-		c = getopt_long(argc, argv, "f:Hdm:M:D:t:T:s:SqhV", long_options, &option_index);
+		c = getopt_long(argc, argv, "Af:Hdm:M:D:t:T:s:SqhV", long_options, &option_index);
 
 		if (c == -1)
 			break;
 
 		switch (c) {
+		case 'A':
+			cmdline_opts.search_all = true;
+			break;
 		case 'f':
 			cmdline_opts.format_str = optarg;
 			break;

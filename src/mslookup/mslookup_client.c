@@ -154,16 +154,20 @@ void osmo_mslookup_client_rx_result(struct osmo_mslookup_client *client, uint32_
 	if (result->rc != OSMO_MSLOOKUP_RC_RESULT)
 		return;
 
+	/* If the client wants to see all results, send this result now */
+	if (req->handling.search_all && result->age > 0)
+		req->handling.result_cb(client, request_handle, &req->query, result);
+
 	/* If we already stored an earlier successful result, keep that if its age is younger. */
 	if (req->result.rc == OSMO_MSLOOKUP_RC_RESULT
-	    && result->age >= req->result.age)
+	    && result->age > req->result.age)
 		return;
 
 	req->result = *result;
 
 	/* If age == 0, it doesn't get any better, so return the result immediately. */
 	if (req->result.age == 0) {
-		osmo_mslookup_request_send_result(req, true);
+		osmo_mslookup_request_send_result(req, !req->handling.search_all);
 		return;
 	}
 
