@@ -45,6 +45,7 @@ static char *domain_from_query(void *ctx, const struct osmo_mslookup_query *quer
 	/* Get id from query */
 	switch (query->id.type) {
 		case OSMO_MSLOOKUP_ID_IMSI:
+		case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
 			id = query->id.imsi;
 			break;
 		case OSMO_MSLOOKUP_ID_MSISDN:
