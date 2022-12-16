@@ -193,11 +193,14 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 	const struct mslookup_service_host *host;
 	int rc;
 	bool exists = false;
+	bool auth_imsi_only = false;
 
 	switch (query->id.type) {
+	case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
+		auth_imsi_only = true;
 	case OSMO_MSLOOKUP_ID_IMSI:
 		rc = db_subscr_exists_by_imsi(g_hlr->dbc, query->id.imsi);
-		if (g_hlr->mslookup.auth_imsi_only) {
+		if (g_hlr->mslookup.auth_imsi_only || auth_imsi_only) {
 			if (!rc)
 				exists = true;
 			rc = db_subscr_authorized_by_imsi(g_hlr->dbc, query->id.imsi);
