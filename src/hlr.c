@@ -830,7 +830,6 @@ int main(int argc, char **argv)
 	}
 	proxy_init(g_hlr->gs);
 
-	g_hlr->ctrl_bind_addr = ctrl_vty_get_bind_addr();
 	g_hlr->ctrl = hlr_controlif_setup(g_hlr);
 
 	dgsm_start(hlr_ctx);

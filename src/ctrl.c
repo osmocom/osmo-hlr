@@ -771,11 +771,8 @@ static int hlr_ctrl_cmds_install(void)
 struct ctrl_handle *hlr_controlif_setup(struct hlr *hlr)
 {
 	int rc;
-	struct ctrl_handle *hdl = ctrl_interface_setup_dynip2(hlr,
-							      hlr->ctrl_bind_addr,
-							      OSMO_CTRL_PORT_HLR,
-							      hlr_ctrl_node_lookup,
-							      _LAST_CTRL_NODE_HLR);
+	struct ctrl_handle *hdl = ctrl_interface_setup2(hlr, OSMO_CTRL_PORT_HLR, hlr_ctrl_node_lookup,
+							_LAST_CTRL_NODE_HLR);
 	if (!hdl)
 		return NULL;
 
