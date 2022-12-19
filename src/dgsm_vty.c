@@ -447,8 +447,8 @@ int config_write_mslookup(struct vty *vty)
 		llist_for_each_entry(msc, &g_hlr->mslookup.server.local_site_services, entry) {
 			if (!osmo_ipa_name_cmp(&mslookup_server_msc_wildcard, &msc->name))
 				continue;
-			vty_out(vty, " msc %s%s", osmo_ipa_name_to_str(&msc->name), VTY_NEWLINE);
-			config_write_msc_services(vty, "  ", msc);
+			vty_out(vty, "  msc ipa-name %s%s", osmo_ipa_name_to_str(&msc->name), VTY_NEWLINE);
+			config_write_msc_services(vty, "   ", msc);
 		}
 
 		/* If the server is disabled, still output the above to not lose the service config. */
@@ -474,6 +474,10 @@ int config_write_mslookup(struct vty *vty)
 		if (strcmp(g_hlr->mslookup.client.mdns.domain_suffix, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT))
 			vty_out(vty, "  mdns domain-suffix %s%s",
 				g_hlr->mslookup.client.mdns.domain_suffix,
+				VTY_NEWLINE);
+		if (g_hlr->mslookup.client.result_timeout_milliseconds != OSMO_DGSM_DEFAULT_RESULT_TIMEOUT_MS)
+			vty_out(vty, "  timeout %u%s",
+				g_hlr->mslookup.client.result_timeout_milliseconds,
 				VTY_NEWLINE);
 	}
 

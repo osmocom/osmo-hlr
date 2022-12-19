@@ -170,7 +170,7 @@ void dgsm_init(void *ctx)
 
 	g_hlr->mslookup.server.local_attach_max_age = 60 * 60;
 
-	g_hlr->mslookup.client.result_timeout_milliseconds = 2000;
+	g_hlr->mslookup.client.result_timeout_milliseconds = OSMO_DGSM_DEFAULT_RESULT_TIMEOUT_MS;
 
 	g_hlr->gsup_unit_name.unit_name = "HLR";
 	g_hlr->gsup_unit_name.serno = "unnamed-HLR";

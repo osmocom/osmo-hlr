@@ -349,15 +349,15 @@ mslookup
   service foo.bar at 123.45.67.89 1011
   service baz.bar at 121.31.41.5 1617
   service baz.bar at a:b:c::d 1819
- msc MSC-1
- msc msc-901-70-23
-  service foo.bar at 76.54.32.10 1234
-  service baz.bar at 12.11.10.98 7654
-  service baz.bar at dd:cc:bb::a 3210
- msc msc-901-70-42
-  service foo.bar at 1.1.1.1 1111
-  service baz.bar at 2.2.2.2 2222
-  service baz.bar at 2222:2222:2222::2 2222
+  msc ipa-name MSC-1
+  msc ipa-name msc-901-70-23
+   service foo.bar at 76.54.32.10 1234
+   service baz.bar at 12.11.10.98 7654
+   service baz.bar at dd:cc:bb::a 3210
+  msc ipa-name msc-901-70-42
+   service foo.bar at 1.1.1.1 1111
+   service baz.bar at 2.2.2.2 2222
+   service baz.bar at 2222:2222:2222::2 2222
  client
   gateway-proxy 1.2.3.4 4222
   mdns bind 239.192.23.42 4266
@@ -404,12 +404,12 @@ mslookup
   mdns bind 239.192.23.42 4266
   service foo.bar at 123.45.67.89 1011
   service baz.bar at 121.31.41.5 1617
- msc MSC-1
- msc msc-901-70-23
-  service foo.bar at 76.54.32.10 1234
-  service baz.bar at 12.11.10.98 7654
- msc msc-901-70-42
-  service foo.bar at 1.1.1.1 1111
+  msc ipa-name MSC-1
+  msc ipa-name msc-901-70-23
+   service foo.bar at 76.54.32.10 1234
+   service baz.bar at 12.11.10.98 7654
+  msc ipa-name msc-901-70-42
+   service foo.bar at 1.1.1.1 1111
  client
   mdns bind 239.192.23.42 4266
 ...
@@ -437,12 +437,12 @@ mslookup
   service foo.bar at 123.45.67.89 1011
   service baz.bar at 121.31.41.5 1617
   service gsup.hlr at 23.42.17.11 4223
- msc MSC-1
- msc msc-901-70-23
-  service foo.bar at 76.54.32.10 1234
-  service baz.bar at 12.11.10.98 7654
- msc msc-901-70-42
-  service foo.bar at 1.1.1.1 1111
+  msc ipa-name MSC-1
+  msc ipa-name msc-901-70-23
+   service foo.bar at 76.54.32.10 1234
+   service baz.bar at 12.11.10.98 7654
+  msc ipa-name msc-901-70-42
+   service foo.bar at 1.1.1.1 1111
  client
   mdns bind 239.192.23.42 4266
 ...
