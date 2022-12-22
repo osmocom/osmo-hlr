@@ -27,90 +27,8 @@
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/bitvec.h>
 #include <osmocom/core/logging.h>
+#include <osmocom/gsm/apn.h>
 #include <osmocom/mslookup/mdns_rfc.h>
-
-/*
- * Encode/decode IEs
- */
-
-/*! Encode a domain string as qname (RFC 1035 4.1.2).
- * \param[in] domain  multiple labels separated by dots, e.g. "sip.voice.1234.msisdn".
- * \returns allocated buffer with length-value pairs for each label (e.g. 0x03 "sip" 0x05 "voice" ...), NULL on error.
- */
-char *osmo_mdns_rfc_qname_encode(void *ctx, const char *domain)
-{
-	char *domain_dup;
-	char *domain_iter;
-	char buf[OSMO_MDNS_RFC_MAX_NAME_LEN + 2] = ""; /* len(qname) is len(domain) +1 */
-	struct osmo_strbuf sb = { .buf = buf, .len = sizeof(buf) };
-	char *label;
-
-	if (strlen(domain) > OSMO_MDNS_RFC_MAX_NAME_LEN)
-		return NULL;
-
-	domain_iter = domain_dup = talloc_strdup(ctx, domain);
-	while ((label = strsep(&domain_iter, "."))) {
-		size_t len = strlen(label);
-
-		/* Empty domain, dot at start, two dots in a row, or ending with a dot */
-		if (!len)
-			goto error;
-
-		OSMO_STRBUF_PRINTF(sb, "%c%s", (char)len, label);
-	}
-
-	talloc_free(domain_dup);
-	return talloc_strdup(ctx, buf);
-
-error:
-	talloc_free(domain_dup);
-	return NULL;
-}
-
-/*! Decode a domain string from a qname (RFC 1035 4.1.2).
- * \param[in] qname  buffer with length-value pairs for each label (e.g. 0x03 "sip" 0x05 "voice" ...)
- * \param[in] qname_max_len  amount of bytes that can be read at most from the memory location that qname points to.
- * \returns allocated buffer with domain string, multiple labels separated by dots (e.g. "sip.voice.1234.msisdn"),
- *	    NULL on error.
- */
-char *osmo_mdns_rfc_qname_decode(void *ctx, const char *qname, size_t qname_max_len)
-{
-	const char *next_label, *qname_end = qname + qname_max_len;
-	char buf[OSMO_MDNS_RFC_MAX_NAME_LEN + 1];
-	int i = 0;
-
-	if (qname_max_len < 1)
-		return NULL;
-
-	while (*qname) {
-		size_t len;
-
-		if (i >= qname_max_len)
-			return NULL;
-
-		len = *qname;
-		next_label = qname + len + 1;
-
-		if (next_label >= qname_end || i + len > OSMO_MDNS_RFC_MAX_NAME_LEN)
-			return NULL;
-
-		if (i) {
-			/* Two dots in a row is not allowed */
-			if (buf[i - 1] == '.')
-				return NULL;
-
-			buf[i] = '.';
-			i++;
-		}
-
-		memcpy(buf + i, qname + 1, len);
-		i += len;
-		qname = next_label;
-	}
-	buf[i] = '\0';
-
-	return talloc_strdup(ctx, buf);
-}
 
 /*
  * Encode/decode message sections
@@ -153,18 +71,15 @@ int osmo_mdns_rfc_header_decode(const uint8_t *data, size_t data_len, struct osm
  */
 int osmo_mdns_rfc_question_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_question *qst)
 {
-	char *qname;
-	size_t qname_len;
-	uint8_t *qname_buf;
+	uint8_t *buf;
+	size_t buf_len;
 
 	/* qname */
-	qname = osmo_mdns_rfc_qname_encode(ctx, qst->domain);
-	if (!qname)
+	buf_len = strlen(qst->domain) + 1;
+	buf = msgb_put(msg, buf_len);
+	if (osmo_apn_from_str(buf, buf_len, qst->domain) < 0)
 		return -EINVAL;
-	qname_len = strlen(qname) + 1;
-	qname_buf = msgb_put(msg, qname_len);
-	memcpy(qname_buf, qname, qname_len);
-	talloc_free(qname);
+	msgb_put_u8(msg, 0x00);
 
 	/* qtype and qclass */
 	msgb_put_u16(msg, qst->qtype);
@@ -182,21 +97,25 @@ struct osmo_mdns_rfc_question *osmo_mdns_rfc_question_decode(void *ctx, const ui
 	if (data_len < 6)
 		return NULL;
 
-	/* qname */
 	ret = talloc_zero(ctx, struct osmo_mdns_rfc_question);
 	if (!ret)
 		return NULL;
-	ret->domain = osmo_mdns_rfc_qname_decode(ret, (const char *)data, qname_len);
-	if (!ret->domain) {
-		talloc_free(ret);
-		return NULL;
-	}
+
+	/* qname */
+	ret->domain = talloc_size(ret, qname_len - 1);
+	if (!ret->domain)
+		goto error;
+	if (!osmo_apn_to_str(ret->domain, data, qname_len - 1))
+		goto error;
 
 	/* qtype and qclass */
 	ret->qtype = osmo_load16be(data + qname_len);
 	ret->qclass = osmo_load16be(data + qname_len + 2);
 
 	return ret;
+error:
+	talloc_free(ret);
+	return NULL;
 }
 
 /*
@@ -208,18 +127,15 @@ struct osmo_mdns_rfc_question *osmo_mdns_rfc_question_decode(void *ctx, const ui
  */
 int osmo_mdns_rfc_record_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_record *rec)
 {
-	char *name;
-	size_t name_len;
 	uint8_t *buf;
+	size_t buf_len;
 
 	/* name */
-	name = osmo_mdns_rfc_qname_encode(ctx, rec->domain);
-	if (!name)
+	buf_len = strlen(rec->domain) + 1;
+	buf = msgb_put(msg, buf_len);
+	if (osmo_apn_from_str(buf, buf_len, rec->domain) < 0)
 		return -EINVAL;
-	name_len = strlen(name) + 1;
-	buf = msgb_put(msg, name_len);
-	memcpy(buf, name, name_len);
-	talloc_free(name);
+	msgb_put_u8(msg, 0x00);
 
 	/* type, class, ttl, rdlength */
 	msgb_put_u16(msg, rec->type);
@@ -240,16 +156,23 @@ struct osmo_mdns_rfc_record *osmo_mdns_rfc_record_decode(void *ctx, const uint8_
 	struct osmo_mdns_rfc_record *ret;
 	size_t name_len;
 
+	/* name length: represented as a series of labels, and terminated by a
+	 * label with zero length (RFC 1035 3.3). A label with zero length is a
+	 * NUL byte. */
+	name_len = strnlen((const char *)data, data_len - 10) + 1;
+	if (data[name_len])
+		return NULL;
+
+	/* allocate ret + ret->domain */
 	ret = talloc_zero(ctx, struct osmo_mdns_rfc_record);
 	if (!ret)
 		return NULL;
-
-	/* name */
-	ret->domain = osmo_mdns_rfc_qname_decode(ret, (const char *)data, data_len - 10);
+	ret->domain = talloc_size(ctx, name_len - 1);
 	if (!ret->domain)
 		goto error;
-	name_len = strlen(ret->domain) + 2;
-	if (name_len + 10 > data_len)
+
+	/* name */
+	if (!osmo_apn_to_str(ret->domain, data, name_len - 1))
 		goto error;
 
 	/* type, class, ttl, rdlength */

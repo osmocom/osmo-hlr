@@ -99,9 +99,6 @@ struct osmo_mdns_rfc_record {
 	uint8_t *rdata;
 };
 
-char *osmo_mdns_rfc_qname_encode(void *ctx, const char *domain);
-char *osmo_mdns_rfc_qname_decode(void *ctx, const char *qname, size_t qname_len);
-
 void osmo_mdns_rfc_header_encode(struct msgb *msg, const struct osmo_mdns_rfc_header *hdr);
 int osmo_mdns_rfc_header_decode(const uint8_t *data, size_t data_len, struct osmo_mdns_rfc_header *hdr);
 
