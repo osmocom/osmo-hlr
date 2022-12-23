@@ -237,8 +237,12 @@ int osmo_mdns_rfc_record_encode(void *ctx, struct msgb *msg, const struct osmo_m
 struct osmo_mdns_rfc_record *osmo_mdns_rfc_record_decode(void *ctx, const uint8_t *data, size_t data_len,
 						       size_t *record_len)
 {
-	struct osmo_mdns_rfc_record *ret = talloc_zero(ctx, struct osmo_mdns_rfc_record);
+	struct osmo_mdns_rfc_record *ret;
 	size_t name_len;
+
+	ret = talloc_zero(ctx, struct osmo_mdns_rfc_record);
+	if (!ret)
+		return NULL;
 
 	/* name */
 	ret->domain = osmo_mdns_rfc_qname_decode(ret, (const char *)data, data_len - 10);
