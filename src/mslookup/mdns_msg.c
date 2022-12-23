@@ -40,7 +40,7 @@ int osmo_mdns_msg_request_encode(void *ctx, struct msgb *msg, const struct osmo_
 	qst.domain = req->domain;
 	qst.qtype = req->type;
 	qst.qclass = OSMO_MDNS_RFC_CLASS_IN;
-	if (osmo_mdns_rfc_question_encode(ctx, msg, &qst) != 0)
+	if (osmo_mdns_rfc_question_encode(msg, &qst) != 0)
 		return -EINVAL;
 
 	return 0;
@@ -106,7 +106,7 @@ int osmo_mdns_msg_answer_encode(void *ctx, struct msgb *msg, const struct osmo_m
 		rec.rdlength = ans_record->length;
 		rec.rdata = ans_record->data;
 
-		if (osmo_mdns_rfc_record_encode(ctx, msg, &rec) != 0)
+		if (osmo_mdns_rfc_record_encode(msg, &rec) != 0)
 			return -EINVAL;
 	}
 

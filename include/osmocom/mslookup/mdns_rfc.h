@@ -102,9 +102,9 @@ struct osmo_mdns_rfc_record {
 void osmo_mdns_rfc_header_encode(struct msgb *msg, const struct osmo_mdns_rfc_header *hdr);
 int osmo_mdns_rfc_header_decode(const uint8_t *data, size_t data_len, struct osmo_mdns_rfc_header *hdr);
 
-int osmo_mdns_rfc_question_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_question *qst);
+int osmo_mdns_rfc_question_encode(struct msgb *msg, const struct osmo_mdns_rfc_question *qst);
 struct osmo_mdns_rfc_question *osmo_mdns_rfc_question_decode(void *ctx, const uint8_t *data, size_t data_len);
 
-int osmo_mdns_rfc_record_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_record *rec);
+int osmo_mdns_rfc_record_encode(struct msgb *msg, const struct osmo_mdns_rfc_record *rec);
 struct osmo_mdns_rfc_record *osmo_mdns_rfc_record_decode(void *ctx, const uint8_t *data, size_t data_len,
 							 size_t *record_len);

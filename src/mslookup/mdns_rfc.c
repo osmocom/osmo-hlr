@@ -69,7 +69,7 @@ int osmo_mdns_rfc_header_decode(const uint8_t *data, size_t data_len, struct osm
 /*! Encode question section (RFC 1035 4.1.2).
  * \param[in] msgb  mesage buffer to which the encoded data will be appended.
  */
-int osmo_mdns_rfc_question_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_question *qst)
+int osmo_mdns_rfc_question_encode(struct msgb *msg, const struct osmo_mdns_rfc_question *qst)
 {
 	uint8_t *buf;
 	size_t buf_len;
@@ -125,7 +125,7 @@ error:
 /*! Encode one resource record (RFC 1035 4.1.3).
  * \param[in] msgb  mesage buffer to which the encoded data will be appended.
  */
-int osmo_mdns_rfc_record_encode(void *ctx, struct msgb *msg, const struct osmo_mdns_rfc_record *rec)
+int osmo_mdns_rfc_record_encode(struct msgb *msg, const struct osmo_mdns_rfc_record *rec)
 {
 	uint8_t *buf;
 	size_t buf_len;

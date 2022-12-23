@@ -147,7 +147,7 @@ void test_enc_dec_rfc_question(void *ctx)
 		struct msgb *msg = msgb_alloc(4096, "dns_test");
 
 		PRINT_QST(&in, "in");
-		assert(osmo_mdns_rfc_question_encode(ctx, msg, &in) == 0);
+		assert(osmo_mdns_rfc_question_encode(msg, &in) == 0);
 		fprintf(stderr, "encoded: %s\n", osmo_hexdump(msgb_data(msg), msgb_length(msg)));
 		out = osmo_mdns_rfc_question_decode(ctx, msgb_data(msg), msgb_length(msg));
 		assert(out);
@@ -211,7 +211,7 @@ void test_enc_dec_rfc_record(void *ctx)
 		size_t record_len;
 
 		PRINT_REC(&in, "in");
-		assert(osmo_mdns_rfc_record_encode(ctx, msg, &in) == 0);
+		assert(osmo_mdns_rfc_record_encode(msg, &in) == 0);
 		fprintf(stderr, "encoded: %s\n", osmo_hexdump(msgb_data(msg), msgb_length(msg)));
 		out = osmo_mdns_rfc_record_decode(ctx, msgb_data(msg), msgb_length(msg), &record_len);
 		fprintf(stderr, "record_len: %lu\n", record_len);
