@@ -263,7 +263,7 @@ struct osmo_mdns_rfc_record *osmo_mdns_rfc_record_decode(void *ctx, const uint8_
 	/* rdata */
 	ret->rdata = talloc_memdup(ret, data + name_len + 10, ret->rdlength);
 	if (!ret->rdata)
-		return NULL;
+		goto error;
 
 	*record_len = name_len + 10 + ret->rdlength;
 	return ret;
