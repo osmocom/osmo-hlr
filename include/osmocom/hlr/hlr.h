@@ -112,6 +112,7 @@ struct hlr {
 				struct osmo_mslookup_client_method *running;
 			} mdns;
 		} client;
+		bool auth_imsi_only;
 	} mslookup;
 };
 
