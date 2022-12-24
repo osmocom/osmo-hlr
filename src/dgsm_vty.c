@@ -188,6 +188,24 @@ DEFUN(cfg_mslookup_server_no_mdns_bind,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_mslookup_auth_imsi_only,
+      cfg_mslookup_auth_imsi_only_cmd,
+      "authorized-imsi-only",
+      "On local GSUP, use mslookup ignoring local HLR + don't answer queries for IMSIs without PS or CS network access mode")
+{
+	g_hlr->mslookup.auth_imsi_only = true;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_no_auth_imsi_only,
+      cfg_mslookup_no_auth_imsi_only_cmd,
+      "no authorized-imsi-only",
+      NO_STR "Answer Local GSUP/mDNS queries for any IMSI in the local HLR database")
+{
+	g_hlr->mslookup.auth_imsi_only = false;
+	return CMD_SUCCESS;
+}
+
 struct cmd_node mslookup_server_msc_node = {
 	MSLOOKUP_SERVER_MSC_NODE,
 	"%s(config-mslookup-server-msc)# ",
@@ -421,6 +439,9 @@ int config_write_mslookup(struct vty *vty)
 
 	vty_out(vty, "mslookup%s", VTY_NEWLINE);
 
+	if (g_hlr->mslookup.auth_imsi_only)
+			vty_out(vty, " authorized-imsi-only%s", VTY_NEWLINE);
+
 	if (g_hlr->mslookup.server.enable || !llist_empty(&g_hlr->mslookup.server.local_site_services)) {
 		struct mslookup_server_msc_cfg *msc;
 
@@ -550,6 +571,8 @@ void dgsm_vty_init(void)
 	install_element(CONFIG_NODE, &cfg_mslookup_cmd);
 
 	install_node(&mslookup_node, config_write_mslookup);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_auth_imsi_only_cmd);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_auth_imsi_only_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_mdns_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_mdns_domain_suffix_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_mdns_cmd);

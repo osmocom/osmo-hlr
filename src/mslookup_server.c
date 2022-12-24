@@ -192,9 +192,16 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 {
 	const struct mslookup_service_host *host;
 	int rc;
+	bool exists = false;
+
 	switch (query->id.type) {
 	case OSMO_MSLOOKUP_ID_IMSI:
 		rc = db_subscr_exists_by_imsi(g_hlr->dbc, query->id.imsi);
+		if (g_hlr->mslookup.auth_imsi_only) {
+			if (!rc)
+				exists = true;
+			rc = db_subscr_authorized_by_imsi(g_hlr->dbc, query->id.imsi);
+		}
 		break;
 	case OSMO_MSLOOKUP_ID_MSISDN:
 		rc = db_subscr_exists_by_msisdn(g_hlr->dbc, query->id.msisdn);
@@ -206,8 +213,9 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 	}
 
 	if (rc) {
-		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: does not exist in local HLR\n",
-		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL));
+		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: %s in local HLR\n",
+		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
+		     (exists) ? "exists but is not authorized" : "does not exist");
 		*result = not_found;
 		return;
 	}
