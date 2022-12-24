@@ -555,6 +555,31 @@ int db_subscr_exists_by_imsi(struct db_context *dbc, const char *imsi) {
 	return rc;
 }
 
+/*! Check if a subscriber exists and has CS or PS service in the HLR database.
+ * \param[in, out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits.
+ * \returns 0 if exists & authorized, -ENOENT if not, -EIO on database error.
+ */
+int db_subscr_authorized_by_imsi(struct db_context *dbc, const char *imsi) {
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_EXISTS_AUTHORIZED_BY_IMSI];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, NULL, imsi))
+		return -EIO;
+
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	if (rc == SQLITE_ROW)
+		return 0; /* exists */
+	if (rc == SQLITE_DONE)
+		return -ENOENT; /* does not exist */
+
+	err = sqlite3_errmsg(dbc->db);
+	LOGP(DAUC, LOGL_ERROR, "Failed to check for authorized subscriber by IMSI='%s': %s\n", imsi, err);
+	return rc;
+}
+
 /*! Retrieve subscriber data from the HLR database.
  * \param[in,out] dbc  database context.
  * \param[in] imsi  ASCII string of IMSI digits.
