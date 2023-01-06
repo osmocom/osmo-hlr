@@ -386,6 +386,24 @@ DEFUN(cfg_mslookup_no_client,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_mslookup_client_subscr_cod_fallback,
+      cfg_mslookup_client_subscr_cod_fallback_cmd,
+      "create-on-demand-fallback",
+      "If the msclient does not get a response from mDNS, proceed according to this HLR subscriber-create-on-demand config")
+{
+	g_hlr->mslookup.client.subscr_create_on_demand_fallback = true;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_client_no_subscr_cod_fallback,
+      cfg_mslookup_client_no_subscr_cod_fallback_cmd,
+      "no create-on-demand-fallback",
+      NO_STR "Return IMSI UNKNOWN if the mslookup client does not receive a response from mDNS")
+{
+	g_hlr->mslookup.client.subscr_create_on_demand_fallback = false;
+	return CMD_SUCCESS;
+}
+
 DEFUN(cfg_mslookup_client_timeout,
       cfg_mslookup_client_timeout_cmd,
       "timeout <1-100000>",
@@ -520,6 +538,8 @@ int config_write_mslookup(struct vty *vty)
 			vty_out(vty, "  timeout %u%s",
 				g_hlr->mslookup.client.result_timeout_milliseconds,
 				VTY_NEWLINE);
+		if (g_hlr->mslookup.client.subscr_create_on_demand_fallback)
+			vty_out(vty, "  create-on-demand-fallback%s", VTY_NEWLINE);
 	}
 
 	return CMD_SUCCESS;
@@ -618,6 +638,8 @@ void dgsm_vty_init(void)
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_client_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_client_cmd);
 	install_node(&mslookup_client_node, NULL);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_subscr_cod_fallback_cmd);
+	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_no_subscr_cod_fallback_cmd);
 	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_timeout_cmd);
 	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_mdns_bind_cmd);
 	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_mdns_domain_suffix_cmd);

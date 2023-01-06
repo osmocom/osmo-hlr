@@ -71,6 +71,8 @@ void proxy_init(struct osmo_gsup_server *gsup_server_to_vlr);
 void proxy_del(struct proxy *proxy);
 void proxy_set_gc_period(struct proxy *proxy, uint32_t gc_period);
 
+struct osmo_gsup_req *proxy_deferred_gsup_req_get_by_imsi(struct proxy *proxy, const char *imsi);
+
 /* The API to access / modify proxy entries keeps the implementation opaque, to make sure that we can easily move proxy
  * storage to SQLite db. */
 int proxy_subscr_get_by_imsi(struct proxy_subscr *dst, struct proxy *proxy, const char *imsi);

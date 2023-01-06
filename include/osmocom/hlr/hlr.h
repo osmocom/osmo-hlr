@@ -132,6 +132,7 @@ struct hlr {
 				char *domain_suffix;
 				struct osmo_mslookup_client_method *running;
 			} mdns;
+			bool subscr_create_on_demand_fallback;
 		} client;
 		bool auth_imsi_only;
 		bool ignore_created_on_demand;
@@ -144,3 +145,4 @@ struct hlr_subscriber;
 
 void osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr);
 int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val, bool is_ps);
+void dgsm_fallback_to_hlr();

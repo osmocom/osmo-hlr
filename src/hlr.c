@@ -391,7 +391,7 @@ static int rx_purge_ms_req(struct osmo_gsup_req *req)
 	return rc;
 }
 
-static int rx_check_imei_req(struct osmo_gsup_req *req)
+static int rx_check_imei_req(struct osmo_gsup_req *req, bool final)
 {
 	struct osmo_gsup_message gsup_reply;
 	char imei[GSM23003_IMEI_NUM_DIGITS_NO_CHK+1] = {0};
@@ -445,7 +445,7 @@ static int rx_check_imei_req(struct osmo_gsup_req *req)
 		.message_type = OSMO_GSUP_MSGT_CHECK_IMEI_RESULT,
 		.imei_result = OSMO_GSUP_IMEI_RESULT_ACK,
 	};
-	return osmo_gsup_req_respond(req, &gsup_reply, false, true);
+	return osmo_gsup_req_respond(req, &gsup_reply, false, final);
 }
 
 static char namebuf[255];
@@ -566,7 +566,7 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		lu_rx_gsup(req);
 		break;
 	case OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST:
-		rx_check_imei_req(req);
+		rx_check_imei_req(req, true);
 		break;
 	case OSMO_GSUP_MSGT_MO_FORWARD_SM_REQUEST:
 		forward_mo_sms(req);
@@ -584,6 +584,12 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		break;
 	}
 	return 0;
+}
+
+void dgsm_fallback_to_hlr(struct osmo_gsup_req *req) {
+	LOGP(DDGSM, LOGL_DEBUG, "Fall back to HLR from DGSM for [%s]\n",
+	     osmo_gsup_message_type_name(req->gsup.message_type));
+	rx_check_imei_req(req, false);
 }
 
 static void print_usage(void)

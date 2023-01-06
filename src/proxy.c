@@ -113,6 +113,19 @@ static bool proxy_deferred_gsup_req_waiting(struct proxy *proxy, const char *ims
 	return false;
 }
 
+struct osmo_gsup_req *proxy_deferred_gsup_req_get_by_imsi(struct proxy *proxy, const char *imsi)
+{
+	struct proxy_pending_gsup_req *p;
+	OSMO_ASSERT(imsi);
+
+	llist_for_each_entry(p, &proxy->pending_gsup_reqs, entry) {
+		if (strcmp(p->req->gsup.imsi, imsi))
+			continue;
+		return p->req;
+	}
+	return NULL;
+}
+
 /* Result of looking for remote HLR. If it failed, pass remote_hlr as NULL. On failure, the remote_hlr may be passed
  * NULL. */
 static void proxy_deferred_gsup_req_pop(struct proxy *proxy, const char *imsi, struct remote_hlr *remote_hlr)
