@@ -22,9 +22,11 @@
 #include <osmocom/mslookup/mslookup_client_mdns.h>
 #include <osmocom/mslookup/mdns.h>
 #include <osmocom/hlr/hlr_vty.h>
+#include <osmocom/hlr/proxy.h>
 #include <osmocom/hlr/mslookup_server.h>
 #include <osmocom/hlr/mslookup_server_mdns.h>
 #include <osmocom/gsupclient/cni_peer_id.h>
+#include <osmocom/gsm/gsm23003.h>
 
 struct cmd_node mslookup_node = {
 	MSLOOKUP_NODE,
@@ -606,6 +608,84 @@ DEFUN(do_mslookup_show_services,
 	return CMD_SUCCESS;
 }
 
+struct proxy_subscr_listentry {
+	struct llist_head entry;
+	timestamp_t last_update;
+	struct proxy_subscr data;
+};
+
+struct proxy_pending_gsup_req {
+	struct llist_head entry;
+	struct osmo_gsup_req *req;
+	timestamp_t received_at;
+};
+
+static void write_one_proxy(struct vty *vty, struct proxy_subscr_listentry *e)
+{
+	struct proxy_subscr p = e->data;
+	uint32_t age;
+	//bool bad_age = false;
+	//char datebuf[32];
+
+	if (!timestamp_age(&e->last_update, &age))
+		vty_out(vty, "Warning: Invalid Timestamp%s", VTY_NEWLINE);
+
+	vty_out(vty, VTY_NEWLINE);
+	vty_out(vty, "  IMSI: %s%sMSISDN: %s%s   HLR: %s:%u%s   AGE: %u seconds %s---------------------------%s",
+		p.imsi, VTY_NEWLINE,
+		p.msisdn ? p.msisdn : "Unknown", VTY_NEWLINE,
+		p.remote_hlr_addr.ip ? p.remote_hlr_addr.ip : "Unknown",
+		p.remote_hlr_addr.port, VTY_NEWLINE, age,
+		VTY_NEWLINE, VTY_NEWLINE);
+}
+
+static void write_one_proxy_request(struct vty *vty, struct osmo_gsup_req *r)
+{
+	vty_out(vty, "IMSI: %s TYPE: %s%s",
+		r->gsup.imsi,
+		osmo_gsup_message_type_name(r->gsup.message_type),
+		VTY_NEWLINE);
+}
+
+DEFUN(do_proxy_del_sub,
+      do_proxy_del_sub_cmd,
+      "proxy subscriber-delete [IMSI]",
+      "Subscriber Proxy \n"
+      "Delete by IMSI\n"
+      "IMSI of subscriber to delete from the Proxy"
+      )
+{
+	const char *imsi = argv[0];
+	if (!osmo_imsi_str_valid(imsi)) {
+		vty_out(vty, "%% Not a valid IMSI: %s%s", imsi, VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	if (proxy_subscr_del(g_hlr->gs->proxy, imsi) == 0)
+		return CMD_SUCCESS;
+	vty_out(vty, "%% Unable to delete a Proxy for: %s%s", imsi, VTY_NEWLINE);
+	return CMD_WARNING;
+}
+
+DEFUN(do_proxy_show,
+      do_proxy_show_cmd,
+      "show proxy",
+      SHOW_STR "Proxy Entries\n")
+{
+	struct proxy_subscr_listentry *e;
+	struct proxy_pending_gsup_req *p;
+
+	vty_out(vty, "Proxy Subscribers%s", VTY_NEWLINE);
+	llist_for_each_entry(e, &g_hlr->gs->proxy->subscr_list, entry) {
+		write_one_proxy(vty, e);
+	}
+	vty_out(vty, VTY_NEWLINE);
+	vty_out(vty, "In-flight Proxy Subscribers Requests%s", VTY_NEWLINE);
+	llist_for_each_entry(p, &g_hlr->gs->proxy->pending_gsup_reqs, entry) {
+		write_one_proxy_request(vty, p->req);
+	}
+	return CMD_SUCCESS;
+}
+
 void dgsm_vty_init(void)
 {
 	install_element(CONFIG_NODE, &cfg_mslookup_cmd);
@@ -648,4 +728,6 @@ void dgsm_vty_init(void)
 	install_element(MSLOOKUP_CLIENT_NODE, &cfg_mslookup_client_no_gateway_proxy_cmd);
 
 	install_element_ve(&do_mslookup_show_services_cmd);
+	install_element_ve(&do_proxy_show_cmd);
+	install_element_ve(&do_proxy_del_sub_cmd);
 }
