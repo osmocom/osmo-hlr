@@ -93,6 +93,9 @@ static const char *stmt_sql[] = {
 	[DB_STMT_SET_LAST_LU_SEEN_PS] = "UPDATE subscriber SET last_lu_seen_ps = datetime($val, 'unixepoch') WHERE id = $subscriber_id",
 	[DB_STMT_EXISTS_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi",
 	[DB_STMT_EXISTS_AUTHORIZED_BY_IMSI] = "SELECT 1 FROM subscriber WHERE imsi = $imsi AND (nam_cs = 1 OR nam_ps = 1)",
+	[DB_STMT_IS_CREATED_ON_DEMAND_BY_IMSI] =
+		"SELECT 1 FROM subscriber WHERE imsi = $imsi AND length(msisdn) = $msisdn_len"
+		" AND nam_cs = 0 AND nam_ps = 0 AND vlr_number IS NULL",
 	[DB_STMT_EXISTS_BY_MSISDN] = "SELECT 1 FROM subscriber WHERE msisdn = $msisdn",
 	[DB_STMT_IND_ADD] = "INSERT INTO ind (vlr) VALUES ($vlr)",
 	[DB_STMT_IND_SELECT] = "SELECT ind FROM ind WHERE vlr = $vlr",

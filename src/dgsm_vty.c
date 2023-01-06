@@ -206,6 +206,24 @@ DEFUN(cfg_mslookup_no_auth_imsi_only,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_mslookup_cod,
+      cfg_mslookup_cod_cmd,
+      "ignore-created-on-demand",
+      "Ignore IMSIs that were created-on-demand")
+{
+	g_hlr->mslookup.ignore_created_on_demand = true;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_mslookup_no_cod,
+      cfg_mslookup_no_cod_cmd,
+      "no ignore-created-on-demand",
+      NO_STR "Answer mslookup and local GSUP for created on demand IMSIs")
+{
+	g_hlr->mslookup.ignore_created_on_demand = false;
+	return CMD_SUCCESS;
+}
+
 struct cmd_node mslookup_server_msc_node = {
 	MSLOOKUP_SERVER_MSC_NODE,
 	"%s(config-mslookup-server-msc)# ",
@@ -441,6 +459,8 @@ int config_write_mslookup(struct vty *vty)
 
 	if (g_hlr->mslookup.auth_imsi_only)
 			vty_out(vty, " authorized-imsi-only%s", VTY_NEWLINE);
+	if (g_hlr->mslookup.ignore_created_on_demand)
+			vty_out(vty, " ignore-created-on-demand%s", VTY_NEWLINE);
 
 	if (g_hlr->mslookup.server.enable || !llist_empty(&g_hlr->mslookup.server.local_site_services)) {
 		struct mslookup_server_msc_cfg *msc;
@@ -573,6 +593,8 @@ void dgsm_vty_init(void)
 	install_node(&mslookup_node, config_write_mslookup);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_auth_imsi_only_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_auth_imsi_only_cmd);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_cod_cmd);
+	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_cod_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_mdns_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_mdns_domain_suffix_cmd);
 	install_element(MSLOOKUP_NODE, &cfg_mslookup_no_mdns_cmd);

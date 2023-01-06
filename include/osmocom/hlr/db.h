@@ -41,6 +41,7 @@ enum stmt_idx {
 	DB_STMT_SET_LAST_LU_SEEN_PS,
 	DB_STMT_EXISTS_BY_IMSI,
 	DB_STMT_EXISTS_AUTHORIZED_BY_IMSI,
+	DB_STMT_IS_CREATED_ON_DEMAND_BY_IMSI,
 	DB_STMT_EXISTS_BY_MSISDN,
 	DB_STMT_IND_ADD,
 	DB_STMT_IND_SELECT,
@@ -159,6 +160,7 @@ int db_subscr_update_imei_by_imsi(struct db_context *dbc, const char* imsi, cons
 
 int db_subscr_exists_by_imsi(struct db_context *dbc, const char *imsi);
 int db_subscr_authorized_by_imsi(struct db_context *dbc, const char *imsi);
+int db_subscr_is_created_on_demand_by_imsi(struct db_context *dbc, const char *imsi, unsigned int msisdn_len);
 int db_subscr_exists_by_msisdn(struct db_context *dbc, const char *msisdn);
 
 int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *filter,
