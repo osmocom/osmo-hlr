@@ -58,6 +58,12 @@ static void resolve_hlr_result_cb(struct osmo_mslookup_client *client,
 	if (result->rc != OSMO_MSLOOKUP_RC_RESULT) {
 		LOG_DGSM(query->id.imsi, LOGL_ERROR, "Failed to resolve remote HLR: %s\n",
 			 osmo_mslookup_result_name_c(OTC_SELECT, query, result));
+		if (g_hlr->mslookup.client.subscr_create_on_demand_fallback &&
+		    db_subscr_exists_by_imsi(g_hlr->dbc, query->id.imsi) != 0) {
+			struct osmo_gsup_req *req = proxy_deferred_gsup_req_get_by_imsi(proxy, query->id.imsi);
+			if (req && req->gsup.message_type == OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST)
+				dgsm_fallback_to_hlr(req);
+		}
 		proxy_subscr_del(proxy, query->id.imsi);
 		return;
 	}
