@@ -121,6 +121,7 @@ struct hlr {
 			} mdns;
 		} client;
 		bool auth_imsi_only;
+		bool ignore_created_on_demand;
 	} mslookup;
 };
 
