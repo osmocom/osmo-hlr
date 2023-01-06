@@ -194,11 +194,25 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 	int rc;
 	bool exists = false;
 	bool auth_imsi_only = false;
+	bool created_on_demand = false;
 
 	switch (query->id.type) {
 	case OSMO_MSLOOKUP_ID_IMSI_AUTHORIZED:
 		auth_imsi_only = true;
 	case OSMO_MSLOOKUP_ID_IMSI:
+		/* Entries that have been created by subscriber create on demand
+		   will have default msisdn length. and will not have any vlr_number entry.
+		   We should not answer for these, unless they have CS/PS service. */
+		if (g_hlr->mslookup.ignore_created_on_demand) {
+			rc = db_subscr_is_created_on_demand_by_imsi(g_hlr->dbc, query->id.imsi,
+								    g_hlr->subscr_create_on_demand.rand_msisdn_len);
+			if (!rc) {
+				exists = true;
+				created_on_demand = true;
+				rc = -ENOENT;
+				break;
+			}
+		}
 		rc = db_subscr_exists_by_imsi(g_hlr->dbc, query->id.imsi);
 		if (g_hlr->mslookup.auth_imsi_only || auth_imsi_only) {
 			if (!rc)
@@ -208,6 +222,7 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 		break;
 	case OSMO_MSLOOKUP_ID_MSISDN:
 		rc = db_subscr_exists_by_msisdn(g_hlr->dbc, query->id.msisdn);
+		/* FIXME: The log message below might not match */
 		break;
 	default:
 		LOGP(DMSLOOKUP, LOGL_ERROR, "Unknown mslookup ID type: %d\n", query->id.type);
@@ -216,9 +231,11 @@ static void mslookup_server_rx_hlr_gsup(const struct osmo_mslookup_query *query,
 	}
 
 	if (rc) {
-		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: %s in local HLR\n",
+		LOGP(DMSLOOKUP, LOGL_DEBUG, "%s: %s%s%s in local HLR\n",
 		     osmo_mslookup_result_name_c(OTC_SELECT, query, NULL),
-		     (exists) ? "exists but is not authorized" : "does not exist");
+		     (exists) ? "exists but" : "does not exist",
+		     (created_on_demand) ? " is created on demand and since untouched" : "",
+		     (exists && !created_on_demand) ? " is not authorized" : "");
 		*result = not_found;
 		return;
 	}

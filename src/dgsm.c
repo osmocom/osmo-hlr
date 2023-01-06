@@ -91,12 +91,17 @@ bool dgsm_check_forward_gsup_msg(struct osmo_gsup_req *req)
 	struct osmo_mslookup_query_handling handling;
 	uint32_t request_handle;
 
-	/* If the IMSI is authorized in the local HLR, then we won't proxy. */
+	/* If the IMSI is authorized in the local HLR, then we won't proxy */
 	if (db_subscr_authorized_by_imsi(g_hlr->dbc, req->gsup.imsi) == 0)
 		return false;
-	/* If auth imsi is not set, then we won't proxy for ANY known IMSI */
-	if (!g_hlr->mslookup.auth_imsi_only &&
+	/* unless configuration tells us to do otherwise. */
+	if (!g_hlr->mslookup.ignore_created_on_demand && !g_hlr->mslookup.auth_imsi_only &&
 	    db_subscr_exists_by_imsi(g_hlr->dbc, req->gsup.imsi) == 0)
+		return false;
+
+	if (!g_hlr->mslookup.auth_imsi_only && !(g_hlr->mslookup.ignore_created_on_demand &&
+	    db_subscr_is_created_on_demand_by_imsi(g_hlr->dbc, req->gsup.imsi,
+						   g_hlr->subscr_create_on_demand.rand_msisdn_len) == 0))
 		return false;
 
 	/* Are we already forwarding this IMSI to a remote HLR? */

@@ -580,6 +580,34 @@ int db_subscr_authorized_by_imsi(struct db_context *dbc, const char *imsi) {
 	return rc;
 }
 
+/*! Check if a subscriber exists and has ever been attached
+ * \param[in, out] dbc  database context.
+ * \param[in] imsi  ASCII string of IMSI digits.
+ * \returns 0 if has vlr_number, -ENOENT if not, -EIO on database error.
+ */
+int db_subscr_is_created_on_demand_by_imsi(struct db_context *dbc, const char *imsi, unsigned int msisdn_len) {
+	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_IS_CREATED_ON_DEMAND_BY_IMSI];
+	const char *err;
+	int rc;
+
+	if (!db_bind_text(stmt, "$imsi", imsi))
+		return -EIO;
+
+	if (!db_bind_int(stmt, "$msisdn_len", msisdn_len))
+		return -EIO;
+
+	rc = sqlite3_step(stmt);
+	db_remove_reset(stmt);
+	if (rc == SQLITE_ROW)
+		return 0; /* exists */
+	if (rc == SQLITE_DONE)
+		return -ENOENT; /* does not exist */
+
+	err = sqlite3_errmsg(dbc->db);
+	LOGP(DAUC, LOGL_ERROR, "Failed to check for on demand subscriber by IMSI='%s': %s\n", imsi, err);
+	return rc;
+}
+
 /*! Retrieve subscriber data from the HLR database.
  * \param[in,out] dbc  database context.
  * \param[in] imsi  ASCII string of IMSI digits.
