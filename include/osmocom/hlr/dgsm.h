@@ -25,6 +25,7 @@
 #include <osmocom/gsupclient/cni_peer_id.h>
 #include <osmocom/gsupclient/gsup_req.h>
 
+#define OSMO_DGSM_DEFAULT_LOCAL_ATTACH_MAX_AGE	60 * 60
 #define OSMO_DGSM_DEFAULT_RESULT_TIMEOUT_MS	2000
 #define LOG_DGSM(imsi, level, fmt, args...) \
 	LOGP(DDGSM, level, "(IMSI-%s) " fmt, imsi, ##args)

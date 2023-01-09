@@ -190,6 +190,17 @@ DEFUN(cfg_mslookup_server_no_mdns_bind,
 	return CMD_SUCCESS;
 }
 
+DEFUN(cfg_mslookup_server_max_age,
+      cfg_mslookup_server_max_age_cmd,
+      "max-age <1-21600>",
+      "How old can the Last Location Update be for the mslookup server to respond\n"
+      "max age in seconds\n")
+{
+	uint32_t val = atol(argv[0]);
+	g_hlr->mslookup.server.local_attach_max_age = val;
+	return CMD_SUCCESS;
+}
+
 DEFUN(cfg_mslookup_auth_imsi_only,
       cfg_mslookup_auth_imsi_only_cmd,
       "authorized-imsi-only",
@@ -511,6 +522,9 @@ int config_write_mslookup(struct vty *vty)
 			vty_out(vty, "  msc ipa-name %s%s", osmo_ipa_name_to_str(&msc->name), VTY_NEWLINE);
 			config_write_msc_services(vty, "   ", msc);
 		}
+		if (g_hlr->mslookup.server.local_attach_max_age != OSMO_DGSM_DEFAULT_LOCAL_ATTACH_MAX_AGE)
+			vty_out(vty, "  max-age %u%s",
+				g_hlr->mslookup.server.local_attach_max_age, VTY_NEWLINE);
 
 		/* If the server is disabled, still output the above to not lose the service config. */
 		if (!g_hlr->mslookup.server.enable)
@@ -725,6 +739,7 @@ void dgsm_vty_init(void)
 	install_element(MSLOOKUP_SERVER_NODE, &cfg_mslookup_server_msc_service_cmd);
 	install_element(MSLOOKUP_SERVER_NODE, &cfg_mslookup_server_msc_no_service_cmd);
 	install_element(MSLOOKUP_SERVER_NODE, &cfg_mslookup_server_msc_no_service_addr_cmd);
+	install_element(MSLOOKUP_SERVER_NODE, &cfg_mslookup_server_max_age_cmd);
 	install_element(MSLOOKUP_SERVER_NODE, &cfg_mslookup_server_msc_cmd);
 
 	install_node(&mslookup_server_msc_node, NULL);
