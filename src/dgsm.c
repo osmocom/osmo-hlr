@@ -183,7 +183,7 @@ void dgsm_init(void *ctx)
 	dgsm_ctx = talloc_named_const(ctx, 0, "dgsm");
 	INIT_LLIST_HEAD(&g_hlr->mslookup.server.local_site_services);
 
-	g_hlr->mslookup.server.local_attach_max_age = 60 * 60;
+	g_hlr->mslookup.server.local_attach_max_age = OSMO_DGSM_DEFAULT_LOCAL_ATTACH_MAX_AGE;
 
 	g_hlr->mslookup.client.result_timeout_milliseconds = OSMO_DGSM_DEFAULT_RESULT_TIMEOUT_MS;
 
