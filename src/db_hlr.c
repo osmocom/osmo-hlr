@@ -753,9 +753,12 @@ int db_subscrs_get(struct db_context *dbc, const char *filter_type, const char *
 		copy_sqlite3_text_to_buf(subscr.imei, stmt, 3);
 		subscr.nam_cs = sqlite3_column_int(stmt, 9);
 		subscr.nam_ps = sqlite3_column_int(stmt, 10);
-		if (show_ls)
+		if (show_ls) {
 			parse_last_lu_seen(&subscr.last_lu_seen, (const char *)sqlite3_column_text(stmt, 14),
 					   subscr.imsi, "CS");
+			copy_sqlite3_text_to_buf(subscr.vlr_number, stmt, 4);
+		}
+
 		get_cb(&subscr, data);
 		rc = sqlite3_step(stmt);
 		(*count)++;
