@@ -182,8 +182,11 @@ static void subscr_dump_summary_vty(struct hlr_subscriber *subscr, void *data)
 		vty_out(vty,"   ------------- ");
 	}
 	vty_out(vty, "   %-2s%-2s  ", subscr->nam_cs ? "CS" : "", subscr->nam_ps ? "PS" : "");
-	if (subscr->last_lu_seen)
+	if (subscr->last_lu_seen) {
+		/* VLR Number is max length 32, possibly truncate here */
+		vty_out(vty, " %.22s ", subscr->vlr_number);
 		dump_last_lu_seen(vty, "CS", subscr->last_lu_seen, true);
+	}
 	vty_out_newline(vty);
 }
 
@@ -218,8 +221,8 @@ static void dump_summary_table_vty(struct vty *vty, bool header, bool show_ls)
 {
 	const char *texts = "ID     MSISDN        IMSI              IMEI              NAM";
 	const char *lines = "-----  ------------  ----------------  ----------------  -----";
-	const char *ls_text = "    LAST SEEN";
-	const char *ls_line = "  ------------";
+	const char *ls_text = "    VLR_NUMBER             LAST SEEN      ";
+	const char *ls_line = "  ---------------------  ---------------------";
 	if (header) {
 		if (!show_ls)
 			vty_out(vty, "%s%s%s%s", texts, VTY_NEWLINE, lines, VTY_NEWLINE);
