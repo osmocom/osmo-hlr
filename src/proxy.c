@@ -190,6 +190,7 @@ int proxy_subscr_create_or_update(struct proxy *proxy, const struct proxy_subscr
 int _proxy_subscr_del(struct proxy_subscr_listentry *e)
 {
 	llist_del(&e->entry);
+	talloc_free(e);
 	return 0;
 }
 
