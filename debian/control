@@ -7,12 +7,12 @@ Build-Depends: debhelper (>= 9),
                dh-autoreconf,
                autotools-dev,
                python3-minimal,
-               libosmocore-dev (>= 1.7.0),
-               libosmo-abis-dev (>= 1.3.0),
-               libosmo-netif-dev (>= 1.2.0),
+               libosmocore-dev (>= 1.8.0),
+               libosmo-abis-dev (>= 1.4.0),
+               libosmo-netif-dev (>= 1.3.0),
                libsqlite3-dev,
                sqlite3,
-               osmo-gsm-manuals-dev (>= 1.3.0)
+               osmo-gsm-manuals-dev (>= 1.4.0)
 Standards-Version: 3.9.6
 Vcs-Browser: https://gitea.osmocom.org/cellular-infrastructure/osmo-hlr
 Vcs-Git: https://gitea.osmocom.org/cellular-infrastructure/osmo-hlr
@@ -59,7 +59,7 @@ Description: Development headers of Osmocom GSUP client library
   .
   This package contains the development headers.
 
-Package: libosmo-mslookup0
+Package: libosmo-mslookup1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -73,7 +73,7 @@ Package: libosmo-mslookup-dev
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
-	 libosmo-mslookup0 (= ${binary:Version}),
+	 libosmo-mslookup1 (= ${binary:Version}),
 	 libosmocore-dev
 Pre-Depends: ${misc:Pre-Depends}
 Description: Development headers of Osmocom MS lookup library
@@ -85,7 +85,7 @@ Package: osmo-mslookup-utils
 Architecture: any
 Section: utils
 Depends: ${shlibs:Depends},
-	 libosmo-mslookup0 (= ${binary:Version}),
+	 libosmo-mslookup1 (= ${binary:Version}),
          ${misc:Depends}
 Multi-Arch: same
 Description: Utilities for Osmocom MS lookup

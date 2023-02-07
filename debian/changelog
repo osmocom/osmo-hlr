@@ -1,3 +1,42 @@
+osmo-hlr (1.6.0) unstable; urgency=medium
+
+  [ Vadim Yanitskiy ]
+  * db_auc: hexparse_stmt(): check value returned by osmo_hexparse()
+
+  [ Max ]
+  * Set working directory in systemd service file
+  * Ignore .deb build byproducts
+  * Debian: bump copyright year to match current
+  * Debian: reformat package description
+  * systemd: enable basic hardening
+  * Debian: install osmo-hlr-dgsm.cfg as example config
+  * hlr_vty.c: fix typo
+  * ctrl: take both address and port from vty config
+
+  [ Harald Welte ]
+  * Support building with -Werror=strict-prototypes / -Werror=old-style-definition
+  * Add -Werror=implicit-int -Werror=int-conversion -Werror=old-style-definition
+
+  [ arehbein ]
+  * osmo-hlr: Transition to use of 'telnet_init_default'
+
+  [ Oliver Smith ]
+  * osmo_mdns_rfc_record_decode: check ret of talloc
+  * osmo_mdns_rfc_record_decode: proper free on err
+  * mslookup: use apn functions from libosmocore
+  * osmo_mdns_rfc_record/question_encode: remove ctx
+
+  [ Keith ]
+  * Vty: Fixup config shown/written from vty
+
+  [ Neels Hofmeyr ]
+  * fix memleak of proxy_subscr_listentry
+
+  [ Alexander Couzens ]
+  * Add vty `reject-cause` to set the reject cause
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Tue, 07 Feb 2023 16:49:14 +0100
+
 osmo-hlr (1.5.0) unstable; urgency=medium
 
   [ Oliver Smith ]
