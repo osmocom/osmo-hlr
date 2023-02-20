@@ -71,7 +71,7 @@ struct osmo_mdns_rfc_header {
 	uint16_t nscount; /* Number of authority records */
 	uint16_t arcount; /* Number of additional records */
 #elif OSMO_IS_BIG_ENDIAN
-/* auto-generated from the little endian part above (libosmocore/contrib/struct_endianess.py) */
+/* auto-generated from the little endian part above (libosmocore/contrib/struct_endianness.py) */
 	uint16_t id;
 	uint8_t qr:1, opcode:4, aa:1, tc:1, rd:1;
 	uint8_t ra:1, z:3, rcode:4;
