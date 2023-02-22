@@ -160,7 +160,7 @@ OsmoHLR# subscriber imsi 123456789023000 show
     ID: 101
     IMSI: 123456789023000
     MSISDN: 423
-    2G auth: XOR
+    2G auth: XOR-3G
              KI=deaf0ff1ced0d0dabbedd1ced1cef00d
 
 OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki BeefedCafeFaceAcedAddedDecadeFee

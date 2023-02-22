@@ -879,7 +879,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
-  .algo = XOR,
+  .algo = XOR-3G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
 3G: none
@@ -907,7 +907,7 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
-  .algo = XOR,
+  .algo = XOR-3G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
 3G: none
