@@ -677,9 +677,6 @@ GET_REPLY 112 subscriber.by-imsi-901991234567891.aud2g none
 SET 113 subscriber.by-imsi-901991234567891.aud2g xor,c01ffedc1cadaeac1d1f1edacac1ab0a
 SET_REPLY 113 subscriber.by-imsi-901991234567891.aud2g OK
 
-GET 114 subscriber.by-imsi-901991234567891.aud2g
-GET_REPLY 114 subscriber.by-imsi-901991234567891.aud2g XOR,c01ffedc1cadaeac1d1f1edacac1ab0a
-
 SET 115 subscriber.by-imsi-901991234567891.aud2g none
 SET_REPLY 115 subscriber.by-imsi-901991234567891.aud2g OK
 

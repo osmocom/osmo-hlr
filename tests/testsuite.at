@@ -27,7 +27,12 @@ AT_KEYWORDS([db])
 cat $abs_srcdir/db/db_test.ok > expout
 cat $abs_srcdir/db/db_test.err > experr
 sqlite3 db_test.db < $abs_top_srcdir/sql/hlr.sql
-AT_CHECK([$abs_top_builddir/tests/db/db_test], [], [expout], [experr])
+
+# Compatibility with libosmocore I446e54d0ddf4a18c46ee022b1249af73552e3ce1
+$abs_top_builddir/tests/db/db_test >out 2>err
+sed -i "s/XOR-3G,/XOR,/g" err
+
+AT_CHECK([cat out; cat err >&2], [], [expout], [experr])
 AT_CLEANUP
 
 # AT_SKIP_IF: disable for old sqlite versions, because the way we dump tables in the test doesn't work with it.
