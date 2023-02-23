@@ -1,3 +1,10 @@
+osmo-hlr (1.6.1) unstable; urgency=medium
+
+  * Run struct_endianness.py
+  * tests: adjust to XOR-3G rename in libosmocore
+
+ -- Oliver Smith <osmith@sysmocom.de>  Thu, 23 Feb 2023 10:23:04 +0100
+
 osmo-hlr (1.6.0) unstable; urgency=medium
 
   [ Vadim Yanitskiy ]
