@@ -2,12 +2,12 @@ SUBDIRS = gen_ts_55_205_test_sets
 
 AM_CPPFLAGS = \
 	$(all_includes) \
+	-I$(top_srcdir)/include \
 	$(NULL)
 
 AM_CFLAGS = \
 	-Wall \
 	-ggdb3 \
-	-I$(top_srcdir)/include \
 	$(LIBOSMOCORE_CFLAGS) \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(NULL)
