@@ -30,8 +30,8 @@ auc_test_SOURCES = \
 	$(NULL)
 
 auc_test_LDADD = \
-	$(top_srcdir)/src/auc.c \
-	$(top_srcdir)/src/logging.c \
+	$(top_builddir)/src/auc.o \
+	$(top_builddir)/src/logging.o \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(NULL)
@@ -41,8 +41,8 @@ auc_ts_55_205_test_sets_SOURCES = \
 	$(NULL)
 
 auc_ts_55_205_test_sets_LDADD = \
-	$(top_srcdir)/src/auc.c \
-	$(top_srcdir)/src/logging.c \
+	$(top_builddir)/src/auc.o \
+	$(top_builddir)/src/logging.o \
 	$(LIBOSMOCORE_LIBS) \
 	$(LIBOSMOGSM_LIBS) \
 	$(NULL)
