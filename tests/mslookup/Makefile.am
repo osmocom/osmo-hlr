@@ -1,11 +1,11 @@
 AM_CPPFLAGS = \
 	$(all_includes) \
+	-I$(top_srcdir)/include \
 	$(NULL)
 
 AM_CFLAGS = \
 	-Wall \
 	-ggdb3 \
-	-I$(top_srcdir)/include \
 	$(LIBOSMOCORE_CFLAGS) \
 	$(LIBOSMOGSM_CFLAGS) \
 	$(LIBOSMOABIS_CFLAGS) \
