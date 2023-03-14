@@ -419,9 +419,9 @@ static void socket_client_close(struct socket_client *c)
 {
 	struct osmo_fd *ofd = &c->ofd;
 
+	osmo_fd_unregister(ofd);
 	close(ofd->fd);
 	ofd->fd = -1;
-	osmo_fd_unregister(ofd);
 
 	llist_del(&c->entry);
 	talloc_free(c);
@@ -561,9 +561,9 @@ void socket_close(void)
 	llist_for_each_entry_safe(c, n, &globals.socket_clients, entry)
 		socket_client_close(c);
 	if (osmo_fd_is_registered(&globals.socket_ofd)) {
+		osmo_fd_unregister(&globals.socket_ofd);
 		close(globals.socket_ofd.fd);
 		globals.socket_ofd.fd = -1;
-		osmo_fd_unregister(&globals.socket_ofd);
 	}
 }
 
