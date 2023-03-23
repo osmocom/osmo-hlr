@@ -276,6 +276,16 @@ int hlr_subscr_nam(struct hlr *hlr, struct hlr_subscriber *subscr, bool nam_val,
 	return 0;
 }
 
+static int rx_epdg_tunnel_request(struct osmo_gsup_req *req)
+{
+	struct osmo_gsup_message gsup_out = {
+		.message_type = OSMO_GSUP_MSGT_EPDG_TUNNEL_RESULT,
+	};
+
+	osmo_gsup_req_respond(req, &gsup_out, false, true);
+	return 0;
+}
+
 /***********************************************************************
  * Send Auth Info handling
  ***********************************************************************/
@@ -558,6 +568,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		break;
 	case OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST:
 		rx_check_imei_req(req);
+		break;
+	case OSMO_GSUP_MSGT_EPDG_TUNNEL_REQUEST:
+		rx_epdg_tunnel_request(req);
 		break;
 	default:
 		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
