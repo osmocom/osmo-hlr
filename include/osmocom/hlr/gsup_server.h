@@ -69,8 +69,6 @@ void osmo_gsup_server_destroy(struct osmo_gsup_server *gsups);
 int osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
 				     uint8_t *apn_buf, size_t apn_buf_size);
 int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, const char *imsi, const char *msisdn,
-					    uint8_t *msisdn_enc, size_t msisdn_enc_size,
-				            uint8_t *apn_buf, size_t apn_buf_size,
-					    enum osmo_gsup_cn_domain cn_domain);
+					    enum osmo_gsup_cn_domain cn_domain, void *talloc_ctx);
 int osmo_gsup_forward_to_local_peer(struct osmo_gsup_server *server, const struct osmo_cni_peer_id *to_peer,
 				    struct osmo_gsup_req *req, struct osmo_gsup_message *modified_gsup);

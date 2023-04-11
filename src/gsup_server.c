@@ -446,19 +446,16 @@ int osmo_gsup_configure_wildcard_apn(struct osmo_gsup_message *gsup,
  * \param[out] gsup  The gsup message to populate.
  * \param[in] imsi  The subscriber's IMSI.
  * \param[in] msisdn The subscriber's MSISDN.
- * \param[out] msisdn_enc A buffer large enough to store the MSISDN in encoded form.
- * \param[in] msisdn_enc_size Size of the buffer (must be >= OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN).
- * \param[out] apn_buf A buffer large enough to store an APN (required if cn_domain is OSMO_GSUP_CN_DOMAIN_PS).
- * \param[in] apn_buf_size Size of APN buffer (must be >= APN_MAXLEN).
  * \param[in] cn_domain The CN Domain of the subscriber connection.
+ * \param[in] talloc_ctx To allocation memory for dynamic fields (msisdn, apn) in the gsup field
  * \returns 0 on success, and negative on error.
  */
 int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, const char *imsi, const char *msisdn,
-						uint8_t *msisdn_enc, size_t msisdn_enc_size,
-						uint8_t *apn_buf, size_t apn_buf_size,
-						enum osmo_gsup_cn_domain cn_domain)
+						enum osmo_gsup_cn_domain cn_domain,
+						void *talloc_ctx)
 {
 	int len;
+	uint8_t *msisdn_buf = talloc_size(talloc_ctx, OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN);
 
 	OSMO_ASSERT(gsup);
 	*gsup = (struct osmo_gsup_message){
@@ -467,27 +464,22 @@ int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, 
 
 	osmo_strlcpy(gsup->imsi, imsi, sizeof(gsup->imsi));
 
-	if (msisdn_enc_size < OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN)
-		return -ENOSPC;
-
-	OSMO_ASSERT(msisdn_enc);
-	len = gsm48_encode_bcd_number(msisdn_enc, msisdn_enc_size, 0, msisdn);
+	len = gsm48_encode_bcd_number(msisdn_buf, OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN, 0, msisdn);
 	if (len < 1) {
 		LOGP(DLGSUP, LOGL_ERROR, "%s: Error: cannot encode MSISDN '%s'\n", imsi, msisdn);
 		return -ENOSPC;
 	}
-	gsup->msisdn_enc = msisdn_enc;
+	gsup->msisdn_enc = msisdn_buf;
 	gsup->msisdn_enc_len = len;
 
 	#pragma message "FIXME: deal with encoding the following data: gsup.hlr_enc"
 
 	gsup->cn_domain = cn_domain;
 	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
-		OSMO_ASSERT(apn_buf_size >= APN_MAXLEN);
-		OSMO_ASSERT(apn_buf);
+		uint8_t *apn_buf = talloc_size(talloc_ctx, APN_MAXLEN);
 		/* FIXME: PDP infos - use more fine-grained access control
 		   instead of wildcard APN */
-		osmo_gsup_configure_wildcard_apn(gsup, apn_buf, apn_buf_size);
+		osmo_gsup_configure_wildcard_apn(gsup, apn_buf, APN_MAXLEN);
 	}
 
 	return 0;
