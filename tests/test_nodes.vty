@@ -53,6 +53,7 @@ OsmoHLR(config-hlr)# ?
 OsmoHLR(config-hlr)# list
 ...
   gsup
+  ps
   database PATH
   euse NAME
   no euse NAME
@@ -112,6 +113,12 @@ hlr
   ipa-name unnamed-HLR
  ussd route prefix *#100# internal own-msisdn
  ussd route prefix *#101# internal own-imsi
+ ps
+  pdp-profiles default
+   profile 1
+    apn internet
+   profile 2
+    apn *
 end
 
 OsmoHLR# configure terminal
@@ -447,4 +454,45 @@ mslookup
    service foo.bar at 1.1.1.1 1111
  client
   mdns bind 239.192.23.42 4266
+...
+OsmoHLR(config-mslookup-server)# end
+OsmoHLR# configure terminal
+
+OsmoHLR(config)# hlr
+OsmoHLR(config-hlr)# ps?
+  ps  Configure the PS options
+
+OsmoHLR(config-hlr)# ps
+
+OsmoHLR(config-hlr-ps)# list
+...
+  pdp-profiles default
+  no pdp-profiles default
+...
+OsmoHLR(config-hlr-ps)# no pdp-profiles default
+
+
+OsmoHLR(config-hlr-ps)# pdp-profiles default
+OsmoHLR(config-hlr-ps-pdp-profiles)# ?
+...
+  profile  Configure a PDP profile
+...
+OsmoHLR(config-hlr-ps-pdp-profiles)# profile 1
+
+OsmoHLR(config-hlr-ps-pdp-profile)# ?
+...
+  apn    Configure the APN.
+...
+OsmoHLR(config-hlr-ps-pdp-profile)# apn internet
+OsmoHLR(config-hlr-ps-pdp-profile)# exit
+OsmoHLR(config-hlr-ps-pdp-profiles)# profile 2
+OsmoHLR(config-hlr-ps-pdp-profile)# apn *
+OsmoHLR(config-hlr-ps-pdp-profile)# show running-config
+...
+ ps
+  pdp-profiles default
+   profile 1
+    apn internet
+   profile 2
+    apn *
 ...

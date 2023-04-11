@@ -58,6 +58,14 @@ struct hlr {
 	struct hlr_euse *euse_default;
 	enum gsm48_gmm_cause reject_cause;
 	enum gsm48_gmm_cause no_proxy_reject_cause;
+	/* PS: APN default configuration used by Subscription Data on ISR */
+	struct {
+		struct {
+			bool enabled;
+			struct osmo_gsup_pdp_info pdp_infos[OSMO_GSUP_MAX_NUM_PDP_INFO];
+			size_t num_pdp_infos;
+		} pdp_profile;
+	} ps;
 
 	/* NCSS (call independent) session guard timeout value */
 	int ncss_guard_timeout;

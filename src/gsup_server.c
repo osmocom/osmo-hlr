@@ -32,6 +32,7 @@
 
 #include <osmocom/hlr/gsup_server.h>
 #include <osmocom/hlr/gsup_router.h>
+#include <osmocom/hlr/hlr.h>
 
 #define LOG_GSUP_CONN(conn, level, fmt, args...) \
 	LOGP(DLGSUP, level, "GSUP peer %s: " fmt, \
@@ -474,10 +475,17 @@ int osmo_gsup_create_insert_subscriber_data_msg(struct osmo_gsup_message *gsup, 
 
 	gsup->cn_domain = cn_domain;
 	if (gsup->cn_domain == OSMO_GSUP_CN_DOMAIN_PS) {
-		uint8_t *apn_buf = talloc_size(talloc_ctx, APN_MAXLEN);
-		/* FIXME: PDP infos - use more fine-grained access control
-		   instead of wildcard APN */
-		osmo_gsup_configure_wildcard_apn(gsup, apn_buf, APN_MAXLEN);
+		if (g_hlr->ps.pdp_profile.enabled) {
+			OSMO_ASSERT(g_hlr->ps.pdp_profile.num_pdp_infos <= ARRAY_SIZE(g_hlr->ps.pdp_profile.pdp_infos));
+			OSMO_ASSERT(g_hlr->ps.pdp_profile.num_pdp_infos <= ARRAY_SIZE(gsup->pdp_infos));
+			memcpy(gsup->pdp_infos,
+			       g_hlr->ps.pdp_profile.pdp_infos,
+			       sizeof(struct osmo_gsup_pdp_info) * g_hlr->ps.pdp_profile.num_pdp_infos);
+			gsup->num_pdp_infos = g_hlr->ps.pdp_profile.num_pdp_infos;
+		} else {
+			uint8_t *apn_buf = talloc_size(talloc_ctx, APN_MAXLEN);
+			osmo_gsup_configure_wildcard_apn(gsup, apn_buf, APN_MAXLEN);
+		}
 	}
 
 	return 0;

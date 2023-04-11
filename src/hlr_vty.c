@@ -26,9 +26,12 @@
  */
 
 #include <errno.h>
+#include <string.h>
 
 #include <osmocom/core/talloc.h>
 #include <osmocom/gsm/protocol/gsm_04_08_gprs.h>
+#include <osmocom/gsm/apn.h>
+
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/stats.h>
 #include <osmocom/vty/command.h>
@@ -103,6 +106,182 @@ DEFUN(cfg_gsup,
 	return CMD_SUCCESS;
 }
 
+struct cmd_node ps_node = {
+	PS_NODE,
+	"%s(config-hlr-ps)# ",
+	1,
+};
+
+DEFUN(cfg_ps,
+      cfg_ps_cmd,
+      "ps",
+      "Configure the PS options")
+{
+	vty->node = PS_NODE;
+	return CMD_SUCCESS;
+}
+
+struct cmd_node ps_pdp_profiles_node = {
+	PS_PDP_PROFILES_NODE,
+	"%s(config-hlr-ps-pdp-profiles)# ",
+	1,
+};
+
+DEFUN(cfg_ps_pdp_profiles,
+      cfg_ps_pdp_profiles_cmd,
+      "pdp-profiles default",
+      "Define a PDP profile set.\n"
+      "Define the global default profile.\n")
+{
+	g_hlr->ps.pdp_profile.enabled = true;
+
+	vty->node = PS_PDP_PROFILES_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_ps_pdp_profiles,
+      cfg_no_ps_pdp_profiles_cmd,
+      "no pdp-profiles default",
+      NO_STR
+      "Delete PDP profile.\n"
+      "Unique identifier for this PDP profile set.\n")
+{
+	g_hlr->ps.pdp_profile.enabled = false;
+	return CMD_SUCCESS;
+}
+
+
+
+struct cmd_node ps_pdp_profiles_profile_node = {
+	PS_PDP_PROFILES_PROFILE_NODE,
+	"%s(config-hlr-ps-pdp-profile)# ",
+	1,
+};
+
+
+/* context_id == 0 means the slot is free */
+struct osmo_gsup_pdp_info *get_pdp_profile(uint8_t context_id)
+{
+	for (int i = 0; i < OSMO_GSUP_MAX_NUM_PDP_INFO; i++) {
+		struct osmo_gsup_pdp_info *info = &g_hlr->ps.pdp_profile.pdp_infos[i];
+		if (info->context_id == context_id)
+			return info;
+	}
+
+	return NULL;
+}
+
+struct osmo_gsup_pdp_info *create_pdp_profile(uint8_t context_id)
+{
+	struct osmo_gsup_pdp_info *info = get_pdp_profile(0);
+	if (!info)
+		return NULL;
+
+	memset(info, 0, sizeof(*info));
+	info->context_id = context_id;
+	info->have_info = 1;
+
+	g_hlr->ps.pdp_profile.num_pdp_infos++;
+	return info;
+}
+
+void destroy_pdp_profile(struct osmo_gsup_pdp_info *info)
+{
+	info->context_id = 0;
+	if (info->apn_enc)
+		talloc_free((void *) info->apn_enc);
+
+	g_hlr->ps.pdp_profile.num_pdp_infos--;
+	memset(info, 0, sizeof(*info));
+}
+
+DEFUN(cfg_ps_pdp_profiles_profile,
+      cfg_ps_pdp_profiles_profile_cmd,
+      "profile <1-10>",
+      "Configure a PDP profile\n"
+      "Unique PDP context identifier. The lowest profile will be used as default context.\n")
+{
+	struct osmo_gsup_pdp_info *info;
+	uint8_t context_id = atoi(argv[0]);
+
+	info = get_pdp_profile(context_id);
+	if (!info) {
+		info = create_pdp_profile(context_id);
+		if (!info) {
+			vty_out(vty, "Failed to create profile %d!%s", context_id, VTY_NEWLINE);
+			return CMD_ERR_INCOMPLETE;
+		}
+	}
+
+	vty->node = PS_PDP_PROFILES_PROFILE_NODE;
+	vty->index = info;
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_ps_pdp_profiles_profile,
+      cfg_no_ps_pdp_profiles_profile_cmd,
+      "no profile <1-10>",
+      NO_STR
+      "Delete a PDP profile\n"
+      "Unique PDP context identifier. The lowest profile will be used as default context.\n")
+{
+	struct osmo_gsup_pdp_info *info;
+	uint8_t context_id = atoi(argv[0]);
+
+	info = get_pdp_profile(context_id);
+	if (info)
+		destroy_pdp_profile(info);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_ps_pdp_profile_apn, cfg_ps_pdp_profile_apn_cmd,
+	"apn ID",
+	"Configure the APN.\n"
+	"APN name or * for wildcard apn.\n")
+{
+	struct osmo_gsup_pdp_info *info = vty->index;
+	const char *apn_name = argv[0];
+
+	/* apn encoded takes one more byte than strlen() */
+	size_t apn_enc_len = strlen(apn_name) + 1;
+	uint8_t *apn_enc;
+	int ret;
+
+	if (apn_enc_len > APN_MAXLEN) {
+		vty_out(vty, "APN name is too long '%s'. Max is %d!%s", apn_name, APN_MAXLEN, VTY_NEWLINE);
+		return CMD_ERR_INCOMPLETE;
+	}
+
+	info->apn_enc = apn_enc = (uint8_t *) talloc_zero_size(g_hlr, apn_enc_len);
+	ret = info->apn_enc_len = osmo_apn_from_str(apn_enc, apn_enc_len, apn_name);
+	if (ret < 0) {
+		talloc_free(apn_enc);
+		info->apn_enc = NULL;
+		info->apn_enc_len = 0;
+		vty_out(vty, "Invalid APN name %s!", apn_name);
+		return CMD_WARNING;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_ps_pdp_profile_apn, cfg_no_ps_pdp_profile_apn_cmd,
+      "no apn",
+      NO_STR
+      "Delete the APN.\n")
+{
+	struct osmo_gsup_pdp_info *info = vty->index;
+	if (info->apn_enc) {
+		talloc_free((void *) info->apn_enc);
+		info->apn_enc = NULL;
+		info->apn_enc_len = 0;
+	}
+
+	return CMD_SUCCESS;
+}
+
+
 static int config_write_hlr(struct vty *vty)
 {
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
@@ -146,6 +325,37 @@ static int config_write_hlr_gsup(struct vty *vty)
 		vty_out(vty, "  bind ip %s%s", g_hlr->gsup_bind_addr, VTY_NEWLINE);
 	if (g_hlr->gsup_unit_name.serno)
 		vty_out(vty, "  ipa-name %s%s", g_hlr->gsup_unit_name.serno, VTY_NEWLINE);
+	return CMD_SUCCESS;
+}
+
+static int config_write_hlr_ps(struct vty *vty)
+{
+	vty_out(vty, " ps%s", VTY_NEWLINE);
+	return CMD_SUCCESS;
+}
+
+static int config_write_hlr_ps_pdp_profiles(struct vty *vty)
+{
+	char apn[APN_MAXLEN + 1] = {};
+
+	if (!g_hlr->ps.pdp_profile.enabled)
+		return CMD_SUCCESS;
+
+	vty_out(vty, "  pdp-profiles default%s", VTY_NEWLINE);
+	for (int i = 0; i < g_hlr->ps.pdp_profile.num_pdp_infos; i++) {
+		struct osmo_gsup_pdp_info *pdp_info = &g_hlr->ps.pdp_profile.pdp_infos[i];
+		if (!pdp_info->context_id)
+			continue;
+
+		vty_out(vty, "   profile %d%s", pdp_info->context_id, VTY_NEWLINE);
+		if (!pdp_info->have_info)
+			continue;
+
+		if (pdp_info->apn_enc && pdp_info->apn_enc_len) {
+			osmo_apn_to_str(apn, pdp_info->apn_enc, pdp_info->apn_enc_len);
+			vty_out(vty, "    apn %s%s", apn, VTY_NEWLINE);
+		}
+	}
 	return CMD_SUCCESS;
 }
 
@@ -537,6 +747,20 @@ void hlr_vty_init(void *hlr_ctx)
 
 	install_element(GSUP_NODE, &cfg_hlr_gsup_bind_ip_cmd);
 	install_element(GSUP_NODE, &cfg_hlr_gsup_ipa_name_cmd);
+
+	/* PS */
+	install_node(&ps_node, config_write_hlr_ps);
+	install_element(HLR_NODE, &cfg_ps_cmd);
+
+	install_node(&ps_pdp_profiles_node, config_write_hlr_ps_pdp_profiles);
+	install_element(PS_NODE, &cfg_ps_pdp_profiles_cmd);
+	install_element(PS_NODE, &cfg_no_ps_pdp_profiles_cmd);
+
+	install_node(&ps_pdp_profiles_profile_node, NULL);
+	install_element(PS_PDP_PROFILES_NODE, &cfg_ps_pdp_profiles_profile_cmd);
+	install_element(PS_PDP_PROFILES_NODE, &cfg_no_ps_pdp_profiles_profile_cmd);
+	install_element(PS_PDP_PROFILES_PROFILE_NODE, &cfg_ps_pdp_profile_apn_cmd);
+	install_element(PS_PDP_PROFILES_PROFILE_NODE, &cfg_no_ps_pdp_profile_apn_cmd);
 
 	install_element(HLR_NODE, &cfg_database_cmd);
 
