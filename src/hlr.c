@@ -85,8 +85,6 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 
 	llist_for_each_entry(co, &g_hlr->gs->clients, list) {
 		struct osmo_gsup_message gsup = { };
-		uint8_t msisdn_enc[OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN];
-		uint8_t apn[APN_MAXLEN];
 		struct msgb *msg_out;
 		uint8_t *peer;
 		int peer_len;
@@ -131,8 +129,7 @@ osmo_hlr_subscriber_update_notify(struct hlr_subscriber *subscr)
 		     subscr->imsi, cn_domain == OSMO_GSUP_CN_DOMAIN_PS ? "PS" : "CS",
 		     osmo_quote_str(peer_compare, -1));
 
-		if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, msisdn_enc,
-								sizeof(msisdn_enc), apn, sizeof(apn), cn_domain) != 0) {
+		if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi, subscr->msisdn, cn_domain, OTC_SELECT) != 0) {
 			LOGP(DLGSUP, LOGL_ERROR,
 			       "IMSI='%s': Cannot notify GSUP client; could not create gsup message "
 			       "for %s:%u\n", subscr->imsi,

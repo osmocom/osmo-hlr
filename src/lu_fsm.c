@@ -241,13 +241,11 @@ static void lu_fsm_wait_insert_data_result_onenter(struct osmo_fsm_inst *fi, uin
 	struct lu *lu = fi->priv;
 	struct hlr_subscriber *subscr = &lu->subscr;
 	struct osmo_gsup_message gsup;
-	uint8_t msisdn_enc[OSMO_GSUP_MAX_CALLED_PARTY_BCD_LEN];
-	uint8_t apn[APN_MAXLEN];
 
 	if (osmo_gsup_create_insert_subscriber_data_msg(&gsup, subscr->imsi,
-							subscr->msisdn, msisdn_enc, sizeof(msisdn_enc),
-							apn, sizeof(apn),
-							lu->is_ps? OSMO_GSUP_CN_DOMAIN_PS : OSMO_GSUP_CN_DOMAIN_CS)) {
+							subscr->msisdn,
+							lu->is_ps ? OSMO_GSUP_CN_DOMAIN_PS : OSMO_GSUP_CN_DOMAIN_CS,
+							OTC_SELECT)) {
 		lu_failure(lu, GMM_CAUSE_NET_FAIL, "cannot encode Insert Subscriber Data message");
 		return;
 	}
