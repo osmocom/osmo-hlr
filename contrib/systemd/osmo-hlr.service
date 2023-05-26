@@ -1,6 +1,8 @@
 [Unit]
 Description=Osmocom Home Location Register (OsmoHLR)
 Documentation=https://osmocom.org/projects/osmo-hlr/wiki/OsmoHLR
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
