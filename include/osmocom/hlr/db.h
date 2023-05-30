@@ -70,8 +70,8 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite3_log
 
 /* obtain the authentication data for a given imsi */
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
-		     struct osmo_sub_auth_data *aud2g,
-		     struct osmo_sub_auth_data *aud3g,
+		     struct osmo_sub_auth_data2 *aud2g,
+		     struct osmo_sub_auth_data2 *aud3g,
 		     int64_t *subscr_id);
 
 int db_update_sqn(struct db_context *dbc, int64_t id,
@@ -121,7 +121,7 @@ struct hlr_subscriber {
  * See https://sqlite.org/lang_datefunc.html, function datetime(). */
 #define DB_LAST_LU_SEEN_FMT "%Y-%m-%d %H:%M:%S"
 
-/* Like struct osmo_sub_auth_data, but the keys are in hexdump representation.
+/* Like struct osmo_sub_auth_data2, but the keys are in hexdump representation.
  * This is useful because SQLite requires them in hexdump format, and callers
  * like the VTY and CTRL interface also have them available as hexdump to begin
  * with. In the binary format, a VTY command would first need to hexparse,

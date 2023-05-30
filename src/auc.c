@@ -1,4 +1,4 @@
-/* (C) 2015 by Harald Welte <laforge@gnumonks.org>
+/* (C) 2015-2023 by Harald Welte <laforge@gnumonks.org>
  *
  * All Rights Reserved
  *
@@ -32,8 +32,8 @@
 /* compute given number of vectors using either aud2g or aud2g or a combination
  * of both.  Handles re-synchronization if rand_auts and auts are set */
 int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
-			struct osmo_sub_auth_data *aud2g,
-			struct osmo_sub_auth_data *aud3g,
+			struct osmo_sub_auth_data2 *aud2g,
+			struct osmo_sub_auth_data2 *aud3g,
 			const uint8_t *rand_auts, const uint8_t *auts)
 {
 	unsigned int i;
@@ -93,10 +93,10 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 	     : "2G only",
 	     auts? ", with AUTS resync" : "");
 	if (aud3g) {
-		DBGP("3G: k = %s\n", hexb(aud3g->u.umts.k));
+		DBGP("3G: k = %s\n", hex(aud3g->u.umts.k, aud3g->u.umts.k_len));
 		DBGP("3G: %s = %s\n",
 		     aud3g->u.umts.opc_is_op? "OP" : "opc",
-		     hexb(aud3g->u.umts.opc));
+		     hex(aud3g->u.umts.opc, aud3g->u.umts.opc_len));
 		DBGP("3G: for sqn ind %u, previous sqn was %" PRIu64 "\n",
 		     aud3g->u.umts.ind, aud3g->u.umts.sqn);
 	}
@@ -115,6 +115,9 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 		if (aud3g) {
 			/* 3G or 3G + 2G case */
 
+			/* backwards-compatibiliy: We assume all RES are 8 bytes long */
+			vec[i].res_len = 8;
+
 			/* Do AUTS only for the first vector or we would use
 			 * the same SQN for each following key. */
 			if ((i == 0) && auts) {
@@ -123,10 +126,10 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 				DBGP("vector [%u]: resync: rand_auts = %s\n",
 				     i, hex(rand_auts, 16));
 
-				rc = osmo_auth_gen_vec_auts(vec+i, aud3g, auts,
+				rc = osmo_auth_gen_vec_auts2(vec+i, aud3g, auts,
 							    rand_auts, rand);
 			} else {
-				rc = osmo_auth_gen_vec(vec+i, aud3g, rand);
+				rc = osmo_auth_gen_vec2(vec+i, aud3g, rand);
 			}
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 3G vector "
@@ -154,7 +157,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 
 			DBGP("vector [%u]: calculating 2G separately\n", i);
 
-			rc = osmo_auth_gen_vec(&vtmp, aud2g, rand);
+			rc = osmo_auth_gen_vec2(&vtmp, aud2g, rand);
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector"
 				     "generation: [%u]: rc = %d\n", i, rc);
@@ -165,7 +168,7 @@ int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
 			vec[i].auth_types |= OSMO_AUTH_TYPE_GSM;
 		} else {
 			/* 2G only case */
-			rc = osmo_auth_gen_vec(vec+i, aud2g, rand);
+			rc = osmo_auth_gen_vec2(vec+i, aud2g, rand);
 			if (rc < 0) {
 				LOGP(DAUC, LOGL_ERROR, "Error in 2G vector "
 				     "generation: [%u]: rc = %d\n", i, rc);

@@ -122,16 +122,16 @@ static void _fill_invalid(void *dest, size_t size)
 /* Not linking the real auc_compute_vectors(), just returning num_vec.
  * This gets called by db_get_auc(), but we're only interested in its rc. */
 int auc_compute_vectors(struct osmo_auth_vector *vec, unsigned int num_vec,
-			struct osmo_sub_auth_data *aud2g,
-			struct osmo_sub_auth_data *aud3g,
+			struct osmo_sub_auth_data2 *aud2g,
+			struct osmo_sub_auth_data2 *aud3g,
 			const uint8_t *rand_auts, const uint8_t *auts)
 { return num_vec; }
 
 static struct db_context *dbc = NULL;
 static void *ctx = NULL;
 static struct hlr_subscriber g_subscr;
-static struct osmo_sub_auth_data g_aud2g;
-static struct osmo_sub_auth_data g_aud3g;
+static struct osmo_sub_auth_data2 g_aud2g;
+static struct osmo_sub_auth_data2 g_aud3g;
 static int g_rc;
 static int64_t g_id;
 
@@ -180,18 +180,21 @@ void dump_subscr(struct hlr_subscriber *subscr)
 #undef Pb
 }
 
-void dump_aud(const char *label, struct osmo_sub_auth_data *aud)
+void dump_aud(const char *label, struct osmo_sub_auth_data2 *aud)
 {
 	if (aud->type == OSMO_AUTH_TYPE_NONE) {
 		fprintf(stderr, "%s: none\n", label);
 		return;
 	}
 
-	fprintf(stderr, "%s: struct osmo_sub_auth_data {\n", label);
+	fprintf(stderr, "%s: struct osmo_sub_auth_data2 {\n", label);
 #define Pf(name, fmt) \
 	Pfo(name, fmt, aud)
 #define Phex(name) \
 	Pfv(name, "'%s'", osmo_hexdump_nospc(aud->name, sizeof(aud->name)))
+#define Phexl(name, len) \
+	Pfv(name, "'%s'", osmo_hexdump_nospc(aud->name, aud->len))
+
 
 	Pfv(type, "%s", osmo_sub_auth_type_name(aud->type));
 	Pfv(algo, "%s", osmo_auth_alg_name(aud->algo));
@@ -200,9 +203,9 @@ void dump_aud(const char *label, struct osmo_sub_auth_data *aud)
 		Phex(u.gsm.ki);
 		break;
 	case OSMO_AUTH_TYPE_UMTS:
-		Phex(u.umts.opc);
+		Phexl(u.umts.opc, u.umts.opc_len);
 		Pf(u.umts.opc_is_op, "%u");
-		Phex(u.umts.k);
+		Phexl(u.umts.k, u.umts.k_len);
 		Phex(u.umts.amf);
 		if (aud->u.umts.sqn) {
 			Pf(u.umts.sqn, "%"PRIu64);
@@ -219,6 +222,7 @@ void dump_aud(const char *label, struct osmo_sub_auth_data *aud)
 
 #undef Pf
 #undef Phex
+#undef Phexl
 }
 
 void db_raw_sql(struct db_context *dbc, const char *sql)

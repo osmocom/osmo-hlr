@@ -1,6 +1,6 @@
 /* OsmoHLR Control Interface implementation */
 
-/* (C) 2017 sysmocom s.f.m.c. GmbH <info@sysmocom.de>
+/* (C) 2017-2023 sysmocom s.f.m.c. GmbH <info@sysmocom.de>
  * All Rights Reserved
  *
  * Author: Max Suraev <msuraev@sysmocom.de>
@@ -166,7 +166,7 @@ static void print_subscr_info(struct ctrl_cmd *cmd,
 		);
 }
 
-static void print_subscr_info_aud2g(struct ctrl_cmd *cmd, struct osmo_sub_auth_data *aud)
+static void print_subscr_info_aud2g(struct ctrl_cmd *cmd, struct osmo_sub_auth_data2 *aud)
 {
 	if (aud->algo == OSMO_AUTH_ALG_NONE)
 		return;
@@ -178,7 +178,7 @@ static void print_subscr_info_aud2g(struct ctrl_cmd *cmd, struct osmo_sub_auth_d
 		hexdump_buf(aud->u.gsm.ki));
 }
 
-static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_data *aud)
+static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_data2 *aud)
 {
 	if (aud->algo == OSMO_AUTH_ALG_NONE)
 		return;
@@ -187,7 +187,7 @@ static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_d
 		"\naud3g.k\t%s"
 		,
 		osmo_auth_alg_name(aud->algo),
-		hexdump_buf(aud->u.umts.k));
+		osmo_hexdump_nospc(aud->u.umts.k, aud->u.umts.k_len));
 	/* hexdump uses a static string buffer, hence only one hexdump per
 	 * printf(). */
 	ctrl_cmd_reply_printf(cmd,
@@ -196,7 +196,7 @@ static void print_subscr_info_aud3g(struct ctrl_cmd *cmd, struct osmo_sub_auth_d
 		"\naud3g.sqn\t%" PRIu64
 		,
 		aud->u.umts.opc_is_op? "op" : "opc",
-		hexdump_buf(aud->u.umts.opc),
+		osmo_hexdump_nospc(aud->u.umts.opc, aud->u.umts.opc_len),
 		aud->u.umts.ind_bitlen,
 		aud->u.umts.sqn);
 }
@@ -291,8 +291,8 @@ CTRL_CMD_DEFINE_RO(subscr_info_aud, "info-aud");
 static int get_subscr_info_aud(struct ctrl_cmd *cmd, void *data)
 {
 	const char *imsi;
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct hlr *hlr = data;
 	const char *by_selector = cmd->node;
 	int rc;
@@ -327,8 +327,8 @@ CTRL_CMD_DEFINE_RO(subscr_info_all, "info-all");
 static int get_subscr_info_all(struct ctrl_cmd *cmd, void *data)
 {
 	struct hlr_subscriber subscr;
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct hlr *hlr = data;
 	const char *by_selector = cmd->node;
 	int rc;
@@ -492,8 +492,8 @@ static int get_subscr_aud2g(struct ctrl_cmd *cmd, void *data)
 	struct hlr_subscriber subscr;
 	struct hlr *hlr = data;
 	const char *by_selector = cmd->node;
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g_unused;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g_unused;
 	int rc;
 
 	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
@@ -592,8 +592,8 @@ static int get_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
 	struct hlr_subscriber subscr;
 	struct hlr *hlr = data;
 	const char *by_selector = cmd->node;
-	struct osmo_sub_auth_data aud2g_unused;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g_unused;
+	struct osmo_sub_auth_data2 aud3g;
 	int rc;
 
 	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
@@ -618,9 +618,9 @@ static int get_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
 	}
 
 	cmd->reply = talloc_asprintf(cmd, "%s,%s,%s,%s,%u", osmo_auth_alg_name(aud3g.algo),
-				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.k, sizeof(aud3g.u.umts.k)),
+				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.k, aud3g.u.umts.k_len),
 				     aud3g.u.umts.opc_is_op ? "OP" : "OPC",
-				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc)),
+				     osmo_hexdump_nospc_c(cmd, aud3g.u.umts.opc, aud3g.u.umts.opc_len),
 				     aud3g.u.umts.ind_bitlen);
 	return CTRL_CMD_REPLY;
 }

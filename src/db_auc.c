@@ -1,4 +1,4 @@
-/* (C) 2015 by Harald Welte <laforge@gnumonks.org>
+/* (C) 2015-2023 by Harald Welte <laforge@gnumonks.org>
  *
  * All Rights Reserved
  *
@@ -74,9 +74,9 @@ out:
 }
 
 /* hexparse a specific column of a sqlite prepared statement into dst (with length check)
- * returns 0 for success, -EIO on error */
-static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int col, const char *col_name,
-			 const char *imsi)
+ * returns byte length in case of success, -EIO on error */
+static int hexparse_stmt(uint8_t *dst, size_t dst_len_min, size_t dst_len_max, sqlite3_stmt *stmt,
+			 int col, const char *col_name, const char *imsi)
 {
 	const uint8_t *text;
 	size_t col_len;
@@ -84,9 +84,15 @@ static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int c
 	/* Bytes are stored as hex strings in database, hence divide length by two */
 	col_len = sqlite3_column_bytes(stmt, col) / 2;
 
-	if (col_len != dst_len) {
-		LOGAUC(imsi, LOGL_ERROR, "Error reading %s, expected length %lu but has length %lu\n", col_name,
-		       dst_len, col_len);
+	if (col_len < dst_len_min) {
+		LOGAUC(imsi, LOGL_ERROR, "Error reading %s, expected min length %lu but has length %lu\n", col_name,
+		       dst_len_min, col_len);
+		return -EIO;
+	}
+
+	if (col_len > dst_len_max) {
+		LOGAUC(imsi, LOGL_ERROR, "Error reading %s, expected max length %lu but has length %lu\n", col_name,
+		       dst_len_max, col_len);
 		return -EIO;
 	}
 
@@ -96,10 +102,10 @@ static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int c
 		return -EIO;
 	}
 
-	if (osmo_hexparse((void *)text, dst, dst_len) != col_len)
+	if (osmo_hexparse((void *)text, dst, dst_len_max) != col_len)
 		return -EINVAL;
 
-	return 0;
+	return col_len;
 }
 
 /* obtain the authentication data for a given imsi
@@ -107,8 +113,8 @@ static int hexparse_stmt(uint8_t *dst, size_t dst_len, sqlite3_stmt *stmt, int c
  * -ENOENT if the IMSI is not known, -ENOKEY if the IMSI is known but has no auth data,
  * -EIO on db failure */
 int db_get_auth_data(struct db_context *dbc, const char *imsi,
-		     struct osmo_sub_auth_data *aud2g,
-		     struct osmo_sub_auth_data *aud3g,
+		     struct osmo_sub_auth_data2 *aud2g,
+		     struct osmo_sub_auth_data2 *aud3g,
 		     int64_t *subscr_id)
 {
 	sqlite3_stmt *stmt = dbc->stmt[DB_STMT_AUC_BY_IMSI];
@@ -142,7 +148,8 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 	/* obtain result values using sqlite3_column_*() */
 	if (sqlite3_column_type(stmt, 1) == SQLITE_INTEGER) {
 		/* we do have some 2G authentication data */
-		if (hexparse_stmt(aud2g->u.gsm.ki, sizeof(aud2g->u.gsm.ki), stmt, 2, "Ki", imsi))
+		if (hexparse_stmt(aud2g->u.gsm.ki, sizeof(aud2g->u.gsm.ki), sizeof(aud2g->u.gsm.ki),
+				  stmt, 2, "Ki", imsi) < 0)
 			goto end_2g;
 		aud2g->algo = sqlite3_column_int(stmt, 1);
 		aud2g->type = OSMO_AUTH_TYPE_GSM;
@@ -151,24 +158,30 @@ int db_get_auth_data(struct db_context *dbc, const char *imsi,
 end_2g:
 	if (sqlite3_column_type(stmt, 3) == SQLITE_INTEGER) {
 		/* we do have some 3G authentication data */
-		if (hexparse_stmt(aud3g->u.umts.k, sizeof(aud3g->u.umts.k), stmt, 4, "K", imsi)) {
+		rc = hexparse_stmt(aud3g->u.umts.k, 16, sizeof(aud3g->u.umts.k), stmt, 4, "K", imsi);
+		if (rc < 0) {
 			ret = -EIO;
 			goto out;
 		}
+		aud3g->u.umts.k_len = rc;
 		aud3g->algo = sqlite3_column_int(stmt, 3);
 
 		/* UMTS Subscribers can have either OP or OPC */
 		if (sqlite3_column_text(stmt, 5)) {
-			if (hexparse_stmt(aud3g->u.umts.opc, sizeof(aud3g->u.umts.opc), stmt, 5, "OP", imsi)) {
+			rc = hexparse_stmt(aud3g->u.umts.opc, 16, sizeof(aud3g->u.umts.opc), stmt, 5, "OP", imsi);
+			if (rc < 0) {
 				ret = -EIO;
 				goto out;
 			}
+			aud3g->u.umts.opc_len = rc;
 			aud3g->u.umts.opc_is_op = 1;
 		} else {
-			if (hexparse_stmt(aud3g->u.umts.opc, sizeof(aud3g->u.umts.opc), stmt, 6, "OPC", imsi)) {
+			rc = hexparse_stmt(aud3g->u.umts.opc, 16, sizeof(aud3g->u.umts.opc), stmt, 6, "OPC", imsi);
+			if (rc < 0) {
 				ret = -EIO;
 				goto out;
 			}
+			aud3g->u.umts.opc_len = rc;
 			aud3g->u.umts.opc_is_op = 0;
 		}
 		aud3g->u.umts.sqn = sqlite3_column_int64(stmt, 7);
@@ -194,7 +207,7 @@ int db_get_auc(struct db_context *dbc, const char *imsi,
 	       unsigned int num_vec, const uint8_t *rand_auts,
 	       const uint8_t *auts, bool separation_bit)
 {
-	struct osmo_sub_auth_data aud2g, aud3g;
+	struct osmo_sub_auth_data2 aud2g, aud3g;
 	int64_t subscr_id;
 	int ret = 0;
 	int rc;

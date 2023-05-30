@@ -116,14 +116,14 @@ int rand_get(uint8_t *rand, unsigned int len)
 /* Subscriber with 2G-only (COMP128v1) authentication data */
 static void test_gen_vectors_2g_only(void)
 {
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct osmo_auth_vector vec;
 	int rc;
 
 	comment_start();
 
-	aud2g = (struct osmo_sub_auth_data){
+	aud2g = (struct osmo_sub_auth_data2){
 		.type = OSMO_AUTH_TYPE_GSM,
 		.algo = OSMO_AUTH_ALG_COMP128v1,
 	};
@@ -131,7 +131,7 @@ static void test_gen_vectors_2g_only(void)
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
 		      aud2g.u.gsm.ki, sizeof(aud2g.u.gsm.ki));
 
-	aud3g = (struct osmo_sub_auth_data){ 0 };
+	aud3g = (struct osmo_sub_auth_data2){ 0 };
 
 	next_rand("39fa2f4e3d523d8619a73b4f65c3e14d", true);
 
@@ -179,14 +179,14 @@ static void test_gen_vectors_2g_only(void)
  * reflects the default configuration of sysmoUSIM-SJS1 */
 static void test_gen_vectors_2g_plus_3g(void)
 {
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct osmo_auth_vector vec;
 	int rc;
 
 	comment_start();
 
-	aud2g = (struct osmo_sub_auth_data){
+	aud2g = (struct osmo_sub_auth_data2){
 		.type = OSMO_AUTH_TYPE_GSM,
 		.algo = OSMO_AUTH_ALG_COMP128v1,
 	};
@@ -194,9 +194,11 @@ static void test_gen_vectors_2g_plus_3g(void)
 	osmo_hexparse("EB215756028D60E3275E613320AEC880",
 		      aud2g.u.gsm.ki, sizeof(aud2g.u.gsm.ki));
 
-	aud3g = (struct osmo_sub_auth_data){
+	aud3g = (struct osmo_sub_auth_data2){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 		.u.umts.sqn = 31,
 	};
 
@@ -292,8 +294,8 @@ void _test_gen_vectors_3g_only__expect_vecs(struct osmo_auth_vector vecs[3])
  * tuples are suitable for both 2G and 3G authentication */
 static void test_gen_vectors_3g_only(void)
 {
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct osmo_auth_vector vec;
 	struct osmo_auth_vector vecs[3];
 	uint8_t auts[14];
@@ -302,11 +304,13 @@ static void test_gen_vectors_3g_only(void)
 
 	comment_start();
 
-	aud2g = (struct osmo_sub_auth_data){ 0 };
+	aud2g = (struct osmo_sub_auth_data2){ 0 };
 
-	aud3g = (struct osmo_sub_auth_data){
+	aud3g = (struct osmo_sub_auth_data2){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 		.u.umts.sqn = 31,
 	};
 
@@ -466,18 +470,20 @@ static void test_gen_vectors_3g_only(void)
  * 2G and 3G authentication */
 static void test_gen_vectors_3g_xor(void)
 {
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct osmo_auth_vector vec;
 	int rc;
 
 	comment_start();
 
-	aud2g = (struct osmo_sub_auth_data){ 0 };
+	aud2g = (struct osmo_sub_auth_data2){ 0 };
 
-	aud3g = (struct osmo_sub_auth_data){
+	aud3g = (struct osmo_sub_auth_data2){
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_XOR_3G,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 		.u.umts.sqn = 0,
 	};
 
@@ -517,39 +523,43 @@ void test_gen_vectors_bad_args(void)
 	int rc;
 	int i;
 
-	struct osmo_sub_auth_data aud2g = {
+	struct osmo_sub_auth_data2 aud2g = {
 		.type = OSMO_AUTH_TYPE_GSM,
 		.algo = OSMO_AUTH_ALG_COMP128v1,
 	};
 
-	struct osmo_sub_auth_data aud3g = {
+	struct osmo_sub_auth_data2 aud3g = {
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 	};
 
-	struct osmo_sub_auth_data aud2g_noalg = {
+	struct osmo_sub_auth_data2 aud2g_noalg = {
 		.type = OSMO_AUTH_TYPE_GSM,
 		.algo = OSMO_AUTH_ALG_NONE,
 	};
 
-	struct osmo_sub_auth_data aud3g_noalg = {
+	struct osmo_sub_auth_data2 aud3g_noalg = {
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_NONE,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 	};
 
-	struct osmo_sub_auth_data aud_notype = {
+	struct osmo_sub_auth_data2 aud_notype = {
 		.type = OSMO_AUTH_TYPE_NONE,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
 	};
 
-	struct osmo_sub_auth_data no_aud = {
+	struct osmo_sub_auth_data2 no_aud = {
 		.type = OSMO_AUTH_TYPE_NONE,
 		.algo = OSMO_AUTH_ALG_NONE,
 	};
 
 	struct {
-		struct osmo_sub_auth_data *aud2g;
-		struct osmo_sub_auth_data *aud3g;
+		struct osmo_sub_auth_data2 *aud2g;
+		struct osmo_sub_auth_data2 *aud3g;
 		uint8_t *rand_auts;
 		uint8_t *auts;
 		const char *label;

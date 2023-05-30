@@ -824,7 +824,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "01234567
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v1,
   .u.gsm.ki = '0123456789abcdef0123456789abcdef',
@@ -841,7 +841,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v1, "01234567
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v1,
   .u.gsm.ki = '0123456789abcdef0123456789abcdef',
@@ -853,7 +853,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v2, "BeadedBe
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v2,
   .u.gsm.ki = 'beadedbeeaced1ebbeddefacedfacade',
@@ -865,7 +865,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_COMP128v3, "DeafBedd
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'deafbeddedbabeacceededfadeddecaf',
@@ -877,7 +877,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEfface
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = XOR-2G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
@@ -905,7 +905,7 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEfface
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = XOR-2G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
@@ -932,7 +932,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -954,7 +954,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -970,7 +970,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'deaf0ff1ced0d0dabbedd1ced1cef00d',
@@ -985,7 +985,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1001,7 +1001,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'cededeffacedacefacedbadfadedbeef',
@@ -1033,7 +1033,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'cededeffacedacefacedbadfadedbeef',
@@ -1069,12 +1069,12 @@ db_subscr_update_aud_by_id(dbc, id, mk_aud_3g(OSMO_AUTH_ALG_MILENAGE, "BeefedCaf
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1097,12 +1097,12 @@ DAUC Cannot update auth tokens: Unknown auth algo: 99999
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1117,12 +1117,12 @@ DAUC Cannot update auth tokens: Invalid KI: 'f000000000000f00000000000f000000f00
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1137,12 +1137,12 @@ DAUC Cannot update auth tokens: Invalid KI: 'f00'
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1157,12 +1157,12 @@ DAUC Cannot update auth tokens: auth algo not suited for 2G: MILENAGE
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1177,12 +1177,12 @@ DAUC Cannot update auth tokens: Invalid OP/OPC: '0f000000000000f00000000000f0000
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1197,12 +1197,12 @@ DAUC Cannot update auth tokens: Invalid K: '000000000000f00000000000f000000'
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1217,12 +1217,12 @@ DAUC Cannot update auth tokens: Invalid ind_bitlen: 29
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1237,12 +1237,12 @@ DAUC Cannot update auth tokens: Invalid OP/OPC: 'X000000000000f00000000000f00000
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1257,12 +1257,12 @@ DAUC Cannot update auth tokens: Invalid K: 'f000000000000 f00000000000 f000000'
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 
-2G: struct osmo_sub_auth_data {
+2G: struct osmo_sub_auth_data2 {
   .type = GSM,
   .algo = COMP128v3,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1338,7 +1338,7 @@ sqlite3_prepare_v2(dbc->db, sql, -1, &stmt, NULL) --> SQLITE_OK
 sqlite3_step(stmt) --> SQLITE_DONE
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -ENOKEY
-DAUC IMSI='123456789000000': Error reading Ki, expected length 16 but has length 15
+DAUC IMSI='123456789000000': Error reading Ki, expected min length 16 but has length 15
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 
@@ -1359,7 +1359,7 @@ sqlite3_step(stmt) --> SQLITE_DONE
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
 DAUC IMSI='123456789000000': No 2G Auth Data
-DAUC IMSI='123456789000000': Error reading K, expected length 16 but has length 15
+DAUC IMSI='123456789000000': Error reading K, expected min length 16 but has length 15
 
 
 
@@ -1374,7 +1374,7 @@ sqlite3_step(stmt) --> SQLITE_DONE
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
 DAUC IMSI='123456789000000': No 2G Auth Data
-DAUC IMSI='123456789000000': Error reading OP, expected length 16 but has length 15
+DAUC IMSI='123456789000000': Error reading OP, expected min length 16 but has length 15
 
 
 
@@ -1389,7 +1389,7 @@ sqlite3_step(stmt) --> SQLITE_DONE
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> -5
 DAUC IMSI='123456789000000': No 2G Auth Data
-DAUC IMSI='123456789000000': Error reading OPC, expected length 16 but has length 15
+DAUC IMSI='123456789000000': Error reading OPC, expected min length 16 but has length 15
 
 
 
@@ -1458,7 +1458,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1477,7 +1477,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1495,7 +1495,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1513,7 +1513,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1534,7 +1534,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1550,7 +1550,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1568,7 +1568,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',
@@ -1586,7 +1586,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 2G Auth Data
 
 2G: none
-3G: struct osmo_sub_auth_data {
+3G: struct osmo_sub_auth_data2 {
   .type = UMTS,
   .algo = MILENAGE,
   .u.umts.opc = 'beefedcafefaceacedaddeddecadefee',

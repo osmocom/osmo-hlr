@@ -24,18 +24,20 @@
 
 static void {func_name}(void)
 {{
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 	struct osmo_auth_vector vec;
 	int rc;
 
 	comment_start();
 
-	aud2g = (struct osmo_sub_auth_data){{ 0 }};
+	aud2g = (struct osmo_sub_auth_data2){{ 0 }};
 
-	aud3g = (struct osmo_sub_auth_data){{
+	aud3g = (struct osmo_sub_auth_data2){{
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.algo = OSMO_AUTH_ALG_MILENAGE,
+		.u.umts.k_len = 16,
+		.u.umts.opc_len = 16,
 		.u.umts.sqn = 31,
 	}};
 
@@ -48,6 +50,7 @@ static void {func_name}(void)
 		      fake_rand, sizeof(fake_rand));
 
 	vec = (struct osmo_auth_vector){{ {{0}} }};
+	vec.res_len = 8;
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
 	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
 	VERBOSE_ASSERT(rc, == 1, "%d");

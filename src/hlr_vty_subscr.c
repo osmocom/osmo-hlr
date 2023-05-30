@@ -1,5 +1,5 @@
 /* OsmoHLR subscriber management VTY implementation */
-/* (C) 2017 by sysmocom s.f.m.c. GmbH <info@sysmocom.de>
+/* (C) 2017-2023 by sysmocom s.f.m.c. GmbH <info@sysmocom.de>
  * All Rights Reserved
  *
  * This program is free software; you can redistribute it and/or modify
@@ -77,8 +77,8 @@ static void dump_last_lu_seen(struct vty *vty, const char *domain_label, time_t 
 static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 {
 	int rc;
-	struct osmo_sub_auth_data aud2g;
-	struct osmo_sub_auth_data aud3g;
+	struct osmo_sub_auth_data2 aud2g;
+	struct osmo_sub_auth_data2 aud3g;
 
 	vty_out(vty, "    ID: %"PRIu64"%s", subscr->id, VTY_NEWLINE);
 
@@ -137,12 +137,12 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 
 	if (aud2g.type != OSMO_AUTH_TYPE_NONE && aud2g.type != OSMO_AUTH_TYPE_GSM) {
 		vty_out(vty, "%% Error: 2G auth data is not of type 'GSM'%s", VTY_NEWLINE);
-		aud2g = (struct osmo_sub_auth_data){};
+		aud2g = (struct osmo_sub_auth_data2){};
 	}
 
 	if (aud3g.type != OSMO_AUTH_TYPE_NONE && aud3g.type != OSMO_AUTH_TYPE_UMTS) {
 		vty_out(vty, "%% Error: 3G auth data is not of type 'UMTS'%s", VTY_NEWLINE);
-		aud3g = (struct osmo_sub_auth_data){};
+		aud3g = (struct osmo_sub_auth_data2){};
 	}
 
 	if (aud2g.algo != OSMO_AUTH_ALG_NONE && aud2g.type != OSMO_AUTH_TYPE_NONE) {
@@ -154,9 +154,10 @@ static void subscr_dump_full_vty(struct vty *vty, struct hlr_subscriber *subscr)
 
 	if (aud3g.algo != OSMO_AUTH_ALG_NONE && aud3g.type != OSMO_AUTH_TYPE_NONE) {
 		vty_out(vty, "    3G auth: %s%s", osmo_auth_alg_name(aud3g.algo), VTY_NEWLINE);
-		vty_out(vty, "             K=%s%s", hexdump_buf(aud3g.u.umts.k), VTY_NEWLINE);
+		vty_out(vty, "             K=%s%s",
+			osmo_hexdump_nospc(aud3g.u.umts.k, aud3g.u.umts.k_len), VTY_NEWLINE);
 		vty_out(vty, "             %s=%s%s", aud3g.u.umts.opc_is_op? "OP" : "OPC",
-			hexdump_buf(aud3g.u.umts.opc), VTY_NEWLINE);
+			osmo_hexdump_nospc(aud3g.u.umts.opc, aud3g.u.umts.opc_len), VTY_NEWLINE);
 		vty_out(vty, "             IND-bitlen=%u", aud3g.u.umts.ind_bitlen);
 		if (aud3g.u.umts.sqn)
 			vty_out(vty, " last-SQN=%"PRIu64, aud3g.u.umts.sqn);
