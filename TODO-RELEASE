@@ -7,3 +7,4 @@
 # If any interfaces have been added since the last public release: c:r:a + 1.
 # If any interfaces have been removed or changed since the last public release: c:r:0.
 #library        what            description / commit summary line
+libosmogsm	UPDATE_DEP_VER	update libosmogsm version dependency after I0ee0565382c1e4515d44ff9b1752685c0a66ae39 is released

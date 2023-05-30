@@ -130,7 +130,7 @@ ERROR 54 Value failed verification.
 SET 55 subscriber.by-imsi-901990000000003.aud2g foobar,2134
 ERROR 55 Unknown auth algorithm.
 
-SET 56 subscriber.by-imsi-901990000000003.aud2g xor,2134
+SET 56 subscriber.by-imsi-901990000000003.aud2g xor-2g,2134
 ERROR 56 Invalid KI.
 
 SET 57 subscriber.by-imsi-901990000000003.aud3g foobar

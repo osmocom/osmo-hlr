@@ -872,14 +872,14 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 }
 3G: none
 
-db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEffacedAceFacedBadFadedBeef")) --> 0
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
-  .algo = XOR-3G,
+  .algo = XOR-2G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
 3G: none
@@ -900,14 +900,14 @@ DAUC IMSI='123456789000000': No 3G Auth Data
 
 db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_NONE, NULL)) --> -ENOENT
 
-db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")) --> 0
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEffacedAceFacedBadFadedBeef")) --> 0
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
 DAUC IMSI='123456789000000': No 3G Auth Data
 
 2G: struct osmo_sub_auth_data {
   .type = GSM,
-  .algo = XOR-3G,
+  .algo = XOR-2G,
   .u.gsm.ki = 'cededeffacedacefacedbadfadedbeef',
 }
 3G: none
@@ -1112,7 +1112,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
   .u.umts.ind_bitlen = 5,
 }
 
-db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f000000000000f00000000000f000000f00000000")) --> -EINVAL
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "f000000000000f00000000000f000000f00000000")) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid KI: 'f000000000000f00000000000f000000f00000000'
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
@@ -1132,7 +1132,7 @@ db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0
   .u.umts.ind_bitlen = 5,
 }
 
-db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR, "f00")) --> -EINVAL
+db_subscr_update_aud_by_id(dbc, id, mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "f00")) --> -EINVAL
 DAUC Cannot update auth tokens: Invalid KI: 'f00'
 
 db_get_auth_data(dbc, imsi0, &g_aud2g, &g_aud3g, &g_id) --> 0

@@ -12,7 +12,7 @@ Table auc_2g contents:
 algo_id_2g|ki|subscriber_id
 1|BeefedCafeFaceAcedAddedDecadeFee|1
 2|33333333333333333333333333333333|4
-4|55555555555555555555555555555555|6
+6|55555555555555555555555555555555|6
 
 Table: auc_3g
 name|type|notnull|dflt_value|pk
@@ -100,7 +100,7 @@ Table auc_2g contents:
 algo_id_2g|ki|subscriber_id
 1|BeefedCafeFaceAcedAddedDecadeFee|1
 2|33333333333333333333333333333333|4
-4|55555555555555555555555555555555|6
+6|55555555555555555555555555555555|6
 
 Table: auc_3g
 name|type|notnull|dflt_value|pk

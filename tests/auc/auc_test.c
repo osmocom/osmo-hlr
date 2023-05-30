@@ -477,7 +477,7 @@ static void test_gen_vectors_3g_xor(void)
 
 	aud3g = (struct osmo_sub_auth_data){
 		.type = OSMO_AUTH_TYPE_UMTS,
-		.algo = OSMO_AUTH_ALG_XOR,
+		.algo = OSMO_AUTH_ALG_XOR_3G,
 		.u.umts.sqn = 0,
 	};
 

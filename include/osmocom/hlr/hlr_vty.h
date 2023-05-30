@@ -40,6 +40,7 @@ enum hlr_vty_node {
 
 #define A38_XOR_MIN_KEY_LEN	12
 #define A38_XOR_MAX_KEY_LEN	16
+#define A38_XOR2G_KEY_LEN	16
 #define A38_COMP128_KEY_LEN	16
 #define MILENAGE_KEY_LEN	16
 

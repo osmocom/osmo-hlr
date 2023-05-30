@@ -460,12 +460,12 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 	return false;
 }
 
-#define AUTH_ALG_TYPES_2G "(comp128v1|comp128v2|comp128v3|xor)"
+#define AUTH_ALG_TYPES_2G "(comp128v1|comp128v2|comp128v3|xor-2g)"
 #define AUTH_ALG_TYPES_2G_HELP \
 	"Use COMP128v1 algorithm\n" \
 	"Use COMP128v2 algorithm\n" \
 	"Use COMP128v3 algorithm\n" \
-	"Use XOR algorithm\n"
+	"Use XOR-2G algorithm\n"
 
 #define AUTH_ALG_TYPES_3G "milenage"
 #define AUTH_ALG_TYPES_3G_HELP \
@@ -486,10 +486,13 @@ bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
 	} else if (!strcasecmp(alg_str, "comp128v3")) {
 		*algo = OSMO_AUTH_ALG_COMP128v3;
 		*minlen = *maxlen = A38_COMP128_KEY_LEN;
-	} else if (!strcasecmp(alg_str, "xor")) {
-		*algo = OSMO_AUTH_ALG_XOR;
+	} else if (!strcasecmp(alg_str, "xor-3g")) {
+		*algo = OSMO_AUTH_ALG_XOR_3G;
 		*minlen = A38_XOR_MIN_KEY_LEN;
 		*maxlen = A38_XOR_MAX_KEY_LEN;
+	} else if (!strcasecmp(alg_str, "xor-2g")) {
+		*algo = OSMO_AUTH_ALG_XOR_2G;
+		*minlen = *maxlen = A38_XOR2G_KEY_LEN;
 	} else if (!strcasecmp(alg_str, "milenage")) {
 		*algo = OSMO_AUTH_ALG_MILENAGE;
 		*minlen = *maxlen = MILENAGE_KEY_LEN;
@@ -659,11 +662,11 @@ DEFUN(subscriber_aud3g,
 
 DEFUN(subscriber_aud3g_xor,
       subscriber_aud3g_xor_cmd,
-      SUBSCR_UPDATE "aud3g xor k K"
+      SUBSCR_UPDATE "aud3g xor-3g k K"
       " [ind-bitlen] [<0-28>]",
       SUBSCR_UPDATE_HELP
       "Set UMTS authentication data (3G, and 2G with UMTS AKA)\n"
-      "Use XOR algorithm\n"
+      "Use XOR-3G algorithm\n"
       "Set Encryption Key K\n" "K as 32 hexadecimal characters\n"
       "Set IND bit length\n" "IND bit length value (default: 5)\n")
 {
@@ -685,8 +688,8 @@ DEFUN(subscriber_aud3g_xor,
 		},
 	};
 
-	if (!auth_algo_parse("xor", &aud3g.algo, &minlen, &maxlen)) {
-		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", "xor", VTY_NEWLINE);
+	if (!auth_algo_parse("xor-3g", &aud3g.algo, &minlen, &maxlen)) {
+		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", "xor-3g", VTY_NEWLINE);
 		return CMD_WARNING;
 	}
 

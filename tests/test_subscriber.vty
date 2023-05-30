@@ -8,10 +8,10 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT delete
   subscriber (imsi|msisdn|id|imei) IDENT update msisdn (none|MSISDN)
   subscriber (imsi|msisdn|id|imei) IDENT update aud2g none
-  subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor) ki KI
+  subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor-2g) ki KI
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g none
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
-  subscriber (imsi|msisdn|id|imei) IDENT update aud3g xor k K [ind-bitlen] [<0-28>]
+  subscriber (imsi|msisdn|id|imei) IDENT update aud3g xor-3g k K [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
   show mslookup services
@@ -144,7 +144,7 @@ OsmoHLR# subscriber imsi 123456789023000 update aud2g ?
   comp128v1  Use COMP128v1 algorithm
   comp128v2  Use COMP128v2 algorithm
   comp128v3  Use COMP128v3 algorithm
-  xor        Use XOR algorithm
+  xor-2g     Use XOR-2G algorithm
 
 OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ?
   ki  Set Ki Encryption Key
@@ -155,12 +155,12 @@ OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki ?
 OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki val ?
   <cr>  
 
-OsmoHLR# subscriber imsi 123456789023000 update aud2g xor ki Deaf0ff1ceD0d0DabbedD1ced1ceF00d
+OsmoHLR# subscriber imsi 123456789023000 update aud2g xor-2g ki Deaf0ff1ceD0d0DabbedD1ced1ceF00d
 OsmoHLR# subscriber imsi 123456789023000 show
     ID: 101
     IMSI: 123456789023000
     MSISDN: 423
-    2G auth: XOR-3G
+    2G auth: XOR-2G
              KI=deaf0ff1ced0d0dabbedd1ced1cef00d
 
 OsmoHLR# subscriber imsi 123456789023000 update aud2g comp128v1 ki BeefedCafeFaceAcedAddedDecadeFee
@@ -241,7 +241,7 @@ OsmoHLR# subscriber id 101 show
     2G auth: COMP128v3
              KI=c01ffedc1cadaeac1d1f1edacac1ab0a
 
-OsmoHLR# subscriber id 101 update aud2g xor ki CoiffedCicadaeAcidifiedAcaciaBoa
+OsmoHLR# subscriber id 101 update aud2g xor-2g ki CoiffedCicadaeAcidifiedAcaciaBoa
 % Invalid value for KI: 'CoiffedCicadaeAcidifiedAcaciaBoa'
 OsmoHLR# subscriber id 101 show
     ID: 101
@@ -250,7 +250,7 @@ OsmoHLR# subscriber id 101 show
     2G auth: COMP128v3
              KI=c01ffedc1cadaeac1d1f1edacac1ab0a
 
-OsmoHLR# subscriber id 101 update aud2g xor ki C01ffedC1cadaeAc1d1f1edAcac1aB0aX
+OsmoHLR# subscriber id 101 update aud2g xor-2g ki C01ffedC1cadaeAc1d1f1edAcac1aB0aX
 % Invalid value for KI: 'C01ffedC1cadaeAc1d1f1edAcac1aB0aX'
 OsmoHLR# subscriber id 101 show
     ID: 101
@@ -269,7 +269,7 @@ OsmoHLR# subscriber id 101 show
 OsmoHLR# subscriber imsi 123456789023000 update aud3g ?
   none      Delete 3G authentication data
   milenage  Use Milenage algorithm
-  xor       Use XOR algorithm
+  xor-3g    Use XOR-3G algorithm
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage ?
   k  Set Encryption Key K

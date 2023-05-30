@@ -586,7 +586,7 @@ static void test_subscr_aud(void)
 	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
-		mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")),
+		mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEffacedAceFacedBadFadedBeef")),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
 
@@ -604,7 +604,7 @@ static void test_subscr_aud(void)
 		-ENOENT);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
-		mk_aud_2g(OSMO_AUTH_ALG_XOR, "CededEffacedAceFacedBadFadedBeef")),
+		mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "CededEffacedAceFacedBadFadedBeef")),
 		0);
 	ASSERT_SEL_AUD(imsi0, 0, id);
 
@@ -707,12 +707,12 @@ static void test_subscr_aud(void)
 	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
-		mk_aud_2g(OSMO_AUTH_ALG_XOR, "f000000000000f00000000000f000000f00000000")),
+		mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "f000000000000f00000000000f000000f00000000")),
 		-EINVAL);
 	ASSERT_SEL_AUD(imsi0, 0, id);
 
 	ASSERT_RC(db_subscr_update_aud_by_id(dbc, id,
-		mk_aud_2g(OSMO_AUTH_ALG_XOR, "f00")),
+		mk_aud_2g(OSMO_AUTH_ALG_XOR_2G, "f00")),
 		-EINVAL);
 	ASSERT_SEL_AUD(imsi0, 0, id);
 

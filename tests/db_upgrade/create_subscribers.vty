@@ -43,5 +43,5 @@ OsmoHLR# subscriber imsi 5555555 create
     MSISDN: none
 OsmoHLR# subscriber imsi 5555555 update msisdn 55555555555555
 % Updated subscriber IMSI='5555555' to MSISDN='55555555555555'
-OsmoHLR# subscriber imsi 5555555 update aud2g xor ki 55555555555555555555555555555555
+OsmoHLR# subscriber imsi 5555555 update aud2g xor-2g ki 55555555555555555555555555555555
 OsmoHLR# subscriber imsi 5555555 update aud3g milenage k 55555555555555555555555555555555 opc 55555555555555555555555555555555
