@@ -1,4 +1,4 @@
-/* (C) 2015 by Harald Welte <laforge@gnumonks.org>
+/* (C) 2015-2023 by Harald Welte <laforge@gnumonks.org>
  *
  * All Rights Reserved
  *
@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	6
+#define CURRENT_SCHEMA_VERSION	7
 
 #define SEL_COLUMNS \
 	"id," \
@@ -513,6 +513,46 @@ static int db_upgrade_v6(struct db_context *dbc)
 	return rc;
 }
 
+static int db_upgrade_v7(struct db_context *dbc)
+{
+	int rc;
+	/* SQLite doesn't allow us to change the column type in-place, so we
+	 * first rename the old table, create a new table and then copy
+	 * the data over before deleting the old table */
+#define CREATE_AUC_3G_V7	\
+"CREATE TABLE auc_3g (\n" \
+"	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id\n" \
+"	algo_id_3g	INTEGER NOT NULL,	-- enum osmo_auth_algo value\n" \
+"	k		VARCHAR(64) NOT NULL,	-- hex string: subscriber's secret key (128/256bit)\n" \
+"	op		VARCHAR(64),		-- hex string: operator's secret key (128/256bit)\n" \
+"	opc		VARCHAR(64),		-- hex string: derived from OP and K (128/256bit)\n" \
+"	sqn		INTEGER NOT NULL DEFAULT 0,	-- sequence number of key usage\n" \
+"	-- nr of index bits at lower SQN end\n" \
+"	ind_bitlen	INTEGER NOT NULL DEFAULT 5\n" \
+");"
+	const char * const statements[] = {
+		"BEGIN TRANSACTION",
+		/* rename old table */
+		"ALTER TABLE auc_3g RENAME TO old_auc_3g",
+		/* create new table */
+		CREATE_AUC_3G_V7,
+		/* copy over old data */
+		"INSERT INTO auc_3g SELECT subscriber_id, algo_id_3g, k, op, opc,sqn, ind_bitlen FROM old_auc_3g",
+		/* delete old table */
+		"DROP TABLE old_auc_3g",
+		/* update user_version */
+		"PRAGMA user_version = 7",
+		"COMMIT",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 7\n");
+		return rc;
+	}
+	return rc;
+}
+
 typedef int (*db_upgrade_func_t)(struct db_context *dbc);
 static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v1,
@@ -521,6 +561,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v4,
 	db_upgrade_v5,
 	db_upgrade_v6,
+	db_upgrade_v7,
 };
 
 static int db_get_user_version(struct db_context *dbc)

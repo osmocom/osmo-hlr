@@ -71,9 +71,9 @@ CREATE TABLE auc_2g (
 CREATE TABLE auc_3g (
 	subscriber_id	INTEGER PRIMARY KEY,	-- subscriber.id
 	algo_id_3g	INTEGER NOT NULL,	-- enum osmo_auth_algo value
-	k		VARCHAR(32) NOT NULL,	-- hex string: subscriber's secret key (128bit)
-	op		VARCHAR(32),		-- hex string: operator's secret key (128bit)
-	opc		VARCHAR(32),		-- hex string: derived from OP and K (128bit)
+	k		VARCHAR(64) NOT NULL,	-- hex string: subscriber's secret key (128/256bit)
+	op		VARCHAR(64),		-- hex string: operator's secret key (128/256bit)
+	opc		VARCHAR(64),		-- hex string: derived from OP and K (128/256bit)
 	sqn		INTEGER NOT NULL DEFAULT 0,	-- sequence number of key usage
 	-- nr of index bits at lower SQN end
 	ind_bitlen	INTEGER NOT NULL DEFAULT 5
@@ -91,4 +91,4 @@ CREATE UNIQUE INDEX idx_subscr_imsi ON subscriber (imsi);
 
 -- Set HLR database schema version number
 -- Note: This constant is currently duplicated in src/db.c and must be kept in sync!
-PRAGMA user_version = 6;
+PRAGMA user_version = 7;

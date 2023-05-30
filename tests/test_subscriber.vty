@@ -275,14 +275,14 @@ OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage ?
   k  Set Encryption Key K
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k ?
-  K  K as 32 hexadecimal characters
+  K  K as 32/64 hexadecimal characters
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d ?
   op   Set OP key
   opc  Set OPC key
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc ?
-  OP_C  OP or OPC as 32 hexadecimal characters
+  OP_C  OP or OPC as 32/64 hexadecimal characters
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage k Deaf0ff1ceD0d0DabbedD1ced1ceF00d opc CededEffacedAceFacedBadFadedBeef ?
   [ind-bitlen]  Set IND bit length

@@ -473,8 +473,14 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 	"Use Milenage algorithm\n"
 
 bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
-		     int *minlen, int *maxlen)
+		     int *minlen, int *maxlen, int *minlen_opc, int *maxlen_opc)
 {
+	/* Default: no OP[c]. True for all 2G algorithms, and 3G-XOR. Overridden below for real 3G AKA algorithms. */
+	if (minlen_opc)
+		*minlen_opc = 0;
+	if (maxlen_opc)
+		*maxlen_opc = 0;
+
 	if (!strcasecmp(alg_str, "none")) {
 		*algo = OSMO_AUTH_ALG_NONE;
 		*minlen = *maxlen = 0;
@@ -497,6 +503,10 @@ bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
 	} else if (!strcasecmp(alg_str, "milenage")) {
 		*algo = OSMO_AUTH_ALG_MILENAGE;
 		*minlen = *maxlen = MILENAGE_KEY_LEN;
+		if (minlen_opc)
+			*minlen_opc = MILENAGE_KEY_LEN;
+		if (maxlen_opc)
+			*maxlen_opc = MILENAGE_KEY_LEN;
 	} else
 		return false;
 	return true;
@@ -552,7 +562,7 @@ DEFUN(subscriber_aud2g,
 		.u.gsm.ki = ki,
 	};
 
-	if (!auth_algo_parse(alg_type, &aud2g.algo, &minlen, &maxlen)) {
+	if (!auth_algo_parse(alg_type, &aud2g.algo, &minlen, &maxlen, NULL, NULL)) {
 		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", alg_type, VTY_NEWLINE);
 		return CMD_WARNING;
 	}
@@ -611,13 +621,13 @@ DEFUN(subscriber_aud3g,
       SUBSCR_UPDATE_HELP
       "Set UMTS authentication data (3G, and 2G with UMTS AKA)\n"
       AUTH_ALG_TYPES_3G_HELP
-      "Set Encryption Key K\n" "K as 32 hexadecimal characters\n"
-      "Set OP key\n" "Set OPC key\n" "OP or OPC as 32 hexadecimal characters\n"
+      "Set Encryption Key K\n" "K as 32/64 hexadecimal characters\n"
+      "Set OP key\n" "Set OPC key\n" "OP or OPC as 32/64 hexadecimal characters\n"
       "Set IND bit length\n" "IND bit length value (default: 5)\n")
 {
 	struct hlr_subscriber subscr;
-	int minlen = 0;
-	int maxlen = 0;
+	int minlen = 0, minlen_opc = 0;
+	int maxlen = 0, maxlen_opc = 0;
 	int rc;
 	const char *id_type = argv[0];
 	const char *id = argv[1];
@@ -636,7 +646,7 @@ DEFUN(subscriber_aud3g,
 		},
 	};
 
-	if (!auth_algo_parse(alg_type, &aud3g.algo, &minlen, &maxlen)) {
+	if (!auth_algo_parse(alg_type, &aud3g.algo, &minlen, &maxlen, &minlen_opc, &maxlen_opc)) {
 		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", alg_type, VTY_NEWLINE);
 		return CMD_WARNING;
 	}
@@ -644,8 +654,7 @@ DEFUN(subscriber_aud3g,
 	if (!is_hexkey_valid(vty, "K", aud3g.u.umts.k, minlen, maxlen))
 		return CMD_WARNING;
 
-	if (!is_hexkey_valid(vty, opc_is_op ? "OP" : "OPC", aud3g.u.umts.opc,
-			     MILENAGE_KEY_LEN, MILENAGE_KEY_LEN))
+	if (!is_hexkey_valid(vty, opc_is_op ? "OP" : "OPC", aud3g.u.umts.opc, minlen_opc, maxlen_opc))
 		return CMD_WARNING;
 
 	if (get_subscr_by_argv(vty, id_type, id, &subscr))
@@ -689,7 +698,7 @@ DEFUN(subscriber_aud3g_xor,
 		},
 	};
 
-	if (!auth_algo_parse("xor-3g", &aud3g.algo, &minlen, &maxlen)) {
+	if (!auth_algo_parse("xor-3g", &aud3g.algo, &minlen, &maxlen, NULL, NULL)) {
 		vty_out(vty, "%% Unknown auth algorithm: '%s'%s", "xor-3g", VTY_NEWLINE);
 		return CMD_WARNING;
 	}

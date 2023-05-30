@@ -86,6 +86,7 @@ DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 3
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 4
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 5
 DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 6
+DDB Database <PATH>test.db' has been upgraded to HLR DB schema version 7
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.
 
 Resulting db:
@@ -106,9 +107,9 @@ Table: auc_3g
 name|type|notnull|dflt_value|pk
 algo_id_3g|INTEGER|1||0
 ind_bitlen|INTEGER|1|5|0
-k|VARCHAR(32)|1||0
-op|VARCHAR(32)|0||0
-opc|VARCHAR(32)|0||0
+k|VARCHAR(64)|1||0
+op|VARCHAR(64)|0||0
+opc|VARCHAR(64)|0||0
 sqn|INTEGER|1|0|0
 subscriber_id|INTEGER|0||1
 
@@ -179,5 +180,5 @@ osmo-hlr --database $db --db-check --config-file $srcdir/osmo-hlr.cfg
 rc = 0
 DMAIN hlr starting
 DDB using database: <PATH>test.db
-DDB Database <PATH>test.db' has HLR DB schema version 6
+DDB Database <PATH>test.db' has HLR DB schema version 7
 DMAIN Cmdline option --db-check: Database was opened successfully, quitting.

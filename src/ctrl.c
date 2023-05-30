@@ -39,7 +39,7 @@
 #define SEL_BY_ID SEL_BY "id-"
 
 extern bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
-			    int *minlen, int *maxlen);
+			    int *minlen, int *maxlen, int *minlen_opc, int *maxlen_opc);
 
 #define hexdump_buf(buf) osmo_hexdump_nospc((void*)buf, sizeof(buf))
 
@@ -550,7 +550,7 @@ static int set_subscr_aud2g(struct ctrl_cmd *cmd, void *data)
 	}
 	if (strcmp(tok, "none") == 0) {
 		aud2g.algo = OSMO_AUTH_ALG_NONE;
-	} else if (!auth_algo_parse(tok, &aud2g.algo, &minlen, &maxlen)) {
+	} else if (!auth_algo_parse(tok, &aud2g.algo, &minlen, &maxlen, NULL, NULL)) {
 		cmd->reply = "Unknown auth algorithm.";
 		return CTRL_CMD_ERROR;
 	}
@@ -630,8 +630,8 @@ static int set_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
 	struct hlr *hlr = data;
 	const char *by_selector = cmd->node;
 	char *tmp = NULL, *tok, *saveptr;
-	int minlen = 0;
-	int maxlen = 0;
+	int minlen = 0, minlen_opc = 0;
+	int maxlen = 0, maxlen_opc = 0;
 	struct sub_auth_data_str aud3g = {
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.u.umts = {
@@ -657,7 +657,7 @@ static int set_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
 	}
 	if (strcmp(tok, "none") == 0) {
 		aud3g.algo = OSMO_AUTH_ALG_NONE;
-	} else if (!auth_algo_parse(tok, &aud3g.algo, &minlen, &maxlen)) {
+	} else if (!auth_algo_parse(tok, &aud3g.algo, &minlen, &maxlen, &minlen_opc, &maxlen_opc)) {
 		cmd->reply = "Unknown auth algorithm.";
 		return CTRL_CMD_ERROR;
 	}
@@ -699,7 +699,7 @@ static int set_subscr_aud3g(struct ctrl_cmd *cmd, void *data)
 		}
 
 		aud3g.u.umts.opc = tok;
-		if (!osmo_is_hexstr(aud3g.u.umts.opc, MILENAGE_KEY_LEN * 2, MILENAGE_KEY_LEN * 2, true)) {
+		if (!osmo_is_hexstr(aud3g.u.umts.opc, minlen_opc * 2, maxlen_opc * 2, true)) {
 			cmd->reply = talloc_asprintf(cmd, "Invalid OP/OPC.");
 			return CTRL_CMD_ERROR;
 		}

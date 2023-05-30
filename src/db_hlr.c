@@ -1,4 +1,4 @@
-/* (C) 2015 by Harald Welte <laforge@gnumonks.org>
+/* (C) 2015-2023 by Harald Welte <laforge@gnumonks.org>
  *
  * All Rights Reserved
  *
@@ -286,12 +286,12 @@ int db_subscr_update_aud_by_id(struct db_context *dbc, int64_t subscr_id,
 
 		if (aud->algo == OSMO_AUTH_ALG_NONE)
 			break;
-		if (!osmo_is_hexstr(aud->u.umts.k, 32, 32, true)) {
+		if (!osmo_is_hexstr(aud->u.umts.k, 32, 64, true)) {
 			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
 			     " Invalid K: '%s'\n", aud->u.umts.k);
 			return -EINVAL;
 		}
-		if (!osmo_is_hexstr(aud->u.umts.opc, 32, 32, true)) {
+		if (!osmo_is_hexstr(aud->u.umts.opc, 32, 64, true)) {
 			LOGP(DAUC, LOGL_ERROR, "Cannot update auth tokens:"
 			     " Invalid OP/OPC: '%s'\n", aud->u.umts.opc);
 			return -EINVAL;
