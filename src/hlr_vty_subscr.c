@@ -468,9 +468,10 @@ static bool is_hexkey_valid(struct vty *vty, const char *label,
 	"Use COMP128v3 algorithm\n" \
 	"Use XOR-2G algorithm\n"
 
-#define AUTH_ALG_TYPES_3G "milenage"
+#define AUTH_ALG_TYPES_3G "(milenage|tuak)"
 #define AUTH_ALG_TYPES_3G_HELP \
-	"Use Milenage algorithm\n"
+	"Use Milenage algorithm\n" \
+	"Use TUAK algorithm\n"
 
 bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
 		     int *minlen, int *maxlen, int *minlen_opc, int *maxlen_opc)
@@ -507,6 +508,14 @@ bool auth_algo_parse(const char *alg_str, enum osmo_auth_algo *algo,
 			*minlen_opc = MILENAGE_KEY_LEN;
 		if (maxlen_opc)
 			*maxlen_opc = MILENAGE_KEY_LEN;
+	} else if (!strcasecmp(alg_str, "tuak")) {
+		*algo = OSMO_AUTH_ALG_TUAK;
+		*minlen = 16;
+		*maxlen = 32;
+		if (minlen_opc)
+			*minlen_opc = 32;
+		if (maxlen_opc)
+			*maxlen_opc = 32;
 	} else
 		return false;
 	return true;
@@ -631,11 +640,11 @@ DEFUN(subscriber_aud3g,
 	int rc;
 	const char *id_type = argv[0];
 	const char *id = argv[1];
-	const char *alg_type = AUTH_ALG_TYPES_3G;
-	const char *k = argv[2];
-	bool opc_is_op = (strcasecmp("op", argv[3]) == 0);
-	const char *op_opc = argv[4];
-	int ind_bitlen = argc > 6? atoi(argv[6]) : 5;
+	const char *alg_type = argv[2];
+	const char *k = argv[3];
+	bool opc_is_op = (strcasecmp("op", argv[4]) == 0);
+	const char *op_opc = argv[5];
+	int ind_bitlen = argc > 7 ? atoi(argv[7]) : 5;
 	struct sub_auth_data_str aud3g = {
 		.type = OSMO_AUTH_TYPE_UMTS,
 		.u.umts = {

@@ -10,7 +10,7 @@ OsmoHLR# list
   subscriber (imsi|msisdn|id|imei) IDENT update aud2g none
   subscriber (imsi|msisdn|id|imei) IDENT update aud2g (comp128v1|comp128v2|comp128v3|xor-2g) ki KI
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g none
-  subscriber (imsi|msisdn|id|imei) IDENT update aud3g milenage k K (op|opc) OP_C [ind-bitlen] [<0-28>]
+  subscriber (imsi|msisdn|id|imei) IDENT update aud3g (milenage|tuak) k K (op|opc) OP_C [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update aud3g xor-3g k K [ind-bitlen] [<0-28>]
   subscriber (imsi|msisdn|id|imei) IDENT update imei (none|IMEI)
   subscriber (imsi|msisdn|id|imei) IDENT update network-access-mode (none|cs|ps|cs+ps)
@@ -269,6 +269,7 @@ OsmoHLR# subscriber id 101 show
 OsmoHLR# subscriber imsi 123456789023000 update aud3g ?
   none      Delete 3G authentication data
   milenage  Use Milenage algorithm
+  tuak      Use TUAK algorithm
   xor-3g    Use XOR-3G algorithm
 
 OsmoHLR# subscriber imsi 123456789023000 update aud3g milenage ?
