@@ -24,43 +24,43 @@
 
 static void {func_name}(void)
 {{
-        struct osmo_sub_auth_data aud2g;
-        struct osmo_sub_auth_data aud3g;
-        struct osmo_auth_vector vec;
-        int rc;
+	struct osmo_sub_auth_data aud2g;
+	struct osmo_sub_auth_data aud3g;
+	struct osmo_auth_vector vec;
+	int rc;
 
-        comment_start();
+	comment_start();
 
-        aud2g = (struct osmo_sub_auth_data){{ 0 }};
+	aud2g = (struct osmo_sub_auth_data){{ 0 }};
 
-        aud3g = (struct osmo_sub_auth_data){{
-                .type = OSMO_AUTH_TYPE_UMTS,
-                .algo = OSMO_AUTH_ALG_MILENAGE,
+	aud3g = (struct osmo_sub_auth_data){{
+		.type = OSMO_AUTH_TYPE_UMTS,
+		.algo = OSMO_AUTH_ALG_MILENAGE,
 		.u.umts.sqn = 31,
-        }};
+	}};
 
-        osmo_hexparse("{Ki}",
-                      aud3g.u.umts.k, sizeof(aud3g.u.umts.k));
-        osmo_hexparse("{OPc}",
-                      aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc));
+	osmo_hexparse("{Ki}",
+		      aud3g.u.umts.k, sizeof(aud3g.u.umts.k));
+	osmo_hexparse("{OPc}",
+		      aud3g.u.umts.opc, sizeof(aud3g.u.umts.opc));
 
-        osmo_hexparse("{RAND}",
-                      fake_rand, sizeof(fake_rand));
+	osmo_hexparse("{RAND}",
+		      fake_rand, sizeof(fake_rand));
 
-        vec = (struct osmo_auth_vector){{ {{0}} }};
+	vec = (struct osmo_auth_vector){{ {{0}} }};
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 31, "%"PRIu64);
-        rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
-        VERBOSE_ASSERT(rc, == 1, "%d");
+	rc = auc_compute_vectors(&vec, 1, &aud2g, &aud3g, NULL, NULL);
+	VERBOSE_ASSERT(rc, == 1, "%d");
 	VERBOSE_ASSERT(aud3g.u.umts.sqn, == 32, "%"PRIu64);
 
-        VEC_IS(&vec,
-               "  rand: {RAND}\n"
-               "  ck: {MIL3G-CK}\n"
-               "  ik: {MIL3G-IK}\n"
-               "  res: {MIL3G-RES}0000000000000000\n"
-               "  kc: {Kc}\n"
-               "  sres: {SRES#1}\n"
-              );
+	VEC_IS(&vec,
+	       "  rand: {RAND}\n"
+	       "  ck: {MIL3G-CK}\n"
+	       "  ik: {MIL3G-IK}\n"
+	       "  res: {MIL3G-RES}0000000000000000\n"
+	       "  kc: {Kc}\n"
+	       "  sres: {SRES#1}\n"
+	      );
 
 	comment_end();
 }}
