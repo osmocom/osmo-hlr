@@ -55,7 +55,7 @@ char *vec_str(const struct osmo_auth_vector *vec)
 	if (pos >= end) \
 		return buf; \
 	pos += snprintf(pos, sizeof(buf) - (pos - buf), \
-                        "  " #what ": %s\n", \
+			"  " #what ": %s\n", \
 			osmo_hexdump_nospc((void*)&vec->what, sizeof(vec->what)))
 
 	append(rand);
@@ -71,7 +71,7 @@ char *vec_str(const struct osmo_auth_vector *vec)
 
 #define VEC_IS(vec, expect) do { \
 		char *_is = vec_str(vec); \
-	        if (strcmp(_is, expect)) { \
+		if (strcmp(_is, expect)) { \
 			fprintf(stderr, "MISMATCH! expected ==\n%s\n", \
 				expect); \
 			char *a = _is; \
