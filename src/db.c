@@ -235,7 +235,7 @@ void db_close(struct db_context *dbc)
 	talloc_free(dbc);
 }
 
-static int db_run_statements(struct db_context *dbc, const char **statements, size_t statements_count)
+static int db_run_statements(struct db_context *dbc, const char * const *statements, size_t statements_count)
 {
 	int rc = 0;
 	int i;
@@ -308,7 +308,7 @@ static int
 db_upgrade_v1(struct db_context *dbc)
 {
 	int rc;
-	const char *statements[] = {
+	const char * const statements[] = {
 		"ALTER TABLE subscriber ADD COLUMN last_lu_seen TIMESTAMP default NULL",
 		"PRAGMA user_version = 1",
 	};
@@ -324,7 +324,7 @@ db_upgrade_v1(struct db_context *dbc)
 static int db_upgrade_v2(struct db_context *dbc)
 {
 	int rc;
-	const char *statements[] = {
+	const char * const statements[] = {
 		"ALTER TABLE subscriber ADD COLUMN imei VARCHAR(14)",
 		"PRAGMA user_version = 2",
 	};
@@ -437,7 +437,7 @@ static int db_upgrade_v3(struct db_context *dbc)
 	"ms_purged_ps," \
 	"last_lu_seen"
 
-	const char *statements[] = {
+	const char * const statements[] = {
 		"BEGIN TRANSACTION",
 		"CREATE TEMPORARY TABLE subscriber_backup" SUBSCR_V3_CREATE,
 		"INSERT INTO subscriber_backup SELECT " SUBSCR_V2_COLUMN_NAMES " FROM subscriber",
@@ -460,7 +460,7 @@ static int db_upgrade_v3(struct db_context *dbc)
 static int db_upgrade_v4(struct db_context *dbc)
 {
 	int rc;
-	const char *statements[] = {
+	const char * const statements[] = {
 		"ALTER TABLE subscriber ADD COLUMN last_lu_seen_ps TIMESTAMP default NULL",
 		"PRAGMA user_version = 4",
 	};
@@ -476,7 +476,7 @@ static int db_upgrade_v4(struct db_context *dbc)
 static int db_upgrade_v5(struct db_context *dbc)
 {
 	int rc;
-	const char *statements[] = {
+	const char * const statements[] = {
 		"ALTER TABLE subscriber ADD COLUMN vlr_via_proxy VARCHAR",
 		"ALTER TABLE subscriber ADD COLUMN sgsn_via_proxy VARCHAR",
 		"PRAGMA user_version = 5",
@@ -493,7 +493,7 @@ static int db_upgrade_v5(struct db_context *dbc)
 static int db_upgrade_v6(struct db_context *dbc)
 {
 	int rc;
-	const char *statements[] = {
+	const char * const statements[] = {
 		"CREATE TABLE ind (\n"
 		"	-- 3G auth IND pool to be used for this VLR\n"
 		"	ind     INTEGER PRIMARY KEY,\n"
