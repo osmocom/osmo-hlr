@@ -386,7 +386,7 @@ static int handle_ussd_own_msisdn(struct ss_session *ss,
 		if (strlen(subscr.msisdn) == 0)
 			snprintf(buf, sizeof(buf), "You have no MSISDN!");
 		else
-			snprintf(buf, sizeof(buf), "Your extension is %s", subscr.msisdn);
+			snprintf(buf, sizeof(buf), "Your phone number is %s", subscr.msisdn);
 		ss_tx_to_ms_ussd_7bit(ss, req->invoke_id, buf);
 		break;
 	case -ENOENT:
