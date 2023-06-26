@@ -420,13 +420,9 @@ static int rx_check_imei_req(struct osmo_gsup_req *req)
 			return -1;
 		}
 	} else {
-		/* Check if subscriber exists and print IMEI */
-		LOGP(DMAIN, LOGL_INFO, "IMSI='%s': has IMEI = %s (consider setting 'store-imei')\n", gsup->imsi, imei);
-		struct hlr_subscriber subscr;
-		if (db_subscr_get_by_imsi(g_hlr->dbc, gsup->imsi, &subscr) < 0) {
-			osmo_gsup_req_respond_err(req, GMM_CAUSE_INV_MAND_INFO, "IMSI unknown");
-			return -1;
-		}
+		/* ThemWi change: report IMSI-IMEI correspondence in syslog */
+		LOGP(DMAIN, LOGL_NOTICE, "IMEI REPORT: IMSI=%s has IMEI=%s\n",
+			gsup->imsi, imei);
 	}
 
 	/* Accept all IMEIs */
