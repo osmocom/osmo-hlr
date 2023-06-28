@@ -122,9 +122,40 @@ void ussd_route_del(struct hlr_ussd_route *rt)
 	talloc_free(rt);
 }
 
-static struct hlr_ussd_route *ussd_route_lookup_7bit(struct hlr *hlr, const char *ussd_code)
+static struct hlr_ussd_route *ussd_route_lookup_for_req(struct hlr *hlr, const struct ss_request *req)
 {
+	const uint8_t cgroup = req->ussd_data_dcs >> 4;
+	const uint8_t lang = req->ussd_data_dcs & 0x0f;
+	char ussd_code[GSM0480_USSD_7BIT_STRING_LEN];
 	struct hlr_ussd_route *rt;
+
+	ussd_code[0] = '\0';
+
+	/* We support only the Coding Group 0 (GSM 7-bit default alphabeet).  In fact,
+	 * the USSD request is usually limited to [*#0-9], so we don't really need to
+	 * support other coding groups and languages. */
+	switch (cgroup) {
+	case 0:
+		/* The Language is usually set to '1111'B (unspecified), but some UEs
+		 * are known to indicate '0000'B (German). */
+		if (lang != 0x0f) {
+			LOGP(DSS, LOGL_NOTICE, "USSD DataCodingScheme (0x%02x): "
+			     "the Language is usually set to 15 (unspecified), "
+			     "but the request indicates %u - ignoring this\n",
+			     req->ussd_data_dcs, lang);
+			/* do not abort, attempt to decode as if it was '1111'B */
+		}
+
+		gsm_7bit_decode_n_ussd(&ussd_code[0], sizeof(ussd_code),
+				       req->ussd_data, (req->ussd_data_len * 8) / 7);
+		break;
+	default:
+		LOGP(DSS, LOGL_ERROR, "USSD DataCodingScheme (0x%02x): "
+		     "Coding Group %u is not supported, expecting Coding Group 0\n",
+		     req->ussd_data_dcs, cgroup);
+		return NULL;
+	}
+
 	llist_for_each_entry(rt, &hlr->ussd_routes, list) {
 		if (!strncmp(ussd_code, rt->prefix, strlen(rt->prefix))) {
 			LOGP(DSS, LOGL_DEBUG, "Found %s '%s' (prefix '%s') for USSD "
@@ -603,7 +634,7 @@ void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 			} else {
 				/* VLR->EUSE: MO USSD. VLR is known ('conn'), EUSE is to be resolved */
 				struct hlr_ussd_route *rt;
-				rt = ussd_route_lookup_7bit(hlr, (const char *) req.ussd_text);
+				rt = ussd_route_lookup_for_req(hlr, &req);
 				if (rt) {
 					if (rt->is_external) {
 						ss->is_external = true;
