@@ -631,7 +631,8 @@ void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 		if (!ss) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: CONTINUE for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
-			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_INV_MAND_INFO, "CONTINUE for unknown SS session");
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_MSGT_INCOMP_P_STATE,
+						  "CONTINUE for unknown SS session");
 			return;
 		}
 
@@ -652,6 +653,8 @@ void rx_proc_ss_req(struct osmo_gsup_req *gsup_req)
 		if (!ss) {
 			LOGP(DSS, LOGL_ERROR, "%s/0x%08x: END for unknown SS session\n",
 				gsup->imsi, gsup->session_id);
+			osmo_gsup_req_respond_err(gsup_req, GMM_CAUSE_MSGT_INCOMP_P_STATE,
+						  "END for unknown SS session");
 			return;
 		}
 
@@ -682,4 +685,5 @@ void rx_proc_ss_error(struct osmo_gsup_req *req)
 {
 	LOGP(DSS, LOGL_NOTICE, "%s/0x%08x: Process SS ERROR (%s)\n", req->gsup.imsi, req->gsup.session_id,
 		osmo_gsup_session_state_name(req->gsup.session_state));
+	osmo_gsup_req_free(req);
 }
