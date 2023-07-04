@@ -275,6 +275,7 @@ void lu_fsm_wait_insert_data_result(struct osmo_fsm_inst *fi, uint32_t event, vo
 
 	case OSMO_GSUP_MSGT_INSERT_DATA_ERROR:
 		lu_failure(lu, GMM_CAUSE_NET_FAIL, "Rx %s", osmo_gsup_message_type_name(req->gsup.message_type));
+		osmo_gsup_req_free(req);
 		break;
 
 	default:
