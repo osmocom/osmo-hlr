@@ -179,11 +179,9 @@ static int osmo_gsup_server_read_cb(struct ipa_server_conn *conn,
 
 	if (hh->proto == IPAC_PROTO_IPACCESS) {
 		rc = ipa_server_conn_ccm(conn, msg);
-		if (rc < 0) {
-			/* conn is already invalid here! */
-			return -1;
-		}
 		msgb_free(msg);
+		if (rc < 0) /* conn is already invalid here! */
+			return -1;
 		return 0;
 	}
 
