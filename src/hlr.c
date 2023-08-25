@@ -49,6 +49,7 @@
 #include <osmocom/hlr/rand.h>
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/hlr_sms.h>
 #include <osmocom/hlr/dgsm.h>
 #include <osmocom/hlr/proxy.h>
 #include <osmocom/hlr/lu_fsm.h>
@@ -554,6 +555,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 		break;
 	case OSMO_GSUP_MSGT_CHECK_IMEI_REQUEST:
 		rx_check_imei_req(req);
+		break;
+	case OSMO_GSUP_MSGT_MO_FORWARD_SM_REQUEST:
+		forward_mo_sms(req);
 		break;
 	default:
 		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
