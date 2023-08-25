@@ -52,6 +52,7 @@ osmo_hlr_SOURCES = \
 	hlr_vty.c \
 	hlr_vty_subscr.c \
 	gsup_send.c \
+	hlr_sms.c \
 	hlr_ussd.c \
 	proxy.c \
 	dgsm.c \

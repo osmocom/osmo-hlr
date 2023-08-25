@@ -41,6 +41,7 @@
 #include <osmocom/hlr/hlr_vty.h>
 #include <osmocom/hlr/hlr_vty_subscr.h>
 #include <osmocom/hlr/hlr_ussd.h>
+#include <osmocom/hlr/hlr_sms.h>
 #include <osmocom/hlr/gsup_server.h>
 
 static const struct value_string gsm48_gmm_cause_vty_names[] = {
@@ -398,6 +399,160 @@ DEFUN(cfg_ncss_guard_timeout, cfg_ncss_guard_timeout_cmd,
 	return CMD_SUCCESS;
 }
 
+/***********************************************************************
+ * Routing of SM-RL to GSUP-attached SMSCs
+ ***********************************************************************/
+
+#define SMSC_STR "Configuration of GSUP routing to SMSCs\n"
+
+struct cmd_node smsc_node = {
+	SMSC_NODE,
+	"%s(config-hlr-smsc)# ",
+	1,
+};
+
+DEFUN(cfg_smsc_entity, cfg_smsc_entity_cmd,
+	"smsc entity NAME",
+	SMSC_STR
+	"Configure a particular external SMSC\n"
+	"IPA name of the external SMSC\n")
+{
+	struct hlr_smsc *smsc;
+	const char *id = argv[0];
+
+	smsc = smsc_find(g_hlr, id);
+	if (!smsc) {
+		smsc = smsc_alloc(g_hlr, id);
+		if (!smsc)
+			return CMD_WARNING;
+	}
+	vty->index = smsc;
+	vty->index_sub = &smsc->description;
+	vty->node = SMSC_NODE;
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_smsc_entity, cfg_no_smsc_entity_cmd,
+	"no smsc entity NAME",
+	NO_STR SMSC_STR "Remove a particular external SMSC\n"
+	"IPA name of the external SMSC\n")
+{
+	struct hlr_smsc *smsc = smsc_find(g_hlr, argv[0]);
+	if (!smsc) {
+		vty_out(vty, "%% Cannot remove non-existent SMSC %s%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	if (g_hlr->smsc_default == smsc) {
+		vty_out(vty,
+			"%% Cannot remove SMSC %s, it is the default route%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	smsc_del(smsc);
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_smsc_route, cfg_smsc_route_cmd,
+	"smsc route NUMBER NAME",
+	SMSC_STR
+	"Configure GSUP route to a particular SMSC\n"
+	"Numeric address of this SMSC, must match EF.SMSP programming in SIMs\n"
+	"IPA name of the external SMSC\n")
+{
+	struct hlr_smsc *smsc = smsc_find(g_hlr, argv[1]);
+	struct hlr_smsc_route *rt = smsc_route_find(g_hlr, argv[0]);
+	if (rt) {
+		vty_out(vty,
+			"%% Cannot add [another?] route for SMSC address %s%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	if (!smsc) {
+		vty_out(vty, "%% Cannot find SMSC '%s'%s", argv[1],
+			VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	smsc_route_alloc(g_hlr, argv[0], smsc);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_smsc_route, cfg_no_smsc_route_cmd,
+	"no smsc route NUMBER",
+	NO_STR SMSC_STR "Remove GSUP route to a particular SMSC\n"
+	"Numeric address of the SMSC\n")
+{
+	struct hlr_smsc_route *rt = smsc_route_find(g_hlr, argv[0]);
+	if (!rt) {
+		vty_out(vty, "%% Cannot find route for SMSC address %s%s",
+			argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+	smsc_route_del(rt);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_smsc_defroute, cfg_smsc_defroute_cmd,
+	"smsc default-route NAME",
+	SMSC_STR
+	"Configure default SMSC route for unknown SMSC numeric addresses\n"
+	"IPA name of the external SMSC\n")
+{
+	struct hlr_smsc *smsc;
+
+	smsc = smsc_find(g_hlr, argv[0]);
+	if (!smsc) {
+		vty_out(vty, "%% Cannot find SMSC %s%s", argv[0], VTY_NEWLINE);
+		return CMD_WARNING;
+	}
+
+	if (g_hlr->smsc_default != smsc) {
+		vty_out(vty, "Switching default route from %s to %s%s",
+			g_hlr->smsc_default ? g_hlr->smsc_default->name : "<none>",
+			smsc->name, VTY_NEWLINE);
+		g_hlr->smsc_default = smsc;
+	}
+
+	return CMD_SUCCESS;
+}
+
+DEFUN(cfg_no_smsc_defroute, cfg_no_smsc_defroute_cmd,
+	"no smsc default-route",
+	NO_STR SMSC_STR
+	"Remove default SMSC route for unknown SMSC numeric addresses\n")
+{
+	g_hlr->smsc_default = NULL;
+
+	return CMD_SUCCESS;
+}
+
+static void dump_one_smsc(struct vty *vty, struct hlr_smsc *smsc)
+{
+	vty_out(vty, " smsc entity %s%s", smsc->name, VTY_NEWLINE);
+}
+
+static int config_write_smsc(struct vty *vty)
+{
+	struct hlr_smsc *smsc;
+	struct hlr_smsc_route *rt;
+
+	llist_for_each_entry(smsc, &g_hlr->smsc_list, list)
+		dump_one_smsc(vty, smsc);
+
+	llist_for_each_entry(rt, &g_hlr->smsc_routes, list) {
+		vty_out(vty, " smsc route %s %s%s", rt->num_addr,
+			rt->smsc->name, VTY_NEWLINE);
+	}
+
+	if (g_hlr->smsc_default)
+		vty_out(vty, " smsc default-route %s%s",
+			g_hlr->smsc_default->name, VTY_NEWLINE);
+
+	return 0;
+}
 
 DEFUN(cfg_reject_cause, cfg_reject_cause_cmd,
       "reject-cause TYPE CAUSE", "") /* Dynamically Generated */
@@ -547,6 +702,15 @@ void hlr_vty_init(void *hlr_ctx)
 	install_element(HLR_NODE, &cfg_ussd_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ussd_no_defaultroute_cmd);
 	install_element(HLR_NODE, &cfg_ncss_guard_timeout_cmd);
+
+	install_node(&smsc_node, config_write_smsc);
+	install_element(HLR_NODE, &cfg_smsc_entity_cmd);
+	install_element(HLR_NODE, &cfg_no_smsc_entity_cmd);
+	install_element(HLR_NODE, &cfg_smsc_route_cmd);
+	install_element(HLR_NODE, &cfg_no_smsc_route_cmd);
+	install_element(HLR_NODE, &cfg_smsc_defroute_cmd);
+	install_element(HLR_NODE, &cfg_no_smsc_defroute_cmd);
+
 	install_element(HLR_NODE, &cfg_reject_cause_cmd);
 	install_element(HLR_NODE, &cfg_store_imei_cmd);
 	install_element(HLR_NODE, &cfg_no_store_imei_cmd);

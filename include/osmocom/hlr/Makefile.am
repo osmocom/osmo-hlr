@@ -6,6 +6,7 @@ noinst_HEADERS = \
 	gsup_router.h \
 	gsup_server.h \
 	hlr.h \
+	hlr_sms.h \
 	hlr_ussd.h \
 	hlr_vty.h \
 	hlr_vty_subscr.h \
