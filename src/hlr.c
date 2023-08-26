@@ -559,6 +559,9 @@ static int read_cb(struct osmo_gsup_conn *conn, struct msgb *msg)
 	case OSMO_GSUP_MSGT_MO_FORWARD_SM_REQUEST:
 		forward_mo_sms(req);
 		break;
+	case OSMO_GSUP_MSGT_MT_FORWARD_SM_REQUEST:
+		forward_mt_sms(req);
+		break;
 	default:
 		LOGP(DMAIN, LOGL_DEBUG, "Unhandled GSUP message type %s\n",
 		     osmo_gsup_message_type_name(req->gsup.message_type));
