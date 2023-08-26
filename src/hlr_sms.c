@@ -190,3 +190,31 @@ void forward_mo_sms(struct osmo_gsup_req *req)
 			     strlen(smsc->name) + 1);
 	osmo_gsup_forward_to_local_peer(req->cb_data, &dest_peer, req, NULL);
 }
+
+/***********************************************************************
+ * forwarding of MT SMS from SMSCs to MSC/VLR based on IMSI
+ ***********************************************************************/
+
+void forward_mt_sms(struct osmo_gsup_req *req)
+{
+	struct hlr_subscriber subscr;
+	struct osmo_cni_peer_id dest_peer;
+	int rc;
+
+	rc = db_subscr_get_by_imsi(g_hlr->dbc, req->gsup.imsi, &subscr);
+	if (rc < 0) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMSI_UNKNOWN,
+					  "IMSI unknown");
+		return;
+	}
+	/* is this subscriber currently attached to a VLR? */
+	if (!subscr.vlr_number[0]) {
+		osmo_gsup_req_respond_err(req, GMM_CAUSE_IMPL_DETACHED,
+					  "subscriber not attached to a VLR");
+		return;
+	}
+	osmo_cni_peer_id_set(&dest_peer, OSMO_CNI_PEER_ID_IPA_NAME,
+			     (const uint8_t *) subscr.vlr_number,
+			     strlen(subscr.vlr_number) + 1);
+	osmo_gsup_forward_to_local_peer(req->cb_data, &dest_peer, req, NULL);
+}
