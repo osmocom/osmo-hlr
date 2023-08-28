@@ -218,3 +218,59 @@ void forward_mt_sms(struct osmo_gsup_req *req)
 			     strlen(subscr.vlr_number) + 1);
 	osmo_gsup_forward_to_local_peer(req->cb_data, &dest_peer, req, NULL);
 }
+
+/***********************************************************************
+ * READY-FOR-SM handling
+ *
+ * An MSC indicates that an MS is ready to receive messages.  If one
+ * or more SMSCs have previously tried to send MT SMS to this MS and
+ * failed, we should pass this READY-FOR-SM message to them so they
+ * can resend their queued SMS right away.  But which SMSC do we
+ * forward the message to?  3GPP specs call for a complicated system
+ * where the HLR remembers which SMSCs have tried and failed to deliver
+ * MT SMS, and those SMSCs then get notified - but that design is too
+ * much complexity for the current state of Osmocom.  So we keep it
+ * simple: we iterate over all configured SMSCs and forward a copy
+ * of the READY-FOR-SM.req message to each.
+ *
+ * Routing of responses is another problem: the MSC that sent
+ * READY-FOR-SM.req expects only one response, and one can even argue
+ * that the operation is a "success" from the perspective of the MS
+ * irrespective of whether each given SMSC handled the notification
+ * successfully or not.  Hence our approach: we always return success
+ * to the MS, and when we forward copies of READY-FOR-SM.req to SMSCs,
+ * we list the HLR as the message source - this way SMSC responses
+ * will terminate at this HLR and won't be forwarded to the MSC.
+ ***********************************************************************/
+
+static void forward_req_copy_to_smsc(const struct osmo_gsup_req *req,
+				     const struct hlr_smsc *smsc)
+{
+	const char *my_ipa_name = g_hlr->gsup_unit_name.serno;
+	struct osmo_gsup_message forward = req->gsup;
+	struct osmo_ipa_name smsc_ipa_name;
+
+	/* set the source to this HLR */
+	forward.source_name = (const uint8_t *) my_ipa_name;
+	forward.source_name_len = strlen(my_ipa_name) + 1;
+
+	/* send it off */
+	LOG_GSUP_REQ(req, LOGL_INFO, "Forwarding source-reset copy to %s\n",
+		     smsc->name);
+	osmo_ipa_name_set(&smsc_ipa_name, (const uint8_t *) smsc->name,
+			  strlen(smsc->name) + 1);
+	osmo_gsup_enc_send_to_ipa_name(g_hlr->gs, &smsc_ipa_name, &forward);
+}
+
+void rx_ready_for_sm_req(struct osmo_gsup_req *req)
+{
+	struct hlr_smsc *smsc;
+
+	/* fan request msg out to all SMSCs */
+	llist_for_each_entry(smsc, &g_hlr->smsc_list, list)
+		forward_req_copy_to_smsc(req, smsc);
+
+	/* send OK response to the MSC and the MS */
+	osmo_gsup_req_respond_msgt(req, OSMO_GSUP_MSGT_READY_FOR_SM_RESULT,
+				   true);
+}
