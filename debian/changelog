@@ -1,3 +1,37 @@
+osmo-hlr (1.7.0) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * Run struct_endianness.py
+  * tests/db/db_test.err: adjust to XOR-3G rename
+  * debian: set compat level to 10
+  * systemd: depend on networking-online.target
+
+  [ Pau Espin Pedrol ]
+  * mslookup: Call osmo_fd_unregister() before closing and changing bfd->fd
+
+  [ Vadim Yanitskiy ]
+  * tests/auc/Makefile.am: put object files to LDADD
+  * tests/*/Makefile.am: move -I to AM_CPPFLAGS
+  * lu_fsm: fix memleak in lu_fsm_wait_insert_data_result()
+  * ussd: fix GSUP memleaks in rx_proc_ss_{req,error}()
+  * gsup_server: fix msgb memleak in osmo_gsup_server_read_cb()
+  * USSD: fix handling of ussd-DataCodingScheme != 0x0f
+
+  [ Alexander Couzens ]
+  * hlr: use talloc for memory allocation in osmo_gsup_create_insert_subscriber_data_msg
+  * Add support for multiple APN profiles for subscriber data
+
+  [ Harald Welte ]
+  * Introduce support for XOR-2G algorithm
+  * cosmetic: gen_ts_55_205_test_sets/func_template.c: Use tab-indent
+  * cosmetic: gen_ts_55_205_test_sets/main_template tabs istead of spaces
+  * Port to new libosmogsm 'struct osmo_sub_auth_data2'
+  * src/db.c: Switch from "const char *statements" to "const char * const"
+  * db: extend database schema to support 256bit K and/or OP[c] values
+  * Add VTY support for TUAK algorithm
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Tue, 12 Sep 2023 14:41:33 +0200
+
 osmo-hlr (1.6.0) unstable; urgency=medium
 
   [ Vadim Yanitskiy ]
