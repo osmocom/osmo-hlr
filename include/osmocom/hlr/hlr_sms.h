@@ -27,3 +27,5 @@ struct hlr_smsc_route *smsc_route_find(struct hlr *hlr, const char *num_addr);
 struct hlr_smsc_route *smsc_route_alloc(struct hlr *hlr, const char *num_addr,
 					struct hlr_smsc *smsc);
 void smsc_route_free(struct hlr_smsc_route *rt);
+
+void forward_mo_sms(struct osmo_gsup_req *req);
