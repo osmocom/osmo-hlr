@@ -74,6 +74,10 @@ struct hlr {
 
 	struct llist_head ss_sessions;
 
+	struct llist_head smsc_list;
+	struct llist_head smsc_routes;
+	struct hlr_smsc *smsc_default;
+
 	bool store_imei;
 
 	bool subscr_create_on_demand;
