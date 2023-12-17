@@ -426,6 +426,20 @@ static int set_subscr_cs_enabled(struct ctrl_cmd *cmd, void *data)
 	return set_subscr_cs_ps_enabled(cmd, data, false);
 }
 
+CTRL_CMD_DEFINE_RO(subscr_imsi, "imsi");
+static int get_subscr_imsi(struct ctrl_cmd *cmd, void *data)
+{
+	struct hlr_subscriber subscr;
+	struct hlr *hlr = data;
+	const char *by_selector = cmd->node;
+
+	if (!get_subscriber(hlr->dbc, by_selector, &subscr, cmd))
+		return CTRL_CMD_ERROR;
+
+	cmd->reply = talloc_strdup(cmd, subscr.imsi);
+	return CTRL_CMD_REPLY;
+}
+
 CTRL_CMD_DEFINE(subscr_msisdn, "msisdn");
 static int verify_subscr_msisdn(struct ctrl_cmd *cmd, const char *value, void *data)
 {
@@ -761,6 +775,7 @@ static int hlr_ctrl_cmds_install(void)
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_info_all);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_ps_enabled);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_cs_enabled);
+	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_imsi);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_msisdn);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_aud2g);
 	rc |= ctrl_cmd_install(CTRL_NODE_SUBSCR_BY, &cmd_subscr_aud3g);
