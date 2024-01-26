@@ -11,8 +11,10 @@ SUBDIRS = \
 
 EXTRA_DIST = \
 	.version \
+	README.md \
 	contrib/osmo-hlr.spec.in \
 	debian \
+	git-version-gen \
 	$(NULL)
 
 AM_DISTCHECK_CONFIGURE_FLAGS = \
