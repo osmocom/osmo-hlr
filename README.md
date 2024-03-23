@@ -1,8 +1,8 @@
 osmo-hlr - Osmocom HLR Implementation
 =====================================
 
-This repository contains a C-language implementation of a GSM Home
-Location Register (HLR). It is part of the
+This repository contains a C-language implementation of a GSM *Home
+Location Register (HLR)*. It is part of the
 [Osmocom](https://osmocom.org/) Open Source Mobile Communications
 project.
 
@@ -10,13 +10,14 @@ Warning: While the HLR logical functionality is implemented, OsmoHLR
 does not use the ETSI/3GPP TCAP/MAP protocol stack. Instead, a much
 simpler custom protocol (GSUP) is used.  This means, OsmoHLR is of
 no use outside the context of an Osmocom core network.  You can use
-it with OsmoMSC, OsmoSGSN etc. - but not with third party components.
+it with [OsmoMSC](https://osmocom.org/projects/osmomsc/wiki),
+[OsmoSGSN](https://osmocom.org/projects/osmosgsn/wiki) etc. -
+but not directly with third party components.
 
 Homepage
 --------
 
-The official homepage of the project is
-https://osmocom.org/projects/osmo-hlr/wiki
+The official homepage of the project is <https://osmocom.org/projects/osmo-hlr/wiki>.
 
 GIT Repository
 --------------
@@ -33,9 +34,9 @@ Documentation
 User Manuals and VTY reference manuals are [optionally] built in PDF form
 as part of the build process.
 
-Pre-rendered PDF version of the current "master" can be found at
-[User Manual](https://ftp.osmocom.org/docs/latest/osmohlr-usermanual.pdf)
-as well as the VTY reference manuals
+Pre-rendered PDF versions of the current `master` can be found at
+
+* [User Manual](https://ftp.osmocom.org/docs/latest/osmohlr-usermanual.pdf)
 * [VTY Reference Manual for osmo-hlr](https://ftp.osmocom.org/docs/latest/osmohlr-vty-reference.pdf)
 
 Mailing List
@@ -54,12 +55,12 @@ Contributing
 ------------
 
 Our coding standards are described at
-https://osmocom.org/projects/cellular-infrastructure/wiki/Coding_standards
+<https://osmocom.org/projects/cellular-infrastructure/wiki/Coding_standards>
 
 We us a gerrit based patch submission/review process for managing
 contributions.  Please see
-https://osmocom.org/projects/cellular-infrastructure/wiki/Gerrit for
+<https://osmocom.org/projects/cellular-infrastructure/wiki/Gerrit> for
 more details
 
 The current patch queue for osmo-hlr can be seen at
-https://gerrit.osmocom.org/#/q/project:osmo-hlr+status:open
+<https://gerrit.osmocom.org/#/q/project:osmo-hlr+status:open>
