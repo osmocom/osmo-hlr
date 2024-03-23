@@ -39,6 +39,13 @@ Pre-rendered PDF versions of the current `master` can be found at
 * [User Manual](https://ftp.osmocom.org/docs/latest/osmohlr-usermanual.pdf)
 * [VTY Reference Manual for osmo-hlr](https://ftp.osmocom.org/docs/latest/osmohlr-vty-reference.pdf)
 
+Forum
+-----
+
+We welcome any osmo-hlr related discussions in the
+[Cellular Network Infrastructure -> 2G/3G Core Network](https://discourse.osmocom.org/c/cni/2g-3g-cn)
+section of the osmocom discourse (web based Forum).
+
 Mailing List
 ------------
 
@@ -50,6 +57,13 @@ options and the list archive.
 Please observe the [Osmocom Mailing List
 Rules](https://osmocom.org/projects/cellular-infrastructure/wiki/Mailing_List_Rules)
 when posting.
+
+Issue Tracker
+-------------
+
+We use the [issue tracker of the osmo-hlr project on osmocom.org](https://osmocom.org/projects/osmo-hlr/issues) for
+tracking the state of bug reports and feature requests.  Feel free to submit any issues you may find, or help
+us out by resolving existing issues.
 
 Contributing
 ------------
