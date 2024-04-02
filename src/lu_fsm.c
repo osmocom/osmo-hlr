@@ -136,7 +136,8 @@ static void lu_start(struct osmo_gsup_req *update_location_req)
 	}
 
 	if (db_subscr_get_by_imsi(g_hlr->dbc, update_location_req->gsup.imsi, &lu->subscr) < 0) {
-		lu_failure(lu, g_hlr->reject_cause, "Subscriber does not exist");
+		lu_failure(lu, (lu->is_ps) ? g_hlr->reject_cause.ps : g_hlr->reject_cause.cs,
+			   "Subscriber does not exist");
 		return;
 	}
 

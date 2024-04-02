@@ -333,7 +333,11 @@ static int rx_send_auth_info(struct osmo_gsup_req *req)
 						  " Returning slightly inaccurate cause 'IMSI Unknown' via GSUP");
 			return rc;
 		case -ENOENT:
-			osmo_gsup_req_respond_err(req, g_hlr->reject_cause, "IMSI unknown");
+			osmo_gsup_req_respond_err(req,
+						  (req->gsup.cn_domain == OSMO_GSUP_CN_DOMAIN_CS) ?
+						  g_hlr->no_proxy_reject_cause.cs :
+						  g_hlr->no_proxy_reject_cause.ps,
+						  "IMSI unknown");
 			return rc;
 		default:
 			osmo_gsup_req_respond_err(req, GMM_CAUSE_NET_FAIL, "failure to look up IMSI in db");
@@ -784,8 +788,10 @@ int main(int argc, char **argv)
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
 	g_hlr->mslookup.server.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
 	g_hlr->mslookup.client.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
-	g_hlr->reject_cause = GMM_CAUSE_PLMN_NOTALLOWED;
-	g_hlr->no_proxy_reject_cause = GMM_CAUSE_NET_FAIL;
+	g_hlr->reject_cause.cs = GMM_CAUSE_PLMN_NOTALLOWED;
+	g_hlr->no_proxy_reject_cause.cs = GMM_CAUSE_PLMN_NOTALLOWED;
+	g_hlr->reject_cause.ps = GMM_CAUSE_NET_FAIL;
+	g_hlr->no_proxy_reject_cause.ps = GMM_CAUSE_NET_FAIL;
 
 	/* Init default (call independent) SS session guard timeout value */
 	g_hlr->ncss_guard_timeout = NCSS_GUARD_TIMEOUT_DEFAULT;

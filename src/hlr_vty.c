@@ -320,12 +320,22 @@ static int config_write_hlr(struct vty *vty)
 {
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
 
-	vty_out(vty, " reject-cause not-found %s%s",
-		get_value_string_or_null(gsm48_gmm_cause_vty_names,
-					 (uint32_t) g_hlr->reject_cause), VTY_NEWLINE);
-	vty_out(vty, " reject-cause no-proxy %s%s",
-		get_value_string_or_null(gsm48_gmm_cause_vty_names,
-					 (uint32_t) g_hlr->no_proxy_reject_cause), VTY_NEWLINE);
+	if (g_hlr->reject_cause.cs != GMM_CAUSE_PLMN_NOTALLOWED)
+		vty_out(vty, " reject-cause not-found cs %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->reject_cause.cs), VTY_NEWLINE);
+	if (g_hlr->reject_cause.ps != GMM_CAUSE_PLMN_NOTALLOWED)
+		vty_out(vty, " reject-cause not-found ps %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->reject_cause.ps), VTY_NEWLINE);
+	if (g_hlr->no_proxy_reject_cause.cs != GMM_CAUSE_NET_FAIL)
+		vty_out(vty, " reject-cause no-proxy cs %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->no_proxy_reject_cause.cs), VTY_NEWLINE);
+	if (g_hlr->no_proxy_reject_cause.ps != GMM_CAUSE_NET_FAIL)
+		vty_out(vty, " reject-cause no-proxy ps %s%s",
+			get_value_string_or_null(gsm48_gmm_cause_vty_names,
+						 (uint32_t) g_hlr->no_proxy_reject_cause.ps), VTY_NEWLINE);
 	if (g_hlr->store_imei)
 		vty_out(vty, " store-imei%s", VTY_NEWLINE);
 	if (g_hlr->db_file_path && strcmp(g_hlr->db_file_path, HLR_DEFAULT_DB_FILE_PATH))
@@ -782,16 +792,26 @@ static int config_write_smsc(struct vty *vty)
 DEFUN(cfg_reject_cause, cfg_reject_cause_cmd,
       "reject-cause TYPE CAUSE", "") /* Dynamically Generated */
 {
-	int cause_code = get_string_value(gsm48_gmm_cause_vty_names, argv[1]);
+	int cause_code = get_string_value(gsm48_gmm_cause_vty_names, argv[2]);
 	OSMO_ASSERT(cause_code >= 0);
 
-	if (strcmp(argv[0], "not-found") == 0)
-		g_hlr->reject_cause = (enum gsm48_gmm_cause) cause_code;
-	if (strcmp(argv[0], "no-proxy") == 0)
-		g_hlr->no_proxy_reject_cause = (enum gsm48_gmm_cause) cause_code;
+	if (strcmp(argv[0], "not-found") == 0) {
+		if (strcmp(argv[1], "cs") == 0)
+			g_hlr->reject_cause.cs = (enum gsm48_gmm_cause) cause_code;
+		else
+			g_hlr->reject_cause.ps = (enum gsm48_gmm_cause) cause_code;
+	}
+	if (strcmp(argv[0], "no-proxy") == 0) {
+		if (strcmp(argv[1], "cs") == 0)
+			g_hlr->no_proxy_reject_cause.cs = (enum gsm48_gmm_cause) cause_code;
+		else
+			g_hlr->no_proxy_reject_cause.ps = (enum gsm48_gmm_cause) cause_code;
+	}
 
 	return CMD_SUCCESS;
 }
+
+
 
 DEFUN(cfg_store_imei, cfg_store_imei_cmd,
 	"store-imei",
@@ -886,7 +906,7 @@ void hlr_vty_init(void *hlr_ctx)
 	cfg_reject_cause_cmd.string =
 		vty_cmd_string_from_valstr(hlr_ctx,
 					   gsm48_gmm_cause_vty_names,
-					   "reject-cause (not-found|no-proxy) (", "|", ")",
+					   "reject-cause (not-found|no-proxy) (cs|ps) (", "|", ")",
 					   VTY_DO_LOWER);
 
 	cfg_reject_cause_cmd.doc =
@@ -894,7 +914,9 @@ void hlr_vty_init(void *hlr_ctx)
 					   gsm48_gmm_cause_vty_descs,
 					   "GSUP/GMM cause to be sent\n"
 					   "in the case the IMSI could not be found in the database\n"
-					   "in the case no remote HLR reponded to mslookup GSUP request\n",
+					   "in the case no remote HLR reponded to mslookup GSUP request\n"
+					   "for CS domain\n"
+					   "for PS domain\n",
 					   "\n", "", 0);
 
 	logging_vty_add_cmds();

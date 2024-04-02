@@ -63,8 +63,16 @@ struct hlr {
 
 	struct llist_head euse_list;
 	struct hlr_euse *euse_default;
-	enum gsm48_gmm_cause reject_cause;
-	enum gsm48_gmm_cause no_proxy_reject_cause;
+
+	struct {
+		enum gsm48_gmm_cause cs;
+		enum gsm48_gmm_cause ps;
+	} reject_cause;
+	struct {
+		enum gsm48_gmm_cause cs;
+		enum gsm48_gmm_cause ps;
+	} no_proxy_reject_cause;
+
 	/* PS: APN default configuration used by Subscription Data on ISR */
 	struct {
 		struct {

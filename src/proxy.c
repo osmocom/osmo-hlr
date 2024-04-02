@@ -92,7 +92,11 @@ static void proxy_pending_req_remote_hlr_connect_result(struct osmo_gsup_req *re
 			osmo_gsup_req_respond(req, &gsup_reply, false, true);
 			return;
 		}
-		osmo_gsup_req_respond_err(req, g_hlr->no_proxy_reject_cause,
+
+		osmo_gsup_req_respond_err(req,
+					  (req->gsup.cn_domain == OSMO_GSUP_CN_DOMAIN_CS) ?
+					  g_hlr->no_proxy_reject_cause.cs :
+					  g_hlr->no_proxy_reject_cause.ps,
 					  "Proxy: Failed to connect to home HLR");
 		return;
 	}
