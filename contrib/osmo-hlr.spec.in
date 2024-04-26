@@ -155,6 +155,8 @@ chown osmocom:osmocom /etc/osmocom/osmo-hlr.cfg
 chmod 0660 /etc/osmocom/osmo-hlr.cfg
 chown root:osmocom /etc/osmocom
 chmod 2775 /etc/osmocom
+mkdir -p /var/lib/osmocom
+chown -R osmocom:osmocom /var/lib/osmocom
 
 %post   -n libosmo-gsup-client0 -p /sbin/ldconfig
 %postun -n libosmo-gsup-client0 -p /sbin/ldconfig

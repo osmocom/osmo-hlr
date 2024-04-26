@@ -20,7 +20,7 @@ Homepage: https://projects.osmocom.org/projects/osmo-hlr
 
 Package: osmo-hlr
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Osmocom Home Location Register
  OsmoHLR is a Osmocom implementation of HLR (Home Location Registrar) which
  works over GSUP protocol. The subscribers are store in sqlite DB.
