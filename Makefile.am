@@ -12,7 +12,6 @@ SUBDIRS = \
 EXTRA_DIST = \
 	.version \
 	README.md \
-	contrib/osmo-hlr.spec.in \
 	debian \
 	git-version-gen \
 	$(NULL)
