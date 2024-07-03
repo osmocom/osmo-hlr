@@ -429,7 +429,11 @@ static void socket_client_close(struct socket_client *c)
 
 void socket_client_respond_result(struct socket_client *c, const char *response)
 {
-	write(c->ofd.fd, response, strlen(response));
+	size_t len = strlen(response);
+	int rc = write(c->ofd.fd, response, len);
+
+	if (rc != len)
+		print_error("%s: write() returned %d instead of %zu\n", __func__, rc, len);
 }
 
 static int socket_read_cb(struct osmo_fd *ofd)
@@ -526,8 +530,13 @@ int socket_accept(struct osmo_fd *ofd, unsigned int flags)
 
 	llist_add(&c->entry, &globals.socket_clients);
 
-	if (globals.format == FORMAT_CSV && cmdline_opts.csv_headers)
-		write(c->ofd.fd, CSV_HEADERS, strlen(CSV_HEADERS));
+	if (globals.format == FORMAT_CSV && cmdline_opts.csv_headers) {
+		size_t len = strlen(CSV_HEADERS);
+		int rc = write(c->ofd.fd, CSV_HEADERS, strlen(CSV_HEADERS));
+
+		if (rc != len)
+			print_error("%s: write() returned %d instead of %zu\n", __func__, rc, len);
+	}
 
 	return 0;
 }
