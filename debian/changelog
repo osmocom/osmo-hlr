@@ -1,3 +1,36 @@
+osmo-hlr (1.8.0) unstable; urgency=medium
+
+  [ Vadim Yanitskiy ]
+  * hlr_vty.c: drop redundant include of hlr_ussd.h
+  * build: include {README.md,git-version-gen} into the release tarball
+  * README.md: cosmetic: fix a typo
+
+  [ Mychaela N. Falconia ]
+  * SMS over GSUP: implement vty config of SMSC routing
+  * SMS over GSUP: implement forwarding of MO SMS
+  * SMS over GSUP: implement forwarding of MT SMS
+  * SMS over GSUP: handle READY-FOR-SM.req from MSCs
+  * ctrl: add subscriber.by-*.imsi GET-able variable
+
+  [ Andreas Eversberg ]
+  * Use uniform log format for default config files
+
+  [ Harald Welte ]
+  * Add funding link to github mirror
+  * README.md: Improve mark-down formatting
+  * README.md: Add Forum and Issue Tracker sections
+
+  [ Max ]
+  * .deb/.rpm: add osmocom user during package install
+
+  [ Oliver Smith ]
+  * .deb/.rpm: various fixes related to non-root
+  * contrib: remove rpm spec file
+  * debian/postinst: add checks, be verbose
+  * mslookup: don't ignore return value of write()
+
+ -- Oliver Smith <osmith@sysmocom.de>  Wed, 24 Jul 2024 15:29:12 +0200
+
 osmo-hlr (1.7.0) unstable; urgency=medium
 
   [ Oliver Smith ]
