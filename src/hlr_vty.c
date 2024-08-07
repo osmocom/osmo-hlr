@@ -282,6 +282,36 @@ DEFUN(cfg_no_ps_pdp_profile_apn, cfg_no_ps_pdp_profile_apn_cmd,
 	return CMD_SUCCESS;
 }
 
+static void config_write_subscr_create_on_demand(struct vty *vty)
+{
+	const uint8_t flags = g_hlr->subscr_create_on_demand.flags;
+	const char *flags_str;
+
+	switch (g_hlr->subscr_create_on_demand.mode) {
+	case SUBSCR_COD_MODE_RAND_MSISDN:
+		vty_out(vty, " subscriber-create-on-demand %u",
+			g_hlr->subscr_create_on_demand.rand_msisdn_len);
+		break;
+	case SUBSCR_COD_MODE_NO_MSISDN:
+		vty_out(vty, " subscriber-create-on-demand no-msisdn");
+		break;
+	case SUBSCR_COD_MODE_DISABLED:
+	default:
+		vty_out(vty, " no subscriber-create-on-demand%s", VTY_NEWLINE);
+		return;
+	}
+
+	if ((flags & DB_SUBSCR_FLAG_NAM_CS) && (flags & DB_SUBSCR_FLAG_NAM_PS))
+		flags_str = "cs+ps";
+	else if (flags & DB_SUBSCR_FLAG_NAM_CS)
+		flags_str = "cs";
+	else if (flags & DB_SUBSCR_FLAG_NAM_PS)
+		flags_str = "ps";
+	else
+		flags_str = "none";
+	vty_out(vty, " %s%s", flags_str, VTY_NEWLINE);
+}
+
 
 static int config_write_hlr(struct vty *vty)
 {
@@ -299,23 +329,7 @@ static int config_write_hlr(struct vty *vty)
 		vty_out(vty, " store-imei%s", VTY_NEWLINE);
 	if (g_hlr->db_file_path && strcmp(g_hlr->db_file_path, HLR_DEFAULT_DB_FILE_PATH))
 		vty_out(vty, " database %s%s", g_hlr->db_file_path, VTY_NEWLINE);
-	if (g_hlr->subscr_create_on_demand) {
-		const char *flags_str = "none";
-		uint8_t flags = g_hlr->subscr_create_on_demand_flags;
-		unsigned int rand_msisdn_len = g_hlr->subscr_create_on_demand_rand_msisdn_len;
-
-		if ((flags & DB_SUBSCR_FLAG_NAM_CS) && (flags & DB_SUBSCR_FLAG_NAM_PS))
-			flags_str = "cs+ps";
-		else if (flags & DB_SUBSCR_FLAG_NAM_CS)
-			flags_str = "cs";
-		else if (flags & DB_SUBSCR_FLAG_NAM_PS)
-			flags_str = "ps";
-
-		if (rand_msisdn_len)
-			vty_out(vty, " subscriber-create-on-demand %i %s%s", rand_msisdn_len, flags_str, VTY_NEWLINE);
-		else
-			vty_out(vty, " subscriber-create-on-demand no-msisdn %s%s", flags_str, VTY_NEWLINE);
-	}
+	config_write_subscr_create_on_demand(vty);
 	return CMD_SUCCESS;
 }
 
@@ -805,20 +819,25 @@ DEFUN(cfg_subscr_create_on_demand, cfg_subscr_create_on_demand_cmd,
 	"Allow access to packet switched NAM by default.\n"
 	"Allow access to circuit and packet switched NAM by default.\n")
 {
+	enum subscr_create_on_demand_mode mode;
 	unsigned int rand_msisdn_len = 0;
 	uint8_t flags = 0x00;
 
-	if (strcmp(argv[0], "no-msisdn") != 0)
+	if (strcmp(argv[0], "no-msisdn") == 0) {
+		mode = SUBSCR_COD_MODE_NO_MSISDN;
+	} else { /* random MSISDN */
+		mode = SUBSCR_COD_MODE_RAND_MSISDN;
 		rand_msisdn_len = atoi(argv[0]);
+	}
 
 	if (strstr(argv[1], "cs"))
 		flags |= DB_SUBSCR_FLAG_NAM_CS;
 	if (strstr(argv[1], "ps"))
 		flags |= DB_SUBSCR_FLAG_NAM_PS;
 
-	g_hlr->subscr_create_on_demand = true;
-	g_hlr->subscr_create_on_demand_rand_msisdn_len = rand_msisdn_len;
-	g_hlr->subscr_create_on_demand_flags = flags;
+	g_hlr->subscr_create_on_demand.mode = mode;
+	g_hlr->subscr_create_on_demand.rand_msisdn_len = rand_msisdn_len;
+	g_hlr->subscr_create_on_demand.flags = flags;
 
 	return CMD_SUCCESS;
 }
@@ -827,7 +846,7 @@ DEFUN(cfg_no_subscr_create_on_demand, cfg_no_subscr_create_on_demand_cmd,
 	"no subscriber-create-on-demand",
 	"Do not make a new record when a subscriber is first seen.\n")
 {
-	g_hlr->subscr_create_on_demand = false;
+	g_hlr->subscr_create_on_demand.mode = SUBSCR_COD_MODE_DISABLED;
 	return CMD_SUCCESS;
 }
 

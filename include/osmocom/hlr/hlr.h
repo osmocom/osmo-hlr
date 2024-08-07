@@ -39,6 +39,12 @@ enum osmo_gsup_message_type;
 
 extern struct osmo_tdef g_hlr_tdefs[];
 
+enum subscr_create_on_demand_mode {
+	SUBSCR_COD_MODE_DISABLED = 0,
+	SUBSCR_COD_MODE_NO_MSISDN,
+	SUBSCR_COD_MODE_RAND_MSISDN,
+};
+
 struct hlr {
 	/* GSUP server pointer */
 	struct osmo_gsup_server *gs;
@@ -80,10 +86,12 @@ struct hlr {
 
 	bool store_imei;
 
-	bool subscr_create_on_demand;
-	/* Bitmask of DB_SUBSCR_FLAG_* */
-	uint8_t subscr_create_on_demand_flags;
-	unsigned int subscr_create_on_demand_rand_msisdn_len;
+	struct {
+		enum subscr_create_on_demand_mode mode;
+		unsigned int rand_msisdn_len;
+		/* Bitmask of DB_SUBSCR_FLAG_* */
+		uint8_t flags;
+	} subscr_create_on_demand;
 
 	struct {
 		bool allow_startup;

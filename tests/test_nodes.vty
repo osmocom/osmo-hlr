@@ -115,6 +115,7 @@ log stderr
 hlr
  store-imei
  database hlr_vty_test.db
+ no subscriber-create-on-demand
  gsup
   bind ip 127.0.0.1
   ipa-name unnamed-HLR

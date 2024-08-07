@@ -204,23 +204,31 @@ static int subscr_create_on_demand(const char *imsi)
 {
 	char msisdn[GSM23003_MSISDN_MAX_DIGITS + 1];
 	int rc;
-	unsigned int rand_msisdn_len = g_hlr->subscr_create_on_demand_rand_msisdn_len;
 
-	if (!g_hlr->subscr_create_on_demand)
-		return -1;
 	if (db_subscr_exists_by_imsi(g_hlr->dbc, imsi) == 0)
 		return -1;
-	if (rand_msisdn_len && generate_new_msisdn(msisdn, imsi, rand_msisdn_len) != 0)
+
+	switch (g_hlr->subscr_create_on_demand.mode) {
+	case SUBSCR_COD_MODE_RAND_MSISDN:
+		if (generate_new_msisdn(msisdn, imsi, g_hlr->subscr_create_on_demand.rand_msisdn_len) != 0)
+			return -1;
+		break;
+	case SUBSCR_COD_MODE_NO_MSISDN:
+		msisdn[0] = '\0';
+		break;
+	case SUBSCR_COD_MODE_DISABLED:
+	default:
 		return -1;
+	}
 
 	LOGP(DMAIN, LOGL_INFO, "IMSI='%s': Creating subscriber on demand\n", imsi);
-	rc = db_subscr_create(g_hlr->dbc, imsi, g_hlr->subscr_create_on_demand_flags);
+	rc = db_subscr_create(g_hlr->dbc, imsi, g_hlr->subscr_create_on_demand.flags);
 	if (rc) {
 		LOGP(DMAIN, LOGL_ERROR, "Failed to create subscriber on demand (rc=%d): IMSI='%s'\n", rc, imsi);
 		return rc;
 	}
 
-	if (!rand_msisdn_len)
+	if (msisdn[0] == '\0')
 		return 0;
 
 	/* Update MSISDN of the new (just allocated) subscriber */
