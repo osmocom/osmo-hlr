@@ -43,6 +43,7 @@ enum subscr_create_on_demand_mode {
 	SUBSCR_COD_MODE_DISABLED = 0,
 	SUBSCR_COD_MODE_NO_MSISDN,
 	SUBSCR_COD_MODE_RAND_MSISDN,
+	SUBSCR_COD_MODE_MSISDN_FROM_IMSI,
 };
 
 struct hlr {

@@ -73,7 +73,7 @@ OsmoHLR(config-hlr)# list
   reject-cause (not-found|no-proxy) (imsi-unknown|illegal-ms|plmn-not-allowed|la-not-allowed|roaming-not-allowed|no-suitable-cell-in-la|net-fail|congestion|auth-unacceptable|proto-error-unspec)
   store-imei
   no store-imei
-  subscriber-create-on-demand (no-msisdn|<3-15>) (none|cs|ps|cs+ps)
+  subscriber-create-on-demand (no-msisdn|msisdn-from-imsi|<3-15>) (none|cs|ps|cs+ps)
   no subscriber-create-on-demand
 
 OsmoHLR(config-hlr)# gsup

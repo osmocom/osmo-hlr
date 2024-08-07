@@ -209,6 +209,9 @@ static int subscr_create_on_demand(const char *imsi)
 		return -1;
 
 	switch (g_hlr->subscr_create_on_demand.mode) {
+	case SUBSCR_COD_MODE_MSISDN_FROM_IMSI:
+		OSMO_STRLCPY_ARRAY(msisdn, imsi);
+		break;
 	case SUBSCR_COD_MODE_RAND_MSISDN:
 		if (generate_new_msisdn(msisdn, imsi, g_hlr->subscr_create_on_demand.rand_msisdn_len) != 0)
 			return -1;

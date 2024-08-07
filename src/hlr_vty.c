@@ -288,6 +288,9 @@ static void config_write_subscr_create_on_demand(struct vty *vty)
 	const char *flags_str;
 
 	switch (g_hlr->subscr_create_on_demand.mode) {
+	case SUBSCR_COD_MODE_MSISDN_FROM_IMSI:
+		vty_out(vty, " subscriber-create-on-demand msisdn-from-imsi");
+		break;
 	case SUBSCR_COD_MODE_RAND_MSISDN:
 		vty_out(vty, " subscriber-create-on-demand %u",
 			g_hlr->subscr_create_on_demand.rand_msisdn_len);
@@ -810,9 +813,10 @@ DEFUN(cfg_no_store_imei, cfg_no_store_imei_cmd,
 }
 
 DEFUN(cfg_subscr_create_on_demand, cfg_subscr_create_on_demand_cmd,
-	"subscriber-create-on-demand (no-msisdn|<3-15>) (none|cs|ps|cs+ps)",
+	"subscriber-create-on-demand (no-msisdn|msisdn-from-imsi|<3-15>) (none|cs|ps|cs+ps)",
 	"Make a new record when a subscriber is first seen.\n"
 	"Do not automatically assign MSISDN.\n"
+	"Assign MSISDN identical to subscriber's IMSI.\n"
 	"Length of an automatically assigned MSISDN.\n"
 	"Do not allow any NAM (Network Access Mode) by default.\n"
 	"Allow access to circuit switched NAM by default.\n"
@@ -825,6 +829,8 @@ DEFUN(cfg_subscr_create_on_demand, cfg_subscr_create_on_demand_cmd,
 
 	if (strcmp(argv[0], "no-msisdn") == 0) {
 		mode = SUBSCR_COD_MODE_NO_MSISDN;
+	} else if (strcmp(argv[0], "msisdn-from-imsi") == 0) {
+		mode = SUBSCR_COD_MODE_MSISDN_FROM_IMSI;
 	} else { /* random MSISDN */
 		mode = SUBSCR_COD_MODE_RAND_MSISDN;
 		rand_msisdn_len = atoi(argv[0]);
