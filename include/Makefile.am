@@ -3,6 +3,7 @@ SUBDIRS = osmocom
 nobase_include_HEADERS = \
 	osmocom/gsupclient/cni_peer_id.h \
 	osmocom/gsupclient/gsup_client.h \
+	osmocom/gsupclient/gsup_client_mux.h \
 	osmocom/gsupclient/gsup_req.h \
 	osmocom/mslookup/mdns.h \
 	osmocom/mslookup/mdns_sock.h \

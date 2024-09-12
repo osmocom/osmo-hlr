@@ -11,6 +11,7 @@ lib_LTLIBRARIES = libosmo-gsup-client.la
 libosmo_gsup_client_la_SOURCES = \
 	cni_peer_id.c \
 	gsup_client.c \
+	gsup_client_mux.c \
 	gsup_req.c \
 	$(NULL)
 
