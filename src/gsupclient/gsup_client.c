@@ -26,6 +26,7 @@
 #include <osmocom/gsupclient/gsup_client.h>
 
 #include <osmocom/abis/ipa.h>
+#include <osmocom/gsm/ipa.h>
 #include <osmocom/gsm/oap_client.h>
 #include <osmocom/gsm/protocol/ipaccess.h>
 #include <osmocom/core/msgb.h>
@@ -44,7 +45,7 @@ static void gsup_client_send_ping(struct osmo_gsup_client *gsupc)
 
 	msg->l2h = msgb_put(msg, 1);
 	msg->l2h[0] = IPAC_MSGT_PING;
-	ipa_msg_push_header(msg, IPAC_PROTO_IPACCESS);
+	ipa_prepend_header(msg, IPAC_PROTO_IPACCESS);
 	ipa_client_conn_send(gsupc->link, msg);
 }
 
@@ -114,7 +115,7 @@ static void client_send(struct osmo_gsup_client *gsupc, int proto_ext,
 			struct msgb *msg_tx)
 {
 	ipa_prepend_header_ext(msg_tx, proto_ext);
-	ipa_msg_push_header(msg_tx, IPAC_PROTO_OSMO);
+	ipa_prepend_header(msg_tx, IPAC_PROTO_OSMO);
 	ipa_client_conn_send(gsupc->link, msg_tx);
 	/* msg_tx is now queued and will be freed. */
 }

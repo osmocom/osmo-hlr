@@ -26,6 +26,7 @@
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/abis/ipa.h>
 #include <osmocom/abis/ipaccess.h>
+#include <osmocom/gsm/ipa.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/apn.h>
 #include <osmocom/gsm/gsm23003.h>
@@ -49,7 +50,7 @@ static void osmo_gsup_server_send(struct osmo_gsup_conn *conn,
 			     int proto_ext, struct msgb *msg_tx)
 {
 	ipa_prepend_header_ext(msg_tx, proto_ext);
-	ipa_msg_push_header(msg_tx, IPAC_PROTO_OSMO);
+	ipa_prepend_header(msg_tx, IPAC_PROTO_OSMO);
 	ipa_server_conn_send(conn->conn, msg_tx);
 }
 
