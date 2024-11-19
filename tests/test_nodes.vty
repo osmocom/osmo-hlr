@@ -113,7 +113,7 @@ log stderr
  logging level dgsm notice
 ...
 hlr
- reject-cause not-found imsi-unknown
+ reject-cause not-found plmn-not-allowed
  reject-cause no-proxy imsi-unknown
  store-imei
  database hlr_vty_test.db

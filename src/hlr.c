@@ -779,7 +779,7 @@ int main(int argc, char **argv)
 	g_hlr->db_file_path = talloc_strdup(g_hlr, HLR_DEFAULT_DB_FILE_PATH);
 	g_hlr->mslookup.server.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
 	g_hlr->mslookup.client.mdns.domain_suffix = talloc_strdup(g_hlr, OSMO_MDNS_DOMAIN_SUFFIX_DEFAULT);
-	g_hlr->reject_cause = GMM_CAUSE_IMSI_UNKNOWN;
+	g_hlr->reject_cause = GMM_CAUSE_PLMN_NOTALLOWED;
 	g_hlr->no_proxy_reject_cause = GMM_CAUSE_IMSI_UNKNOWN;
 
 	/* Init default (call independent) SS session guard timeout value */
