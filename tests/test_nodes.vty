@@ -114,7 +114,7 @@ log stderr
 ...
 hlr
  reject-cause not-found plmn-not-allowed
- reject-cause no-proxy imsi-unknown
+ reject-cause no-proxy net-fail
  store-imei
  database hlr_vty_test.db
  no subscriber-create-on-demand
