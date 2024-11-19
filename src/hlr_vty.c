@@ -320,14 +320,12 @@ static int config_write_hlr(struct vty *vty)
 {
 	vty_out(vty, "hlr%s", VTY_NEWLINE);
 
-	if (g_hlr->reject_cause != GMM_CAUSE_IMSI_UNKNOWN)
-		vty_out(vty, " reject-cause not-found %s%s",
-			get_value_string_or_null(gsm48_gmm_cause_vty_names,
-						 (uint32_t) g_hlr->reject_cause), VTY_NEWLINE);
-	if (g_hlr->no_proxy_reject_cause != GMM_CAUSE_IMSI_UNKNOWN)
-		vty_out(vty, " reject-cause no-proxy %s%s",
-			get_value_string_or_null(gsm48_gmm_cause_vty_names,
-						 (uint32_t) g_hlr->no_proxy_reject_cause), VTY_NEWLINE);
+	vty_out(vty, " reject-cause not-found %s%s",
+		get_value_string_or_null(gsm48_gmm_cause_vty_names,
+					 (uint32_t) g_hlr->reject_cause), VTY_NEWLINE);
+	vty_out(vty, " reject-cause no-proxy %s%s",
+		get_value_string_or_null(gsm48_gmm_cause_vty_names,
+					 (uint32_t) g_hlr->no_proxy_reject_cause), VTY_NEWLINE);
 	if (g_hlr->store_imei)
 		vty_out(vty, " store-imei%s", VTY_NEWLINE);
 	if (g_hlr->db_file_path && strcmp(g_hlr->db_file_path, HLR_DEFAULT_DB_FILE_PATH))
