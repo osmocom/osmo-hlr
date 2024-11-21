@@ -30,6 +30,7 @@ export LD_LIBRARY_PATH="$inst/lib"
 export PATH="$inst/bin:$PATH"
 
 osmo-build-dep.sh libosmocore "" ac_cv_path_DOXYGEN=false
+osmo-build-dep.sh libosmo-netif "" --disable-doxygen
 osmo-build-dep.sh libosmo-abis
 
 # Additional configure options and depends
