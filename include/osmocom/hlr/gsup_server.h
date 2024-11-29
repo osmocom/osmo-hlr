@@ -2,9 +2,9 @@
 
 #include <osmocom/core/linuxlist.h>
 #include <osmocom/core/msgb.h>
-#include <osmocom/abis/ipa.h>
-#include <osmocom/abis/ipaccess.h>
 #include <osmocom/gsm/gsup.h>
+#include <osmocom/gsm/protocol/ipaccess.h>
+#include <osmocom/abis/ipa.h>
 #include <osmocom/gsupclient/cni_peer_id.h>
 #include <osmocom/gsupclient/gsup_req.h>
 

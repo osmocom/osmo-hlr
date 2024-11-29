@@ -24,12 +24,12 @@
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/core/linuxlist.h>
-#include <osmocom/abis/ipa.h>
-#include <osmocom/abis/ipaccess.h>
-#include <osmocom/gsm/ipa.h>
 #include <osmocom/gsm/gsm48_ie.h>
 #include <osmocom/gsm/apn.h>
+#include <osmocom/gsm/protocol/ipaccess.h>
+#include <osmocom/gsm/ipa.h>
 #include <osmocom/gsm/gsm23003.h>
+#include <osmocom/abis/ipa.h>
 
 #include <osmocom/hlr/gsup_server.h>
 #include <osmocom/hlr/gsup_router.h>
