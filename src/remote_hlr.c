@@ -66,7 +66,7 @@ static void remote_hlr_err_reply(struct remote_hlr *rh, const struct osmo_gsup_m
  * The local MSC shall be indicated by gsup.destination_name. */
 static int remote_hlr_rx(struct osmo_gsup_client *gsupc, struct msgb *msg)
 {
-	struct remote_hlr *rh = gsupc->data;
+	struct remote_hlr *rh = osmo_gsup_client_get_data(gsupc);
 	struct proxy_subscr proxy_subscr;
 	struct osmo_gsup_message gsup;
 	int rc;
@@ -108,7 +108,7 @@ struct remote_hlr_pending_up {
 
 static bool remote_hlr_up_down(struct osmo_gsup_client *gsupc, bool up)
 {
-	struct remote_hlr *remote_hlr = gsupc->data;
+	struct remote_hlr *remote_hlr = osmo_gsup_client_get_data(gsupc);
 	struct remote_hlr_pending_up *p, *n;
 	if (!up) {
 		LOG_REMOTE_HLR(remote_hlr, LOGL_NOTICE, "link to remote HLR is down, removing GSUP client\n");
@@ -127,7 +127,7 @@ static bool remote_hlr_up_down(struct osmo_gsup_client *gsupc, bool up)
 
 bool remote_hlr_is_up(struct remote_hlr *remote_hlr)
 {
-	return remote_hlr && remote_hlr->gsupc && remote_hlr->gsupc->is_connected;
+	return remote_hlr && remote_hlr->gsupc && osmo_gsup_client_is_connected(remote_hlr->gsupc);
 }
 
 struct remote_hlr *remote_hlr_get_or_connect(const struct osmo_sockaddr_str *addr, bool connect,
@@ -180,7 +180,7 @@ struct remote_hlr *remote_hlr_get_or_connect(const struct osmo_sockaddr_str *add
 		return NULL;
 	}
 
-	rh->gsupc->data = rh;
+	osmo_gsup_client_set_data(rh->gsupc, rh);
 	llist_add(&rh->entry, &remote_hlrs);
 
 add_result_cb:

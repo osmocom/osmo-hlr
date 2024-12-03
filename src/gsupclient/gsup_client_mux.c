@@ -58,7 +58,7 @@ static enum osmo_gsup_message_class gsup_client_mux_classify(struct gsup_client_
 /* Non-static for unit tests */
 int gsup_client_mux_rx(struct osmo_gsup_client *gsup_client, struct msgb *msg)
 {
-	struct gsup_client_mux *gcm = gsup_client->data;
+	struct gsup_client_mux *gcm = osmo_gsup_client_get_data(gsup_client);
 	struct osmo_gsup_message gsup;
 	enum osmo_gsup_message_class message_class;
 	int rc;
@@ -115,7 +115,7 @@ int gsup_client_mux_start(struct gsup_client_mux *gcm, const char *gsup_server_a
 						    &gsup_client_mux_rx, NULL);
 	if (!gcm->gsup_client)
 		return -ENOMEM;
-	gcm->gsup_client->data = gcm;
+	osmo_gsup_client_set_data(gcm->gsup_client, gcm);
 	return 0;
 }
 
@@ -144,14 +144,16 @@ void gsup_client_mux_tx_set_source(const struct gsup_client_mux *gcm,
 				   struct osmo_gsup_message *gsup_msg)
 {
 	const char *local_msc_name;
+	const struct ipaccess_unit *ipa_dev;
 
 	if (!gcm)
 		return;
 	if (!gcm->gsup_client)
 		return;
-	if (!gcm->gsup_client->ipa_dev)
+	ipa_dev = osmo_gsup_client_get_ipaccess_unit(gcm->gsup_client);
+	if (!ipa_dev)
 		return;
-	local_msc_name = gcm->gsup_client->ipa_dev->serno;
+	local_msc_name = ipa_dev->serno;
 	if (!local_msc_name)
 		return;
 	gsup_msg->source_name = (const uint8_t *) local_msc_name;
