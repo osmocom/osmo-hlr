@@ -307,7 +307,7 @@ struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx, struct osmo_
 
 	OSMO_ASSERT(config->ipa_dev->unit_name);
 
-	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
+	gsupc = talloc(talloc_ctx, struct osmo_gsup_client);
 	OSMO_ASSERT(gsupc);
 	*gsupc = (struct osmo_gsup_client){
 		.unit_name = (const char *)config->ipa_dev->unit_name, /* API backwards compat */
