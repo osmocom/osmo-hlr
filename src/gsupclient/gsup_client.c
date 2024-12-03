@@ -450,3 +450,36 @@ struct msgb *osmo_gsup_client_msgb_alloc(void)
 {
 	return msgb_alloc_headroom(4000, 64, __func__);
 }
+
+void *osmo_gsup_client_get_data(const struct osmo_gsup_client *gsupc)
+{
+	return gsupc->data;
+}
+
+void osmo_gsup_client_set_data(struct osmo_gsup_client *gsupc, void *data)
+{
+	gsupc->data = data;
+}
+
+const char *osmo_gsup_client_get_rem_addr(const struct osmo_gsup_client *gsupc)
+{
+	if (!gsupc->link)
+		return NULL;
+	return gsupc->link->addr;
+}
+uint16_t osmo_gsup_client_get_rem_port(const struct osmo_gsup_client *gsupc)
+{
+	if (!gsupc->link)
+		return 0;
+	return gsupc->link->port;
+}
+
+bool osmo_gsup_client_is_connected(const struct osmo_gsup_client *gsupc)
+{
+	return gsupc->is_connected;
+}
+
+const struct ipaccess_unit *osmo_gsup_client_get_ipaccess_unit(const struct osmo_gsup_client *gsupc)
+{
+	return gsupc->ipa_dev;
+}

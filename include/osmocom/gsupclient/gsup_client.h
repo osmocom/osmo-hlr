@@ -20,6 +20,9 @@
  */
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include <osmocom/core/timer.h>
 #include <osmocom/gsm/oap_client.h>
 #include <osmocom/gsm/ipa.h>
@@ -40,6 +43,7 @@ typedef int (*osmo_gsup_client_read_cb_t)(struct osmo_gsup_client *gsupc, struct
 
 typedef bool (*osmo_gsup_client_up_down_cb_t)(struct osmo_gsup_client *gsupc, bool up);
 
+/* NOTE: THIS STRUCT IS CONSIDERED PRIVATE, AVOID ACCESSING ITS FIELDS! */
 struct osmo_gsup_client {
 	const char *unit_name; /* same as ipa_dev->unit_name, for backwards compat */
 
@@ -98,4 +102,13 @@ int osmo_gsup_client_send(struct osmo_gsup_client *gsupc, struct msgb *msg);
 int osmo_gsup_client_enc_send(struct osmo_gsup_client *gsupc,
 			      const struct osmo_gsup_message *gsup_msg);
 struct msgb *osmo_gsup_client_msgb_alloc(void);
+
+void *osmo_gsup_client_get_data(const struct osmo_gsup_client *gsupc);
+void osmo_gsup_client_set_data(struct osmo_gsup_client *gsupc, void *data);
+
+const char *osmo_gsup_client_get_rem_addr(const struct osmo_gsup_client *gsupc);
+uint16_t osmo_gsup_client_get_rem_port(const struct osmo_gsup_client *gsupc);
+
+bool osmo_gsup_client_is_connected(const struct osmo_gsup_client *gsupc);
+const struct ipaccess_unit *osmo_gsup_client_get_ipaccess_unit(const struct osmo_gsup_client *gsupc);
 
