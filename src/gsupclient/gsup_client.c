@@ -309,13 +309,11 @@ struct osmo_gsup_client *osmo_gsup_client_create3(void *talloc_ctx, struct osmo_
 
 	gsupc = talloc_zero(talloc_ctx, struct osmo_gsup_client);
 	OSMO_ASSERT(gsupc);
-	*gsupc = (struct osmo_gsup_client){
-		.unit_name = (const char *)config->ipa_dev->unit_name, /* API backwards compat */
-		.ipa_dev = config->ipa_dev,
-		.read_cb = config->read_cb,
-		.up_down_cb = config->up_down_cb,
-		.data = config->data,
-	};
+	gsupc->unit_name = (const char *)config->ipa_dev->unit_name; /* API backwards compat */
+	gsupc->ipa_dev = config->ipa_dev;
+	gsupc->read_cb = config->read_cb;
+	gsupc->up_down_cb = config->up_down_cb;
+	gsupc->data = config->data;
 
 	/* a NULL oapc_config will mark oap_state disabled. */
 	rc = osmo_oap_client_init(config->oapc_config, &gsupc->oap_state);
