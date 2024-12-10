@@ -20,7 +20,7 @@
 #include <osmocom/gsm/protocol/gsm_04_08_gprs.h>
 #include <osmocom/gsm/gsup.h>
 #include <osmocom/gsm/gsm23003.h>
-#include <osmocom/abis/ipa.h>
+#include <osmocom/gsm/ipa.h>
 #include <osmocom/gsupclient/gsup_client.h>
 #include <osmocom/hlr/logging.h>
 #include <osmocom/hlr/hlr.h>
