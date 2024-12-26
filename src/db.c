@@ -578,29 +578,29 @@ static int db_upgrade_v8(struct db_context *dbc)
 		"	UNIQUE (subscriber_id, rat)\n"
 		")",
 		"CREATE UNIQUE INDEX idx_subscr_rat_flag ON subscriber_rat (subscriber_id, rat)",
-		"PRAGMA user_version = 7",
-	};
-
-	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
-	if (rc != SQLITE_DONE) {
-		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 6\n");
-		return rc;
-	}
-	return rc;
-}
-
-static int db_upgrade_v8(struct db_context *dbc)
-{
-	int rc;
-	const char *statements[] = {
-		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_cs TEXT default NULL",
-		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_ps TEXT default NULL",
 		"PRAGMA user_version = 8",
 	};
 
 	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
 	if (rc != SQLITE_DONE) {
 		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 8\n");
+		return rc;
+	}
+	return rc;
+}
+
+static int db_upgrade_v9(struct db_context *dbc)
+{
+	int rc;
+	const char *statements[] = {
+		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_cs TEXT default NULL",
+		"ALTER TABLE subscriber ADD COLUMN last_lu_rat_ps TEXT default NULL",
+		"PRAGMA user_version = 9",
+	};
+
+	rc = db_run_statements(dbc, statements, ARRAY_SIZE(statements));
+	if (rc != SQLITE_DONE) {
+		LOGP(DDB, LOGL_ERROR, "Unable to update HLR database schema to version 9\n");
 		return rc;
 	}
 	return rc;
@@ -616,6 +616,7 @@ static db_upgrade_func_t db_upgrade_path[] = {
 	db_upgrade_v6,
 	db_upgrade_v7,
 	db_upgrade_v8,
+	db_upgrade_v9,
 };
 
 static int db_get_user_version(struct db_context *dbc)
