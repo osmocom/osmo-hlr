@@ -28,7 +28,7 @@
 #include "db_bootstrap.h"
 
 /* This constant is currently duplicated in sql/hlr.sql and must be kept in sync! */
-#define CURRENT_SCHEMA_VERSION	8
+#define CURRENT_SCHEMA_VERSION	9
 
 #define SEL_COLUMNS \
 	"id," \
