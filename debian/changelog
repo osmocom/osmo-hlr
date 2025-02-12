@@ -1,3 +1,30 @@
+osmo-hlr (1.9.0) unstable; urgency=medium
+
+  [ Vadim Yanitskiy ]
+  * subscriber-create-on-demand: rework configuration
+  * subscriber-create-on-demand: add mode for MSISDN=IMSI
+
+  [ Alexander Couzens ]
+  * gsupclient: Introduce gsup_client_mux
+  * gsupclient: add missing SPDX line
+  * debian/copyright: add gsup_client under GPLv2+
+
+  [ Pau Espin Pedrol ]
+  * gsup: Replace deprecated ipa_msg_push_header()
+  * jenkins.sh: libosmo-netif no longer depends on libosmo-abis
+  * Drop use of libosmo-abis osmocom/abis/ipaccess.h
+  * gsup_client: Add new APIs to avoid users accessing struct fields
+  * gsup_client: Avoid double memset 0
+  * Drop unneeded use of abis/ipa.h header
+  * jenkins.sh: Use --disable-doxygen configure param
+
+  [ Mychaela N. Falconia ]
+  * vty: always emit reject-cause lines in saved config
+  * change default reject cause to plmn-not-allowed
+  * change default no-proxy reject cause to net-fail
+
+ -- Oliver Smith <osmith@sysmocom.de>  Wed, 12 Feb 2025 12:17:52 +0100
+
 osmo-hlr (1.8.0) unstable; urgency=medium
 
   [ Vadim Yanitskiy ]
