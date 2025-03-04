@@ -48,7 +48,6 @@ enum hlr_vty_node {
 #define A38_COMP128_KEY_LEN	16
 #define MILENAGE_KEY_LEN	16
 
-int hlr_vty_is_config_node(struct vty *vty, int node);
 int hlr_vty_go_parent(struct vty *vty);
 void hlr_vty_init(void *hlr_ctx);
 void dgsm_vty_init(void);

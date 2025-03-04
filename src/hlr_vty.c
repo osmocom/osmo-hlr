@@ -881,18 +881,6 @@ int hlr_vty_go_parent(struct vty *vty)
 	return vty->node;
 }
 
-int hlr_vty_is_config_node(struct vty *vty, int node)
-{
-	switch (node) {
-	/* add items that are not config */
-	case CONFIG_NODE:
-		return 0;
-
-	default:
-		return 1;
-	}
-}
-
 void hlr_vty_init(void *hlr_ctx)
 {
 	cfg_reject_cause_cmd.string =

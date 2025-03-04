@@ -754,7 +754,6 @@ static struct vty_app_info vty_info = {
 	.name 		= "OsmoHLR",
 	.version	= PACKAGE_VERSION,
 	.copyright	= vlr_copyright,
-	.is_config_node	= hlr_vty_is_config_node,
 	.go_parent_cb   = hlr_vty_go_parent,
 };
 
