@@ -595,6 +595,7 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 	int rc;
 	bool has_sqlite_config_sqllog = false;
 	int version;
+	bool version_changed = false;
 
 	LOGP(DDB, LOGL_NOTICE, "using database: %s\n", fname);
 	LOGP(DDB, LOGL_INFO, "Compiled against SQLite3 lib version %s\n", SQLITE_VERSION);
@@ -672,6 +673,7 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 			goto out_free;
 		}
 		version = CURRENT_SCHEMA_VERSION;
+		version_changed = true;
 	}
 
 	LOGP(DDB, LOGL_NOTICE, "Database '%s' has HLR DB schema version %d\n", dbc->fname, version);
@@ -686,6 +688,7 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 		}
 		LOGP(DDB, LOGL_NOTICE, "Database '%s' has been upgraded to HLR DB schema version %d\n",
 		     dbc->fname, version+1);
+		version_changed = true;
 	}
 
 	if (version != CURRENT_SCHEMA_VERSION) {
@@ -701,6 +704,12 @@ struct db_context *db_open(void *ctx, const char *fname, bool enable_sqlite_logg
 
 		goto out_free;
 	}
+
+	/* Flush the cache after changing the version, to make the scenario
+	 * less likely that after an unclean shutdown the DB gets restored
+	 * with the right table layout but wrong version (SYS#7394). */
+	if (version_changed)
+		sqlite3_db_cacheflush(dbc->db);
 
 	/* prepare all SQL statements */
 	for (i = 0; i < ARRAY_SIZE(dbc->stmt); i++) {
