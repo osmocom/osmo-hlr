@@ -1,3 +1,13 @@
+osmo-hlr (1.9.1) unstable; urgency=medium
+
+  [ Pau Espin Pedrol ]
+  * Drop use of deprecated vty is_config_node() cb
+
+  [ Oliver Smith ]
+  * db: flush after changing schema version
+
+ -- Oliver Smith <osmith@sysmocom.de>  Wed, 02 Apr 2025 15:12:35 +0200
+
 osmo-hlr (1.9.0) unstable; urgency=medium
 
   [ Vadim Yanitskiy ]
