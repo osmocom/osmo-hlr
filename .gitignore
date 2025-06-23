@@ -86,3 +86,5 @@ contrib/osmo-hlr.spec
 /debian/osmo-mslookup-utils/
 /debian/*.log
 /debian/*.substvars
+
+include/osmocom/*/version.h
