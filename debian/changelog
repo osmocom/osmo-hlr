@@ -1,3 +1,10 @@
+osmo-hlr (1.9.2) unstable; urgency=medium
+
+  [ Oliver Smith ]
+  * Generate version.h files
+
+ -- Pau Espin Pedrol <pespin@sysmocom.de>  Wed, 03 Dec 2025 19:05:42 +0100
+
 osmo-hlr (1.9.1) unstable; urgency=medium
 
   [ Pau Espin Pedrol ]
