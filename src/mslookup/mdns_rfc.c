@@ -156,10 +156,23 @@ struct osmo_mdns_rfc_record *osmo_mdns_rfc_record_decode(void *ctx, const uint8_
 	struct osmo_mdns_rfc_record *ret;
 	size_t name_len;
 
+	/* A record needs at least one name byte plus the 10 fixed trailing
+	 * bytes (type, class, ttl, rdlength). Reject anything shorter, so the
+	 * unsigned 'data_len - 10' below cannot underflow to ~SIZE_MAX. */
+	if (data_len < 11)
+		return NULL;
+
 	/* name length: represented as a series of labels, and terminated by a
 	 * label with zero length (RFC 1035 3.3). A label with zero length is a
 	 * NUL byte. */
 	name_len = strnlen((const char *)data, data_len - 10) + 1;
+	/* If no label terminator was found within the scanned range, strnlen()
+	 * returns its bound, so name_len can be as large as data_len - 9. The
+	 * fixed-field loads below read up to data[name_len + 9], which would then
+	 * be one byte past the buffer. Require room for the name plus the 10
+	 * fixed trailing bytes before touching any of them. */
+	if (name_len + 10 > data_len)
+		return NULL;
 	if (data[name_len])
 		return NULL;
 
