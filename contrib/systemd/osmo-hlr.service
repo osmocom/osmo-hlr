@@ -11,6 +11,7 @@ StateDirectory=osmocom
 WorkingDirectory=%S/osmocom
 User=osmocom
 Group=osmocom
+ExecStartPre=/usr/share/osmocom/osmo-hlr-db-upgrade.sh
 ExecStart=/usr/bin/osmo-hlr -c /etc/osmocom/osmo-hlr.cfg -l /var/lib/osmocom/hlr.db
 RestartSec=2
 ProtectHome=true

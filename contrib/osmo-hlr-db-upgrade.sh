@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright 2021 sysmocom s.f.m.c GmbH <info@sysmocom.de>
 #
-# Packagers are supposed to call this script in post-upgrade, so it can safely
-# upgrade the database scheme if required.
+# This script gets called in ExecStartPre= of osmo-hlr.service, so it can
+# safely upgrade the database scheme if required.
 
 DB="/var/lib/osmocom/hlr.db"
-IS_ACTIVE=0
 
 msg() {
-	echo "osmo-hlr-post-upgrade: $@"
+	echo "osmo-hlr-db-upgrade: $@"
 }
 
 err() {
@@ -36,27 +35,6 @@ check_upgrade_required() {
 	msg "database upgrade is required"
 }
 
-stop_service() {
-	if systemctl is-active -q osmo-hlr; then
-		IS_ACTIVE=1
-		msg "stopping osmo-hlr service"
-		systemctl stop osmo-hlr
-
-		# Verify that it stopped
-		for i in $(seq 1 100); do
-			if ! systemctl is-active -q osmo-hlr; then
-				return
-			fi
-			sleep 0.1
-		done
-
-		err "failed to stop osmo-hlr service"
-		exit 1
-	else
-		msg "osmo-hlr service is not running"
-	fi
-}
-
 create_backup() {
 	backup="$DB.$(date +%Y%m%d%H%M%S).bak"
 	msg "creating backup: $backup"
@@ -81,15 +59,6 @@ upgrade() {
 	msg "database upgrade successful"
 }
 
-start_service() {
-	if [ "$IS_ACTIVE" = "1" ]; then
-		msg "starting osmo-hlr service"
-		systemctl start osmo-hlr
-	fi
-}
-
 check_upgrade_required
-stop_service
 create_backup
 upgrade
-start_service
