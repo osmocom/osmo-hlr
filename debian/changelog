@@ -1,3 +1,14 @@
+osmo-hlr (1.9.3) unstable; urgency=medium
+
+  [ Pau Espin Pedrol ]
+  * tests/db_upgrade: Use log stderr blocking-io
+  * osmo-hlr: Force log stderr blocking-io in --db-check mode
+
+  [ Oliver Smith ]
+  * systemd: run db-upgrade script in ExecStartPre
+
+ -- Oliver Smith <osmith@sysmocom.de>  Fri, 17 Jul 2026 09:02:09 +0200
+
 osmo-hlr (1.9.2) unstable; urgency=medium
 
   [ Oliver Smith ]
