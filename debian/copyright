@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: OsmoHLR
-Source: http://cgit.osmocom.org/osmo-hlr/
+Source: https://gitea.osmocom.org/cellular-infrastructure/osmo-hlr
 
 Files: *
 Copyright: 2016-2022 Sysmocom s. f. m. c. GmbH <info@sysmocom.de>
