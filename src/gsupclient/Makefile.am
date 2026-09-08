@@ -16,7 +16,7 @@ libosmo_gsup_client_la_SOURCES = \
 	$(NULL)
 
 libosmo_gsup_client_la_LDFLAGS = -version-info $(LIBVERSION) -no-undefined
-libosmo_gsup_client_la_LIBADD = $(TALLOC_LIBS) $(LIBOSMOCORE_LIBS) $(LIBOSMOABIS_LIBS)
+libosmo_gsup_client_la_LIBADD = $(TALLOC_LIBS) $(LIBOSMOCORE_LIBS) $(LIBOSMOGSM_LIBS) $(LIBOSMOABIS_LIBS)
 
 noinst_PROGRAMS = gsup-test-client
 
