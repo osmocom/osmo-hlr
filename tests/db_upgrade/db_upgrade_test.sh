@@ -18,8 +18,11 @@ dump_sorted_schema(){
 		sqlite3 -batch -header "$db_file" "SELECT name,type,\"notnull\",dflt_value,pk FROM PRAGMA_TABLE_INFO('$table') order by name;"
 		echo
 		echo "Table $table contents:"
-		columns="$(sqlite3 -batch -noheader "$db_file" "SELECT name FROM PRAGMA_TABLE_INFO('$table') order by name;")"
-		sqlite3 -batch -header "$db_file" "SELECT $(echo $columns | sed 's/ /,/g') from $table;"
+		# sqlite3 >= 3.54 prints the header even for empty results, so skip empty tables
+		if [ "$(sqlite3 -batch -noheader "$db_file" "SELECT COUNT(*) FROM $table;")" != "0" ]; then
+			columns="$(sqlite3 -batch -noheader "$db_file" "SELECT name FROM PRAGMA_TABLE_INFO('$table') order by name;")"
+			sqlite3 -batch -header "$db_file" "SELECT $(echo $columns | sed 's/ /,/g') from $table;"
+		fi
 	done
 }
 
