@@ -1,3 +1,16 @@
+osmo-hlr (1.9.5) unstable; urgency=medium
+
+  [ Harald Welte ]
+  * debian/copyright: Update Source link from cgit to gitea/forgejo
+
+  [ Andrei Gosman ]
+  * gsupclient: add LIBOSMOGSM_LIBS to LIBADD
+
+  [ Vadim Yanitskiy ]
+  * tests/db_upgrade: fix test failure with sqlite3 >= 3.54.0
+
+ -- Vadim Yanitskiy <vyanitskiy@sysmocom.de>  Thu, 05 Nov 2026 18:01:22 +0500
+
 osmo-hlr (1.9.4) unstable; urgency=medium
 
   [ n0k0 ]
